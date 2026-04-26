@@ -1,5 +1,8 @@
 # Bayyinah
 
+> Live demo: see the **Hosted API** section below.
+
+
 **File integrity scanner for detecting hidden, concealed, or adversarial content in digital documents.**
 
 Bayyinah extracts every content layer from a file, visible and invisible, and reports whether what the file *displays* matches what the file *contains*. It is the input-layer application of the [Munafiq Protocol](https://doi.org/10.5281/zenodo.19677111)'s performed-alignment detection. A document that renders cleanly at the surface while carrying concealed payloads, steganographic encoding, embedded prompt injections, or cross-modal anomalies is a document performing alignment. Bayyinah makes the performance visible; the reader performs the recognition.
@@ -190,6 +193,41 @@ class MyAnalyzer(BaseAnalyzer):
             findings=findings,
         )
 ```
+
+## Hosted API
+
+A thin FastAPI wrapper (`api.py`) exposes `scan_file` over HTTP for
+demos and lightweight integration. The same library does the work; the
+wrapper only handles transport.
+
+### Endpoints
+
+| Method | Path        | Purpose                                                |
+|--------|-------------|--------------------------------------------------------|
+| GET    | `/`         | Browser upload form (drag-drop a file, see JSON result)|
+| GET    | `/healthz`  | Liveness probe (`{"status": "ok", ...}`)               |
+| GET    | `/version`  | Installed Bayyinah version                             |
+| POST   | `/scan`     | Multipart upload, returns `IntegrityReport.to_dict()`  |
+
+### Run locally
+
+```bash
+pip install -r requirements.txt
+uvicorn api:app --host 0.0.0.0 --port 8000
+```
+
+Then open `http://localhost:8000/` for the upload form, or:
+
+```bash
+curl -X POST -F "file=@suspicious.pdf" http://localhost:8000/scan
+```
+
+### Limits
+
+The demo `/scan` endpoint caps uploads at 25 MiB. The library itself
+enforces deeper scan limits via `domain.scan_limits.ScanLimits`. There
+is no auth on the demo endpoint; rate limiting is delegated to the
+hosting provider.
 
 ## Configuration: `ScanLimits`
 

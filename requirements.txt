@@ -13,5 +13,11 @@
 pymupdf>=1.24,<2
 pypdf>=4.0,<7
 
-# Audio container metadata (Phase 24 — MP3 / WAV / FLAC / M4A / OGG).
+# Audio container metadata (Phase 24 - MP3 / WAV / FLAC / M4A / OGG).
 mutagen>=1.47,<2
+
+# HTTP API wrapper (api.py). Used by the Railway deployment that exposes
+# scan_file() over HTTP. The library itself does not import these.
+fastapi>=0.110,<1
+uvicorn[standard]>=0.27,<1
+python-multipart>=0.0.9,<1

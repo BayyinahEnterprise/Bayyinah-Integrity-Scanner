@@ -275,6 +275,20 @@ _INDEX_HTML = """<!doctype html>
       Try a document you already trust to see a score of 1.0 with no
       findings. Then try one from a less-trusted source.
     </p>
+    <details style="margin-top:1rem; font-size:0.9rem;">
+      <summary style="cursor:pointer; color:var(--muted);">Verdict legend</summary>
+      <dl class="meta-grid" style="margin-top:0.75rem;">
+        <dt><code>sahih</code></dt><dd>sound — score 1.0, no findings, scan complete</dd>
+        <dt><code>mushtabih</code></dt><dd>doubtful — score 0.7-1.0, some signal, nothing verified</dd>
+        <dt><code>mukhfi</code></dt><dd>concealed — score 0.3-0.7, concealment detected</dd>
+        <dt><code>munafiq</code></dt><dd>severe concealment — score below 0.3 with at least one verified mechanism</dd>
+        <dt><code>mughlaq</code></dt><dd>closed — scan incomplete or errored, no verdict can be issued</dd>
+      </dl>
+      <p style="font-size:0.85rem; color:var(--muted); margin: 0.75rem 0 0;">
+        These labels classify the <em>report</em>, not the document's author or intent.
+        Bayyinah surfaces the gap; the reader performs the recognition.
+      </p>
+    </details>
   </div>
 
   <h2>Why it matters now</h2>
@@ -289,12 +303,16 @@ _INDEX_HTML = """<!doctype html>
   </p>
 
   <h2>What it covers</h2>
-  <p>
-    23 file kinds: PDF, DOCX, XLSX, PPTX, HTML, EML, CSV, JSON, plain
-    text and source code, Markdown, RTF, SVG, PNG, JPEG, GIF, WebP,
-    TIFF, MP3, WAV, FLAC, OGG, MP4, plus a fallback witness for unknown
-    formats so nothing slips through silent-clean.
-  </p>
+  <p>23 file kinds, grouped by family:</p>
+  <ul style="line-height:1.7;">
+    <li><strong>Documents:</strong> PDF, DOCX, XLSX, PPTX</li>
+    <li><strong>Web &amp; mail:</strong> HTML, SVG, EML</li>
+    <li><strong>Data &amp; text:</strong> JSON, CSV, Markdown, plain text and source code</li>
+    <li><strong>Images:</strong> PNG, JPEG</li>
+    <li><strong>Video:</strong> MP4, MOV, WEBM, MKV</li>
+    <li><strong>Audio:</strong> MP3, WAV, FLAC, M4A, OGG</li>
+    <li><strong>Universal-witness fallback</strong> for unknown formats so nothing slips through silent-clean</li>
+  </ul>
 
   <h2>API</h2>
   <p>The same scanner is exposed over HTTP for integration:</p>

@@ -1,6 +1,6 @@
 # Bayyinah
 
-> **Try it now:** [web-production-620b1.up.railway.app](https://web-production-620b1.up.railway.app/) — drag any file into the form and see the integrity report. See the [Hosted API](#hosted-api) section for the JSON endpoint.
+> **Try it now:** [bayyinah.dev](https://bayyinah.dev/) — drag any file into the form and see the integrity report. See the [Hosted API](#hosted-api) section for the JSON endpoint.
 
 **File integrity scanner for detecting hidden, concealed, or adversarial content in digital documents.**
 
@@ -199,11 +199,10 @@ A thin FastAPI wrapper (`api.py`) exposes `scan_file` over HTTP for
 demos and lightweight integration. The same library does the work; the
 wrapper only handles transport.
 
-**Live instance:** https://web-production-620b1.up.railway.app/
+**Live instance:** https://bayyinah.dev/
 
 ```bash
-curl -X POST -F "file=@suspicious.pdf" \
-  https://web-production-620b1.up.railway.app/scan
+curl -X POST -F "file=@suspicious.pdf" https://bayyinah.dev/scan
 ```
 
 ### Endpoints

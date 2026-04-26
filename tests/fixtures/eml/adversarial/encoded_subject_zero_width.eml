@@ -1,0 +1,9 @@
+From: alice@example.com
+To: bob@example.com
+Subject: =?UTF-8?B?SGVsbG/igIt3b3JsZA==?=
+Date: Wed, 22 Apr 2026 09:35:00 +0000
+Message-ID: <encoded-zwsp-0001@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Body of the message is unremarkable.

@@ -1,0 +1,9 @@
+From: "support@trusted.example" <attacker@evil.example>
+To: Bob <bob@example.com>
+Subject: Follow-up on your inquiry
+Date: Wed, 22 Apr 2026 09:30:00 +0000
+Message-ID: <display-name-embedded-0001@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+We received your inquiry and will respond within two business days.

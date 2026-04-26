@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Inline Script</title></head>
+<body>
+  <h1>Innocuous-looking page</h1>
+  <p>Welcome to the documentation site.</p>
+  <script>
+    // Inline JavaScript executes the moment the parser closes this tag.
+    var exfil = document.cookie;
+    console.log("payload:", exfil);
+  </script>
+</body>
+</html>

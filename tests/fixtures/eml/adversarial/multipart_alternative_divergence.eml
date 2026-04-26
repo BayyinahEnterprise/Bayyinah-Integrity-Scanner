@@ -1,0 +1,19 @@
+From: Alice <alice@example.com>
+To: Bob <bob@example.com>
+Subject: Account update
+Date: Wed, 22 Apr 2026 09:10:00 +0000
+Message-ID: <divergence-fixture-0001@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary=BOUNDARY0002000200020002000200020002
+
+--BOUNDARY0002000200020002000200020002
+Content-Type: text/plain; charset=utf-8
+
+Hello Bob, this is a routine quarterly summary of service usage statistics that include normal reporting fields nothing unusual happened during the reporting window.
+
+--BOUNDARY0002000200020002000200020002
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>URGENT action required immediately: your account has been compromised suspended blocked by administrators. Verify your password credentials banking details confirm identity now before permanent cancellation penalty fees.</p></body></html>
+
+--BOUNDARY0002000200020002000200020002--

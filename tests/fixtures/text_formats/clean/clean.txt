@@ -1,0 +1,6 @@
+Bayyinah Clean Text Reference
+
+Plain text file. No concealment mechanisms present.
+
+The three lines of this document are a reference standard for the
+TextFileAnalyzer: a clean file should produce zero findings.

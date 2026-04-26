@@ -1,0 +1,10 @@
+# Bayyinah — development requirements
+# Kept in sync with [project.optional-dependencies].dev in pyproject.toml.
+# Install with:  pip install -r requirements-dev.txt
+
+-r requirements.txt
+
+pytest>=7
+pytest-cov>=4
+ruff>=0.6
+mypy>=1.8

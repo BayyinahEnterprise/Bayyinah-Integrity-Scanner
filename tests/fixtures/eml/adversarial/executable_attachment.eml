@@ -1,0 +1,23 @@
+From: Alice <alice@example.com>
+To: Bob <bob@example.com>
+Subject: Please review the attached
+Date: Wed, 22 Apr 2026 09:45:00 +0000
+Message-ID: <exec-attach-0001@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=BOUNDARY0003000300030003000300030003
+
+--BOUNDARY0003000300030003000300030003
+Content-Type: text/plain; charset=utf-8
+
+Please see the attached invoice tool.
+
+--BOUNDARY0003000300030003000300030003
+Content-Type: application/octet-stream; name="invoice.exe"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="invoice.exe"
+
+UExBQ0VIT0xERVJfTk9UX0FfUkVBTF9FWEVDVVRBQkxFX1BMQUNFSE9MREVSX05PVF9BX1JFQUxf
+RVhFQ1VUQUJMRV9QTEFDRUhPTERFUl9OT1RfQV9SRUFMX0VYRUNVVEFCTEVfUExBQ0VIT0xERVJf
+Tk9UX0FfUkVBTF9FWEVDVVRBQkxFXw==
+
+--BOUNDARY0003000300030003000300030003--

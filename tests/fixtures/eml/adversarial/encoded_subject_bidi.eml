@@ -1,0 +1,9 @@
+From: alice@example.com
+To: bob@example.com
+Subject: =?UTF-8?B?aW52b2ljZeKArmZkcC5kb2M=?=
+Date: Wed, 22 Apr 2026 09:40:00 +0000
+Message-ID: <encoded-bidi-0001@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Please see the attached document for your records.

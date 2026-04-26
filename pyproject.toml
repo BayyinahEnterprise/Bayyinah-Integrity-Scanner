@@ -1,0 +1,189 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bayyinah"
+version = "1.1.1"
+description = "File integrity scanner that detects hidden, concealed, or adversarial content in digital documents. Applies the Munafiq Protocol's performed-alignment detection to data."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Bilal Syed Arfeen", email = "doctordopemusic@gmail.com" },
+]
+keywords = [
+    "pdf",
+    "security",
+    "integrity",
+    "steganography",
+    "prompt-injection",
+    "adversarial-documents",
+    "munafiq-protocol",
+    "performed-alignment",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Text Processing",
+]
+# Runtime dependencies. Most non-PDF analyzers are stdlib-only:
+#
+#   DocxAnalyzer  / XlsxAnalyzer / PptxAnalyzer : zipfile + xml.etree
+#   HtmlAnalyzer                                 : html.parser + re
+#   EmlAnalyzer                                  : email
+#   CsvAnalyzer                                  : csv + io
+#   JsonAnalyzer                                 : json
+#   SvgAnalyzer                                  : xml.etree
+#   ImageAnalyzer                                : struct + zlib
+#   VideoAnalyzer                                : struct (ISO BMFF + EBML)
+#
+# Adding python-docx / openpyxl / python-pptx / beautifulsoup4 would pull
+# each format's full object model into the scanner; the parser then
+# becomes a surface an adversarial document can target. A stdlib-only
+# scanner inspects the raw structural bytes, which is exactly what a
+# concealment-detector needs to see anyway, and dramatically reduces
+# the scanner's own attack surface.
+#
+# TWO external-library exceptions:
+#
+#   (1) PDF path: pymupdf + pypdf. Two parsers because real-world PDFs
+#       frequently parse cleanly in one and fail in the other, and v0's
+#       design made pypdf failure recoverable (object-layer analyzer
+#       records a scan_error rather than aborting).
+#
+#   (2) Audio path: mutagen (Phase 24). Unlike the office-format
+#       libraries, mutagen is pure Python (no compiled extensions, so
+#       the attack surface is Python-visible), is ~300 KB total, and
+#       is the canonical metadata parser across the Python audio
+#       community (Picard, beets, Mopidy). Implementing ID3v2.4 /
+#       Vorbis comments / iTunes metadata atom parsing from scratch
+#       in a session budget would produce a larger, less-audited
+#       surface than mutagen itself. The stem-extractor-and-router
+#       pattern from Phase 23 video still holds: mutagen returns the
+#       raw stems (metadata tags, embedded pictures, decoded lyrics);
+#       AudioAnalyzer routes each to the existing analyzers that
+#       already know how to read that material. AudioAnalyzer retains
+#       stdlib fallbacks for WAV (``wave`` module) and FLAC
+#       (``struct``-based METADATA_BLOCK walk) so coverage does not
+#       collapse if mutagen is ever swapped out.
+# Upper bounds applied at v1.1.1 (Phase-26 review fix #4): the
+# additive-only invariant guards Bayyinah's own public surface from
+# regressing across versions; capping major-version bumps in our two
+# external dependencies extends the same discipline to upstream churn.
+# A pymupdf 2.x or pypdf 7.x release that changes the parse surface
+# could break the byte-identical PDF parity invariant silently;
+# capping at the current major versions makes any compatibility check
+# explicit (consumer raises the cap deliberately, confirms parity
+# holds, then ships).
+dependencies = [
+    "pymupdf>=1.24,<2",
+    "pypdf>=4.0,<7",
+    "mutagen>=1.47,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7",
+    "pytest-cov>=4",
+    "ruff>=0.6",
+    "mypy>=1.8",
+]
+
+[project.scripts]
+bayyinah = "cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner"
+Repository = "https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner"
+"Reference (Munafiq Protocol)" = "https://doi.org/10.5281/zenodo.19677111"
+Changelog = "https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/CHANGELOG.md"
+
+# ---------------------------------------------------------------------------
+# Packaging layout: 1.0.0
+# ---------------------------------------------------------------------------
+#
+# The scanner is a set of cooperating packages, not a monolith:
+#
+#   bayyinah/             : public Python API (scan_pdf, ScanService, …)
+#   cli/                  : console-script entry point (bayyinah CLI)
+#   domain/               : pure dataclasses + scoring primitives
+#   infrastructure/       : parser adapters (pymupdf, pypdf) + formatters
+#   analyzers/            : BaseAnalyzer contract + Zahir/Batin analyzers
+#   application/          : ScanService orchestrator
+#   legacy/               : additive alias package for the reference
+#                            modules; see legacy/README.md
+#
+# The reference implementations are preserved unchanged at the top level
+# for reproducibility and byte-identical parity testing:
+#
+#   bayyinah_v0.py        : original monolithic scanner (v0)
+#   bayyinah_v0_1.py      : fat-split intermediate (v0.1)
+#
+# Both continue to ship in the wheel so existing downstream pins
+# (``import bayyinah_v0``) do not break. The ``legacy`` package provides
+# an additive conceptual alias (``from legacy import bayyinah_v0``) that
+# resolves to the same module object; nothing is copied or shadowed.
+[tool.setuptools]
+py-modules = ["bayyinah_v0", "bayyinah_v0_1"]
+packages = [
+    "bayyinah",
+    "cli",
+    "domain",
+    "infrastructure",
+    "analyzers",
+    "application",
+    "legacy",
+]
+
+# ---------------------------------------------------------------------------
+# Tooling
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "SIM",  # flake8-simplify
+]
+ignore = [
+    "E501",  # line too long (handled by formatter where possible)
+    "B008",  # function call in default argument (common in dataclasses)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+# pymupdf and pypdf do not ship with type stubs in all versions
+[[tool.mypy.overrides]]
+module = ["fitz", "pymupdf", "pypdf", "pypdf.*"]
+ignore_missing_imports = true

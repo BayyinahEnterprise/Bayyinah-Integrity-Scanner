@@ -1,0 +1,15 @@
+From: Alice <alice@example.com>
+To: Bob <bob@example.com>
+Subject: Weekly status update
+Date: Wed, 22 Apr 2026 09:00:00 +0000
+Message-ID: <plain-fixture-0001@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Hello Bob,
+
+The project is on track for the April milestone. We completed
+the testing phase and the team is reviewing results this week.
+
+Thanks,
+Alice

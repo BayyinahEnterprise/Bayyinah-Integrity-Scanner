@@ -1,0 +1,19 @@
+From: Alice <alice@example.com>
+To: Bob <bob@example.com>
+Subject: Boundary anomaly test
+Date: Wed, 22 Apr 2026 10:10:00 +0000
+Message-ID: <short-boundary-0001@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=XY
+
+--XY
+Content-Type: text/plain; charset=utf-8
+
+First body part content here.
+
+--XY
+Content-Type: text/plain; charset=utf-8
+
+Second body part content there.
+
+--XY--

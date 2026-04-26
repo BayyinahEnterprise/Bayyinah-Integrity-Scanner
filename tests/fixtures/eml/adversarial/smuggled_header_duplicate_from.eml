@@ -1,0 +1,10 @@
+From: alice@trusted.example
+From: mallory@evil.example
+To: bob@example.com
+Subject: Important update
+Date: Wed, 22 Apr 2026 10:00:00 +0000
+Message-ID: <dup-from-0001@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Please review the attached policy document when you have time.

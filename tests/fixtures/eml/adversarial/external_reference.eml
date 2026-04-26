@@ -1,0 +1,9 @@
+From: Alice <alice@example.com>
+To: Bob <bob@example.com>
+Subject: Company update
+Date: Wed, 22 Apr 2026 09:55:00 +0000
+Message-ID: <external-ref-0001@example.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>Please read the attached company update.</p><img src="http://evil.example/tracking/pixel.gif" width="1" height="1" alt=""></body></html>

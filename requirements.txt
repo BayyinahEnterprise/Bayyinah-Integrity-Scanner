@@ -1,0 +1,17 @@
+# Bayyinah — runtime requirements
+# Kept in sync with the [project.dependencies] table in pyproject.toml.
+# Install with:  pip install -r requirements.txt
+#
+# Upper bounds (added v1.1.1, Phase-26 review fix #4) extend the
+# additive-only invariant to upstream dependencies. A pymupdf 2.x or
+# pypdf 7.x release that changes the parse surface could break PDF
+# parity silently; capping at the current major versions forces any
+# compatibility step to be explicit. See pyproject.toml's
+# [project.dependencies] block for the full rationale.
+
+# PDF object-layer + text-layer extraction
+pymupdf>=1.24,<2
+pypdf>=4.0,<7
+
+# Audio container metadata (Phase 24 — MP3 / WAV / FLAC / M4A / OGG).
+mutagen>=1.47,<2

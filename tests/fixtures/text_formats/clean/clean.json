@@ -1,0 +1,12 @@
+{
+  "title": "Bayyinah Clean JSON Reference",
+  "author": "Bayyinah project",
+  "description": "Plain JSON with ASCII values and no structural anomalies.",
+  "meta": {
+    "version": "1.0",
+    "tags": [
+      "reference",
+      "clean"
+    ]
+  }
+}

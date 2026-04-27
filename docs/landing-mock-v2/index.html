@@ -520,6 +520,7 @@ h2 em { font-style: italic; color: var(--lamp); }
 .exam-bar .verdict-state.sahih    { color: var(--ok); }
 .exam-bar .verdict-state.mukhfi   { color: var(--t1); }
 .exam-bar .verdict-state.mushtabih{ color: var(--t3); }
+.exam-bar .verdict-state.mughlaq  { color: var(--t2); }
 .exam-bar .verdict-state .tr {
   font-family: var(--fs); font-style: normal;
   font-size: 0.72rem; color: var(--muted);
@@ -800,6 +801,32 @@ h2 em { font-style: italic; color: var(--lamp); }
 .scan-card .scan-result .verdict.sahih { color: var(--ok); }
 .scan-card .scan-result .verdict.mukhfi { color: var(--t1); }
 .scan-card .scan-result .verdict.mushtabih { color: var(--t3); }
+.scan-card .scan-result .verdict.mughlaq { color: var(--t2); }
+.scan-card .scan-result .scope-note {
+  margin-top: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-left: 2px solid var(--t2);
+  background: rgba(122, 160, 196, 0.06);
+  font-family: var(--fb);
+  font-size: 0.92rem;
+  color: var(--ink);
+  line-height: 1.55;
+}
+.scan-card .scan-result .scope-note .scope-headline {
+  font-weight: 600;
+  color: var(--t2);
+  margin-bottom: 0.35rem;
+}
+.scan-card .scan-result .scope-note .scope-detail {
+  color: var(--muted);
+}
+.scan-card .scan-result .scope-note .scope-hint {
+  margin-top: 0.5rem;
+  font-family: var(--fm);
+  font-size: 0.78rem;
+  color: var(--faint);
+  word-break: break-all;
+}
 .scan-card .scan-result .meta {
   color: var(--muted);
   font-size: 0.72rem;
@@ -1256,19 +1283,54 @@ function countTiers(findings) {
 }
 
 // Verdict derived from the real report shape, not a stored label.
-// Mirrors the policy: complete clean scan = ṣaḥīḥ; incomplete = mushtabih;
-// any tier-1 or tier-2 finding = mukhfī.
+// Five-state map. Order of precedence top-to-bottom:
+//   mukhfī  — at least one Tier-1 or Tier-2 finding (verified or structural)
+//   mughlaq — scan_incomplete with no verified concealment, OR unknown format
+//   mushtabih — Tier-3 only, scan complete
+//   ṣaḥīḥ  — score 1.0, no findings, scan complete
+// munafiq is reserved for score < 0.3 with verified mechanisms, derived
+// server-side in a future release; do not derive in the simulator yet.
 function deriveVerdict(report) {
   const findings = report.findings || [];
   const incomplete = report.scan_incomplete === true;
   const tier1or2 = findings.some(f => f.tier === 1 || f.tier === 2);
+  const isUnknownFormat = findings.some(f => f.mechanism === 'unknown_format');
   if (tier1or2) {
     return { key: 'mukhfi', label: 'mukhfī', tr: '/ concealed' };
   }
-  if (incomplete) {
+  if (incomplete || isUnknownFormat) {
+    return { key: 'mughlaq', label: 'mughlaq', tr: '/ closed' };
+  }
+  if (findings.length > 0) {
     return { key: 'mushtabih', label: 'mushtabih', tr: '/ doubtful' };
   }
   return { key: 'sahih', label: 'ṣaḥīḥ', tr: '/ sound' };
+}
+
+// Pull a human-readable cause out of the report. For unknown_format we
+// use the finding's surface metadata; for encrypted PDFs we use error.
+function mughlaqCause(report) {
+  const findings = report.findings || [];
+  const unknown = findings.find(f => f.mechanism === 'unknown_format');
+  if (unknown) {
+    return {
+      headline: 'File kind outside Bayyinah\u2019s verified scope.',
+      detail: 'The scanner refused to issue a verdict rather than guess. Out of scope by policy for this release.',
+      hint: unknown.surface || ''
+    };
+  }
+  if (report.error) {
+    return {
+      headline: 'Scan could not complete.',
+      detail: report.error,
+      hint: ''
+    };
+  }
+  return {
+    headline: 'Substrate not readable.',
+    detail: 'Bayyinah does not guess what it cannot see.',
+    hint: ''
+  };
 }
 
 function shortLoc(loc) {
@@ -1304,12 +1366,13 @@ function renderExam(key) {
   examUI.tiers.textContent = countTiers(findings);
   examUI.findings.innerHTML = '';
 
-  if (findings.length === 0) {
+  if (findings.length === 0 || v.key === 'mughlaq') {
     examUI.empty.style.display = 'block';
-    if (report.scan_incomplete) {
-      examUI.empty.textContent = 'Scan incomplete · substrate not readable. Bayyinah does not guess what it cannot see.';
+    if (v.key === 'mughlaq') {
+      const cause = mughlaqCause(report);
+      examUI.empty.textContent = cause.headline + ' ' + cause.detail;
     } else {
-      examUI.empty.textContent = 'No findings · file presents as authored.';
+      examUI.empty.textContent = 'No findings \u00b7 file presents as authored.';
     }
   } else {
     examUI.empty.style.display = 'none';
@@ -1458,11 +1521,18 @@ function renderResult(report) {
   if (incomplete) html += '<span style="color:var(--t3)"><b>scan_incomplete</b> true</span>';
   html += '</div>';
 
-  if (findings.length === 0) {
+  if (v.key === 'mughlaq') {
+    const cause = mughlaqCause(report);
+    html += '<div class="scope-note">';
+    html += '<div class="scope-headline">' + esc(cause.headline) + '</div>';
+    html += '<div class="scope-detail">' + esc(cause.detail) + '</div>';
+    if (cause.hint) {
+      html += '<div class="scope-hint">' + esc(cause.hint) + '</div>';
+    }
+    html += '</div>';
+  } else if (findings.length === 0) {
     html += '<div style="color:var(--muted); font-style:italic">';
-    html += incomplete
-      ? 'Scan incomplete · substrate not readable. Bayyinah does not guess what it cannot see.'
-      : 'No findings · file presents as authored.';
+    html += 'No findings \u00b7 file presents as authored.';
     html += '</div>';
   } else {
     const shown = findings.slice(0, 8);

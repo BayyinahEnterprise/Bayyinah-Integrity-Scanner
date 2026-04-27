@@ -44,7 +44,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 import bayyinah
 from bayyinah import scan_file
@@ -591,10 +591,55 @@ _INDEX_HTML = """<!doctype html>
 """
 
 
+_LANDING_DIR = _ROOT / "docs" / "landing-mock-v2"
+_LANDING_INDEX = _LANDING_DIR / "index.html"
+_LANDING_FIXTURES = _LANDING_DIR / "fixtures.json"
+
+
 @app.get("/", response_class=HTMLResponse)
 def index() -> HTMLResponse:
-    """Serves the browser upload form."""
+    """Serve the v2 lab-notebook landing page.
+
+    The page is a single static HTML file under docs/landing-mock-v2/.
+    The simulator on the page loads /fixtures.json for the three
+    pre-recorded examinations, and the drop-zone POSTs to /scan.
+
+    If for any reason the v2 file is unavailable in this deployment,
+    fall back to the inline form so the service is never broken.
+    """
+    if _LANDING_INDEX.is_file():
+        try:
+            html = _LANDING_INDEX.read_text(encoding="utf-8")
+            return HTMLResponse(content=html)
+        except OSError:
+            pass
     html = _INDEX_HTML.replace(
         "__VERSION__", getattr(bayyinah, "__version__", "1.1.1")
     )
     return HTMLResponse(content=html)
+
+
+@app.get("/scan", response_class=HTMLResponse)
+def scan_form_legacy() -> HTMLResponse:
+    """Keep the legacy upload form reachable at /scan.
+
+    The v2 landing page is now at /, and the new drop-zone POSTs
+    directly to /scan. But there are external links and prior screenshots
+    that point readers at /scan as a destination URL, so we serve the
+    classic inline form here for continuity.
+    """
+    html = _INDEX_HTML.replace(
+        "__VERSION__", getattr(bayyinah, "__version__", "1.1.1")
+    )
+    return HTMLResponse(content=html)
+
+
+@app.get("/fixtures.json")
+def landing_fixtures() -> FileResponse:
+    """Serve the recorded fixtures JSON the v2 simulator loads."""
+    if not _LANDING_FIXTURES.is_file():
+        raise HTTPException(status_code=404, detail="fixtures unavailable")
+    return FileResponse(
+        path=str(_LANDING_FIXTURES),
+        media_type="application/json",
+    )

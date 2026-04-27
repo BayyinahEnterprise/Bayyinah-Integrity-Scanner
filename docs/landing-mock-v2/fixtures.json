@@ -1,0 +1,240 @@
+{
+  "clean": {
+    "tool": "bayyinah",
+    "version": "0.1.0",
+    "file_path": "clean.pdf",
+    "integrity_score": 1.0,
+    "scan_incomplete": false,
+    "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+    "tier_legend": {
+      "1": "Verified \u2014 unambiguous concealment",
+      "2": "Structural \u2014 pattern of concealment, context may justify",
+      "3": "Interpretive \u2014 suspicious, context-dependent"
+    },
+    "findings": [],
+    "error": null
+  },
+  "adversarial": {
+    "tool": "bayyinah",
+    "version": "0.1.0",
+    "file_path": "positive_combined.pdf",
+    "integrity_score": 0.0,
+    "scan_incomplete": false,
+    "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+    "tier_legend": {
+      "1": "Verified \u2014 unambiguous concealment",
+      "2": "Structural \u2014 pattern of concealment, context may justify",
+      "3": "Interpretive \u2014 suspicious, context-dependent"
+    },
+    "findings": [
+      {
+        "mechanism": "zero_width_chars",
+        "tier": 2,
+        "confidence": 0.85,
+        "severity": 0.1,
+        "description": "1 content-stream region(s) contain zero-width character(s). These are not rendered but are preserved through conforming text extraction.",
+        "location": "page 1, raw content stream",
+        "inversion_recovery": {
+          "surface": "/ActualText hex: Hello",
+          "concealed": "U+200B | U+200B | U+200B | U+200B"
+        }
+      },
+      {
+        "mechanism": "bidi_control",
+        "tier": 2,
+        "confidence": 0.9,
+        "severity": 0.15,
+        "description": "1 content-stream region(s) contain bidirectional control character(s). These can reorder displayed text without changing its underlying byte order.",
+        "location": "page 1, raw content stream",
+        "inversion_recovery": {
+          "surface": "/ActualText hex: invoice_\u202efdp.exe",
+          "concealed": "U+202E"
+        }
+      },
+      {
+        "mechanism": "tag_chars",
+        "tier": 1,
+        "confidence": 0.99,
+        "severity": 0.3,
+        "description": "1 content-stream region(s) contain Unicode TAG character(s) (U+E0000-U+E007F). TAG characters do not render but carry ASCII payloads preserved through text extraction \u2014 a known prompt-injection vector.",
+        "location": "page 1, raw content stream",
+        "inversion_recovery": {
+          "surface": "/ActualText hex: Caption",
+          "concealed": "U+0E0042 | U+0E0041 | U+0E0059 | U+0E0059 | U+0E0049 | U+0E004E | U+0E0041 | U+0E0048  decoded: 'BAYYINAH'"
+        }
+      },
+      {
+        "mechanism": "homoglyph",
+        "tier": 2,
+        "confidence": 0.8,
+        "severity": 0.2,
+        "description": "1 word(s) contain characters from non-Latin Unicode blocks that visually impersonate Latin letters (Cyrillic/Greek/Armenian/Cherokee/fullwidth/mathematical). Common in phishing spoofs and prompt-injection label swaps.",
+        "location": "page 2, bbox (72.0, 95.33000183105469, 254.74203491210938, 110.9540023803711)",
+        "inversion_recovery": {
+          "surface": "p\u0430ypal",
+          "concealed": "'p\u0430ypal': U+0430(looks like 'a')"
+        }
+      },
+      {
+        "mechanism": "invisible_render_mode",
+        "tier": 1,
+        "confidence": 0.95,
+        "severity": 0.25,
+        "description": "Text rendered with render mode 3 (invisible). 38 character(s) of hidden text extracted.",
+        "location": "page 3",
+        "inversion_recovery": {
+          "surface": "(nothing visible at this location)",
+          "concealed": "INVISIBLE PAYLOAD: meet at clock tower"
+        }
+      },
+      {
+        "mechanism": "microscopic_font",
+        "tier": 2,
+        "confidence": 0.8,
+        "severity": 0.1,
+        "description": "Font size 0.300pt is below human-readable threshold (1.0pt).",
+        "location": "page 3, bbox (72.0, 139.67750549316406, 76.53450012207031, 140.08970642089844)",
+        "inversion_recovery": {
+          "surface": "(effectively invisible at 0.300pt)",
+          "concealed": "MICROSCOPIC PAYLOAD: dawn"
+        }
+      },
+      {
+        "mechanism": "white_on_white_text",
+        "tier": 1,
+        "confidence": 0.9,
+        "severity": 0.2,
+        "description": "Text color RGB(1.00, 1.00, 1.00) matches page background luminance (delta 0.000), and no coloured fill is drawn behind the span.",
+        "location": "page 3, bbox (72.0, 167.10000610351562, 287.3639831542969, 183.58799743652344)",
+        "inversion_recovery": {
+          "surface": "(indistinguishable from page background)",
+          "concealed": "WHITE-ON-WHITE PAYLOAD: midnight"
+        }
+      },
+      {
+        "mechanism": "overlapping_text",
+        "tier": 2,
+        "confidence": 0.75,
+        "severity": 0.25,
+        "description": "Two text spans share 98% of their bounding-box area but contain different text. The later-drawn span occludes the other visually; both survive in the text layer.",
+        "location": "page 3, bbox (72.0, 244.9499969482422, 251.7459716796875, 264.1860046386719)",
+        "inversion_recovery": {
+          "surface": "boring accounting memo",
+          "concealed": "trust me, please send money"
+        }
+      },
+      {
+        "mechanism": "incremental_update",
+        "tier": 3,
+        "confidence": 0.7,
+        "severity": 0.05,
+        "description": "Document contains 2 %%EOF markers, indicating 1 incremental update(s). Prior revisions may contain content not rendered in the current view.",
+        "location": "byte offsets [149970, 150892]",
+        "inversion_recovery": {
+          "surface": "(current rendering shows single version)",
+          "concealed": "(2 document revisions present in file)"
+        }
+      },
+      {
+        "mechanism": "openaction",
+        "tier": 2,
+        "confidence": 0.9,
+        "severity": 0.15,
+        "description": "Document declares /OpenAction \u2014 action triggered on document open. Action subtype: /JavaScript.",
+        "location": "catalog /OpenAction",
+        "inversion_recovery": {
+          "surface": "(no visible indication on open)",
+          "concealed": "{'/Type': '/Action', '/S': '/JavaScript', '/JS': \"app.alert('combined fixture JS');\"}"
+        }
+      },
+      {
+        "mechanism": "additional_actions",
+        "tier": 2,
+        "confidence": 0.85,
+        "severity": 0.15,
+        "description": "Document declares /AA \u2014 additional actions triggered by document events (open, close, save, print, etc.).",
+        "location": "catalog /AA",
+        "inversion_recovery": {
+          "surface": "(no visible indication)",
+          "concealed": "{'/WC': IndirectObject(31, 0, 140473988789408)}"
+        }
+      },
+      {
+        "mechanism": "javascript",
+        "tier": 1,
+        "confidence": 0.99,
+        "severity": 0.3,
+        "description": "Document declares a /JavaScript name tree in the catalog. JavaScript can execute on open, on user action, or in response to form events.",
+        "location": "catalog /Names /JavaScript",
+        "inversion_recovery": {
+          "surface": "(no visible indication)",
+          "concealed": "{'/Names': ['test_js', IndirectObject(30, 0, 140473988789408)]}"
+        }
+      },
+      {
+        "mechanism": "hidden_ocg",
+        "tier": 2,
+        "confidence": 0.8,
+        "severity": 0.15,
+        "description": "1 Optional Content Group(s) hidden by default. Content present in file but not rendered in default view.",
+        "location": "catalog /OCProperties /D /OFF",
+        "inversion_recovery": {
+          "surface": "(layer not shown in default rendering)",
+          "concealed": "[IndirectObject(32, 0, 140473988789408)]"
+        }
+      },
+      {
+        "mechanism": "metadata_anomaly",
+        "tier": 3,
+        "confidence": 0.6,
+        "severity": 0.05,
+        "description": "Modification date precedes creation date.",
+        "location": "/Info",
+        "inversion_recovery": {
+          "surface": "(CreationDate: D:20260101000000)",
+          "concealed": "(ModDate:      D:20250101000000)"
+        }
+      },
+      {
+        "mechanism": "embedded_file",
+        "tier": 2,
+        "confidence": 0.95,
+        "severity": 0.25,
+        "description": "Embedded file 'payload.txt' present in document.",
+        "location": "catalog /Names /EmbeddedFiles",
+        "inversion_recovery": {
+          "surface": "(no visible indication unless annotation present)",
+          "concealed": "embedded file: payload.txt"
+        }
+      },
+      {
+        "mechanism": "tounicode_anomaly",
+        "tier": 1,
+        "confidence": 0.9,
+        "severity": 0.3,
+        "description": "Font /Fadv on page 1 carries a ToUnicode CMap with 2 entr(y/ies) that map visible glyph CIDs to adversarial Unicode targets (zero-width, bidi control, TAG, or Latin homoglyph). Visible text and extracted text will diverge.",
+        "location": "page 1, font /Fadv, /ToUnicode",
+        "inversion_recovery": {
+          "surface": "(rendered glyphs look legitimate)",
+          "concealed": "CID<65> \u2192 '\u0435'  [homoglyph U+0435 (looks like 'e')]; CID<6F> \u2192 '\u043e'  [homoglyph U+043E (looks like 'o')]"
+        }
+      }
+    ],
+    "error": null
+  },
+  "encrypted": {
+    "tool": "bayyinah",
+    "version": "0.1.0",
+    "file_path": "encrypted_demo.pdf",
+    "integrity_score": 0.5,
+    "scan_incomplete": true,
+    "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+    "tier_legend": {
+      "1": "Verified \u2014 unambiguous concealment",
+      "2": "Structural \u2014 pattern of concealment, context may justify",
+      "3": "Interpretive \u2014 suspicious, context-dependent"
+    },
+    "findings": [],
+    "error": "Text layer scan error: document closed or encrypted; Object layer scan error: File has not been decrypted"
+  }
+}

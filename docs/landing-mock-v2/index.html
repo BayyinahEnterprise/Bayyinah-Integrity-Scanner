@@ -763,12 +763,96 @@ h2 em { font-style: italic; color: var(--lamp); }
   color: var(--faint);
   letter-spacing: 0.04em;
 }
+.scan-card .drop { display: block; cursor: pointer; }
+.scan-card .drop.dragover {
+  border-color: var(--lamp);
+  color: var(--lamp);
+  background: var(--lamp-soft);
+}
+.scan-card .drop.has-file { border-style: solid; border-color: var(--lamp); color: var(--vellum); font-style: normal; }
 .scan-card .note {
   font-family: var(--fm);
   font-size: 0.7rem;
   color: var(--muted);
   letter-spacing: 0.04em;
   margin-top: 1rem;
+  word-break: break-word;
+}
+.scan-card .note.error { color: var(--t1); }
+.scan-card .btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+.scan-card .scan-result {
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--rule);
+  background: var(--bg);
+  text-align: left;
+  font-family: var(--fm);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+.scan-card .scan-result .verdict {
+  font-family: var(--fd);
+  font-style: italic;
+  font-size: 1.4rem;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+.scan-card .scan-result .verdict.sahih { color: var(--ok); }
+.scan-card .scan-result .verdict.mukhfi { color: var(--t1); }
+.scan-card .scan-result .verdict.mushtabih { color: var(--t3); }
+.scan-card .scan-result .meta {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+}
+.scan-card .scan-result .meta b { color: var(--vellum); font-weight: 500; }
+.scan-card .scan-result ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.6rem 0 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.scan-card .scan-result li {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 0.7rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--bg-2);
+  border-left: 2px solid var(--rule-2);
+}
+.scan-card .scan-result li.t1 { border-left-color: var(--t1); }
+.scan-card .scan-result li.t2 { border-left-color: var(--t2); }
+.scan-card .scan-result li.t3 { border-left-color: var(--t3); }
+.scan-card .scan-result .pill {
+  font-size: 0.6rem; letter-spacing: 0.06em;
+  padding: 0.18rem 0.4rem; border-radius: 2px;
+  align-self: start; text-align: center;
+  background: var(--rule); color: var(--vellum);
+}
+.scan-card .scan-result .pill.t1 { background: var(--t1-soft); color: var(--t1); }
+.scan-card .scan-result .pill.t2 { background: var(--t2-soft); color: var(--t2); }
+.scan-card .scan-result .pill.t3 { background: var(--t3-soft); color: var(--t3); }
+.scan-card .scan-result .mech { color: var(--vellum); font-weight: 500; }
+.scan-card .scan-result .desc { color: var(--ink-2); display: block; margin-top: 0.15rem; word-break: break-word; }
+.scan-card .scan-result .more {
+  color: var(--muted); font-size: 0.7rem;
+  margin-top: 0.6rem; padding-left: 0.7rem; border-left: 2px solid var(--rule);
+}
+.scan-card .scan-result .raw {
+  margin-top: 1rem; font-size: 0.68rem;
+}
+.scan-card .scan-result .raw summary { cursor: pointer; color: var(--muted); }
+.scan-card .scan-result .raw pre {
+  margin-top: 0.6rem; padding: 0.7rem;
+  background: var(--bg-2); color: var(--ink-2);
+  white-space: pre-wrap; word-break: break-all;
+  max-height: 280px; overflow: auto;
+  font-size: 0.66rem;
 }
 
 /* ===========================================================
@@ -996,7 +1080,7 @@ h2 em { font-style: italic; color: var(--lamp); }
           <button class="exam-tab" data-fixture="adversarial">
             <span class="num">ii.</span>
             <span class="name">Adversarial PDF</span>
-            <span class="desc">Hidden $10,000 in the substrate.</span>
+            <span class="desc">Sixteen substrate findings.</span>
           </button>
           <button class="exam-tab" data-fixture="encrypted">
             <span class="num">iii.</span>
@@ -1123,14 +1207,16 @@ h2 em { font-style: italic; color: var(--lamp); }
       <p class="lede">No account. No tracking. The scanner runs stateless content analysis and returns a verdict in under five seconds for most file kinds.</p>
 
       <div class="scan-card">
-        <a href="https://bayyinah.dev/scan" style="text-decoration:none; color:inherit; display:block;">
-          <div class="drop">
-            Click to upload a file
+        <form id="scan-form" enctype="multipart/form-data" novalidate>
+          <label class="drop" id="drop-zone" for="scan-file">
+            <span id="drop-prompt">Click or drop a file</span>
             <span class="ext">PDF · DOCX · XLSX · HTML · EML · CSV · JSON · PNG · JPEG · SVG · 13 more</span>
-          </div>
-        </a>
-        <a class="btn" href="https://bayyinah.dev/scan">Open scanner <span class="arrow">→</span></a>
-        <div class="note">Stateless · no file is stored · no telemetry beyond Cloudflare access logs</div>
+            <input type="file" id="scan-file" name="file" hidden>
+          </label>
+          <button class="btn" type="submit" id="scan-submit" disabled>Scan file <span class="arrow">→</span></button>
+        </form>
+        <div id="scan-status" class="note">Stateless · no file is stored · no telemetry beyond Cloudflare access logs</div>
+        <div id="scan-result" class="scan-result" hidden></div>
       </div>
     </section>
 
@@ -1155,51 +1241,46 @@ h2 em { font-style: italic; color: var(--lamp); }
 
 <script>
 // ============================================================
-// The Examination — wires the simulator and the lit page
+// Shared helpers — verdict mapping, escaping, finding counts
 // ============================================================
-const FIXTURES = {
-  clean: {
-    verdict: 'sahih',
-    label: 'ṣaḥīḥ',
-    tr: '/ sound',
-    score: 1.000,
-    tiers: '0/0/0',
-    findings: []
-  },
-  adversarial: {
-    verdict: 'mukhfi',
-    label: 'mukhfī',
-    tr: '/ concealed',
-    score: 0.420,
-    tiers: '2/1/0',
-    findings: [
-      { tier: 1, mech: 'pdf_off_page_text',
-        loc: '/Page 1 · y=-200pt',
-        desc: 'Off-page text stream contains "actual revenue $10,000 · see annex". Invisible to viewers, ingested by LLMs.' },
-      { tier: 1, mech: 'white_on_white_text',
-        loc: '/Page 1 · /TJ chunk 4',
-        desc: 'Text rendered in #FFFFFF on #FFFFFF background. Surface invisible, substrate present.' },
-      { tier: 2, mech: 'pdf_metadata_payload',
-        loc: '/Info /Subject',
-        desc: 'Metadata field carries natural-language string unrelated to document title.' }
-    ]
-  },
-  encrypted: {
-    verdict: 'mushtabih',
-    label: 'mushtabih',
-    tr: '/ doubtful',
-    score: 0.500,
-    tiers: '0/1/0',
-    findings: [
-      { tier: 2, mech: 'pdf_encrypted',
-        loc: '/Encrypt dictionary present',
-        desc: 'Document is encrypted. Substrate cannot be read without the key. Confidence is clamped to 0.5. Bayyinah does not guess what it cannot see.' }
-    ]
-  }
-};
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
+function countTiers(findings) {
+  const t = { 1: 0, 2: 0, 3: 0 };
+  (findings || []).forEach(f => { if (t[f.tier] != null) t[f.tier]++; });
+  return t[1] + '/' + t[2] + '/' + t[3];
+}
+
+// Verdict derived from the real report shape, not a stored label.
+// Mirrors the policy: complete clean scan = ṣaḥīḥ; incomplete = mushtabih;
+// any tier-1 or tier-2 finding = mukhfī.
+function deriveVerdict(report) {
+  const findings = report.findings || [];
+  const incomplete = report.scan_incomplete === true;
+  const tier1or2 = findings.some(f => f.tier === 1 || f.tier === 2);
+  if (tier1or2) {
+    return { key: 'mukhfi', label: 'mukhfī', tr: '/ concealed' };
+  }
+  if (incomplete) {
+    return { key: 'mushtabih', label: 'mushtabih', tr: '/ doubtful' };
+  }
+  return { key: 'sahih', label: 'ṣaḥīḥ', tr: '/ sound' };
+}
+
+function shortLoc(loc) {
+  if (!loc) return '';
+  return loc.length > 80 ? loc.slice(0, 77) + '…' : loc;
+}
+
+// ============================================================
+// The Examination — loads recorded fixtures.json and renders
+// ============================================================
 const $ = (id) => document.getElementById(id);
-const ui = {
+const examUI = {
   verdict: $('verdict'),
   score:   $('score'),
   count:   $('count'),
@@ -1208,28 +1289,50 @@ const ui = {
   empty:   $('empty')
 };
 
-function render(key) {
-  const fx = FIXTURES[key];
-  ui.verdict.className = 'verdict-state ' + fx.verdict;
-  ui.verdict.innerHTML = fx.label + ' <span class="tr">' + fx.tr + '</span>';
-  ui.score.textContent = fx.score.toFixed(3);
-  ui.count.textContent = fx.findings.length;
-  ui.tiers.textContent = fx.tiers;
-  ui.findings.innerHTML = '';
+let RECORDED = null;
 
-  if (fx.findings.length === 0) {
-    ui.empty.style.display = 'block';
+function renderExam(key) {
+  if (!RECORDED || !RECORDED[key]) return;
+  const report = RECORDED[key];
+  const findings = report.findings || [];
+  const v = deriveVerdict(report);
+
+  examUI.verdict.className = 'verdict-state ' + v.key;
+  examUI.verdict.innerHTML = esc(v.label) + ' <span class="tr">' + esc(v.tr) + '</span>';
+  examUI.score.textContent = (report.integrity_score == null ? 'n/a' : Number(report.integrity_score).toFixed(3));
+  examUI.count.textContent = findings.length;
+  examUI.tiers.textContent = countTiers(findings);
+  examUI.findings.innerHTML = '';
+
+  if (findings.length === 0) {
+    examUI.empty.style.display = 'block';
+    if (report.scan_incomplete) {
+      examUI.empty.textContent = 'Scan incomplete · substrate not readable. Bayyinah does not guess what it cannot see.';
+    } else {
+      examUI.empty.textContent = 'No findings · file presents as authored.';
+    }
   } else {
-    ui.empty.style.display = 'none';
-    fx.findings.forEach((f, i) => {
+    examUI.empty.style.display = 'none';
+    // Show first 4 findings inline; collapse the rest into a count.
+    const shown = findings.slice(0, 4);
+    shown.forEach((f, i) => {
       const li = document.createElement('li');
       li.style.animationDelay = (i * 90) + 'ms';
       li.innerHTML =
-        '<span class="tier-pill t' + f.tier + '">T' + f.tier + '</span>' +
-        '<div><span class="mech">' + f.mech + '</span> <span class="loc">· ' + f.loc + '</span>' +
-        '<span class="desc">' + f.desc + '</span></div>';
-      ui.findings.appendChild(li);
+        '<span class="tier-pill t' + esc(f.tier) + '">T' + esc(f.tier) + '</span>' +
+        '<div><span class="mech">' + esc(f.mechanism) + '</span> ' +
+        '<span class="loc">· ' + esc(shortLoc(f.location)) + '</span>' +
+        '<span class="desc">' + esc(f.description) + '</span></div>';
+      examUI.findings.appendChild(li);
     });
+    const extra = findings.length - shown.length;
+    if (extra > 0) {
+      const li = document.createElement('li');
+      li.style.background = 'transparent';
+      li.style.borderLeftColor = 'transparent';
+      li.innerHTML = '<span></span><div class="desc" style="color:var(--muted)">+ ' + extra + ' additional finding' + (extra === 1 ? '' : 's') + ' · see full report on /scan</div>';
+      examUI.findings.appendChild(li);
+    }
   }
 }
 
@@ -1237,11 +1340,157 @@ document.querySelectorAll('.exam-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.exam-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-    render(tab.dataset.fixture);
+    renderExam(tab.dataset.fixture);
   });
 });
 
-render('clean');
+// Load recorded fixtures, then render the active tab.
+fetch('fixtures.json', { cache: 'no-cache' })
+  .then(r => r.ok ? r.json() : Promise.reject(new Error('fixtures.json ' + r.status)))
+  .then(data => { RECORDED = data; renderExam('clean'); })
+  .catch(err => {
+    console.warn('fixtures.json load failed:', err);
+    examUI.empty.style.display = 'block';
+    examUI.empty.textContent = 'Recorded fixtures unavailable. The simulator is offline.';
+  });
+
+// ============================================================
+// Drop-zone — real upload to /scan, renders the same shape
+// ============================================================
+const form     = $('scan-form');
+const input    = $('scan-file');
+const drop     = $('drop-zone');
+const prompt   = $('drop-prompt');
+const submit   = $('scan-submit');
+const status   = $('scan-status');
+const resultEl = $('scan-result');
+
+const ENDPOINT = '/scan';
+const MAX_BYTES = 25 * 1024 * 1024; // mirror server cap
+
+function setStatus(msg, isError) {
+  status.textContent = msg;
+  status.className = 'note' + (isError ? ' error' : '');
+}
+
+function onPickedFile(file) {
+  if (!file) {
+    submit.disabled = true;
+    drop.classList.remove('has-file');
+    prompt.textContent = 'Click or drop a file';
+    setStatus('Stateless · no file is stored · no telemetry beyond Cloudflare access logs', false);
+    return;
+  }
+  if (file.size > MAX_BYTES) {
+    setStatus('File exceeds the 25 MiB demo limit. Use the CLI for larger files.', true);
+    submit.disabled = true;
+    return;
+  }
+  if (file.size === 0) {
+    setStatus('Empty file · nothing to scan.', true);
+    submit.disabled = true;
+    return;
+  }
+  submit.disabled = false;
+  drop.classList.add('has-file');
+  const kb = (file.size / 1024).toFixed(file.size < 102400 ? 1 : 0);
+  prompt.textContent = file.name + ' · ' + kb + ' KB';
+  setStatus('Ready. Click “Scan file” to send.', false);
+}
+
+input.addEventListener('change', () => onPickedFile(input.files[0]));
+
+['dragenter', 'dragover'].forEach(evt =>
+  drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.add('dragover'); }));
+['dragleave', 'drop'].forEach(evt =>
+  drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.remove('dragover'); }));
+drop.addEventListener('drop', e => {
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    input.files = e.dataTransfer.files;
+    onPickedFile(input.files[0]);
+  }
+});
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const file = input.files[0];
+  if (!file) return;
+  submit.disabled = true;
+  resultEl.hidden = true;
+  setStatus('Examining · reading both layers…', false);
+  const fd = new FormData();
+  fd.append('file', file, file.name);
+  try {
+    const res = await fetch(ENDPOINT, { method: 'POST', body: fd });
+    const text = await res.text();
+    let payload = null;
+    try { payload = JSON.parse(text); } catch (_) { /* keep raw */ }
+    if (!res.ok) {
+      const msg = (payload && (payload.detail || payload.error)) || ('HTTP ' + res.status);
+      setStatus('Scan failed: ' + msg, true);
+      submit.disabled = false;
+      return;
+    }
+    renderResult(payload);
+    setStatus('Done · file was not stored.', false);
+  } catch (err) {
+    setStatus('Network error: ' + (err.message || err), true);
+  } finally {
+    submit.disabled = false;
+  }
+});
+
+function renderResult(report) {
+  const findings = report.findings || [];
+  const v = deriveVerdict(report);
+  const score = report.integrity_score == null ? 'n/a' : Number(report.integrity_score).toFixed(3);
+  const tiers = countTiers(findings);
+  const incomplete = report.scan_incomplete === true;
+  const filename = report.file_path || 'file';
+
+  let html = '';
+  html += '<span class="verdict ' + v.key + '">' + esc(v.label) + ' <span style="font-style:normal;font-size:0.85rem;color:var(--faint)">' + esc(v.tr) + '</span></span>';
+  html += '<div class="meta">';
+  html += '<span><b>file</b> ' + esc(filename) + '</span>';
+  html += '<span><b>score</b> ' + esc(score) + '</span>';
+  html += '<span><b>findings</b> ' + findings.length + '</span>';
+  html += '<span><b>tiers</b> ' + tiers + '</span>';
+  if (incomplete) html += '<span style="color:var(--t3)"><b>scan_incomplete</b> true</span>';
+  html += '</div>';
+
+  if (findings.length === 0) {
+    html += '<div style="color:var(--muted); font-style:italic">';
+    html += incomplete
+      ? 'Scan incomplete · substrate not readable. Bayyinah does not guess what it cannot see.'
+      : 'No findings · file presents as authored.';
+    html += '</div>';
+  } else {
+    const shown = findings.slice(0, 8);
+    html += '<ul>';
+    shown.forEach(f => {
+      html += '<li class="t' + esc(f.tier) + '">';
+      html += '<span class="pill t' + esc(f.tier) + '">T' + esc(f.tier) + '</span>';
+      html += '<div><span class="mech">' + esc(f.mechanism) + '</span> ';
+      if (f.location) html += '<span style="color:var(--faint)">· ' + esc(shortLoc(f.location)) + '</span>';
+      html += '<span class="desc">' + esc(f.description) + '</span></div>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    if (findings.length > shown.length) {
+      html += '<div class="more">+ ' + (findings.length - shown.length) + ' additional finding' + (findings.length - shown.length === 1 ? '' : 's') + ' · see raw report below.</div>';
+    }
+  }
+
+  if (report.error) {
+    html += '<div class="more" style="color:var(--t3)"><b>error</b> ' + esc(report.error) + '</div>';
+  }
+
+  html += '<details class="raw"><summary>Raw report</summary>';
+  html += '<pre>' + esc(JSON.stringify(report, null, 2)) + '</pre></details>';
+
+  resultEl.innerHTML = html;
+  resultEl.hidden = false;
+}
 </script>
 
 </body>

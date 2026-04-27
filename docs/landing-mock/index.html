@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bayyinah · Pre-LLM File Integrity Verification</title>
+<meta name="description" content="What your LLM reads is not what was in the file. Bayyinah scans surface and substrate, reports the gap. Across 23 file kinds.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..500&family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* paper palette — adapted from Settle */
+  --paper:    #F4F0E6;
+  --card:     #FBF8F1;
+  --vellum:   #F9F5EA;
+  --ink:      #0C0A07;
+  --ink-2:    #2a2520;
+  --muted:    #6b6358;
+  --rule:     #d9d0bd;
+
+  /* tier colors — adapted to paper palette */
+  --tier-1:   #A5322A; /* mukhfī / verified concealment */
+  --tier-2:   #245D7A; /* mushtabih / structural */
+  --tier-3:   #8A5A12; /* interpretive */
+  --ok:       #1F7A55; /* ṣaḥīḥ / sound */
+  --gold:     #c4953a;
+
+  /* type */
+  --fd: 'Fraunces', 'Times New Roman', serif;
+  --fs: 'Inter Tight', system-ui, -apple-system, sans-serif;
+  --fm: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--fs);
+  font-feature-settings: "ss01", "cv11";
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: inherit; }
+a:hover { color: var(--tier-2); }
+
+/* === LAYOUT === */
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 1.5rem; }
+.section { padding: 5rem 0; border-bottom: 1px solid var(--rule); }
+.section:last-of-type { border-bottom: none; }
+
+/* === NAV === */
+nav {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.25rem 1.5rem; max-width: 980px; margin: 0 auto;
+}
+nav .brand { font-family: var(--fm); font-size: 0.85rem; letter-spacing: 0.08em; }
+nav .links { display: flex; gap: 1.5rem; font-size: 0.9rem; }
+nav .links a { text-decoration: none; opacity: 0.75; }
+nav .links a:hover { opacity: 1; }
+nav .cta {
+  background: var(--ink); color: var(--paper);
+  padding: 0.55rem 1rem; text-decoration: none;
+  font-family: var(--fm); font-size: 0.78rem; letter-spacing: 0.06em;
+}
+
+/* === EYEBROW PILL === */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.35rem 0.9rem; border: 1px solid var(--rule);
+  border-radius: 999px; background: var(--card);
+  font-family: var(--fm); font-size: 0.78rem; letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.eyebrow .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ok); box-shadow: 0 0 0 0 rgba(31,122,85,0.5);
+  animation: pulse 2.4s var(--ease) infinite;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(31,122,85,0.5); }
+  50%     { box-shadow: 0 0 0 6px rgba(31,122,85,0); }
+}
+
+/* === HERO === */
+.hero { padding: 4rem 0 5rem; text-align: center; }
+.hero .eyebrow { margin-bottom: 2.5rem; }
+
+.hero h1 {
+  font-family: var(--fd); font-weight: 400;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.1; letter-spacing: -0.02em;
+  max-width: 720px; margin: 0 auto 1.25rem;
+}
+.hero .sub {
+  max-width: 560px; margin: 0 auto 2rem;
+  font-size: 1.1rem; color: var(--ink-2);
+  font-style: italic; font-family: var(--fd); font-weight: 300;
+}
+
+/* === SPLIT DOCUMENT HERO COMPONENT === */
+.split {
+  position: relative; max-width: 760px; margin: 2rem auto 3rem;
+  aspect-ratio: 16/9;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.02), 0 30px 60px -30px rgba(12,10,7,0.18);
+}
+.split .layer {
+  position: absolute; inset: 0;
+  padding: 2rem 2.5rem;
+  font-family: var(--fd);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.split .layer-zahir {
+  background: var(--card);
+  z-index: 2;
+  animation: zahir-fade 6s var(--ease) infinite;
+}
+.split .layer-batin {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      var(--vellum) 0px, var(--vellum) 22px,
+      rgba(0,0,0,0.015) 22px, rgba(0,0,0,0.015) 23px
+    );
+  z-index: 1;
+  font-family: var(--fm); font-size: 0.78rem; line-height: 1.7;
+  color: var(--muted);
+  padding-top: 1.5rem; padding-bottom: 1.5rem;
+}
+@keyframes zahir-fade {
+  0%, 35%   { opacity: 1; }
+  50%, 85%  { opacity: 0.08; }
+  100%      { opacity: 1; }
+}
+
+.split .label {
+  position: absolute; top: 0.85rem;
+  font-family: var(--fm); font-size: 0.7rem;
+  letter-spacing: 0.12em; color: var(--muted);
+}
+.split .label-zahir { left: 1rem; }
+.split .label-batin { right: 1rem; }
+.split .label-batin::before {
+  content: ""; display: inline-block;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--tier-1); margin-right: 0.45rem;
+  vertical-align: 1px;
+  animation: payload-pulse 1.6s var(--ease) infinite;
+}
+@keyframes payload-pulse {
+  0%,100% { opacity: 0.4; }
+  50%     { opacity: 1; }
+}
+
+.split .doc-line { color: var(--ink-2); }
+.split .doc-line.title {
+  font-size: 1rem; font-family: var(--fs); font-weight: 600;
+  letter-spacing: 0.02em; margin-bottom: 1rem; color: var(--muted);
+  text-transform: uppercase; font-size: 0.72rem;
+}
+.split .num {
+  font-family: var(--fd); font-weight: 300;
+  font-size: clamp(2.6rem, 6.5vw, 4.4rem);
+  line-height: 1; letter-spacing: -0.03em;
+  font-variant-numeric: oldstyle-nums;
+}
+.split .num-zahir { color: var(--ink); }
+.split .num-batin {
+  color: var(--tier-1);
+  font-style: italic;
+}
+.split .caption {
+  margin-top: 0.9rem; color: var(--muted);
+  font-family: var(--fs); font-size: 0.85rem; font-style: normal;
+}
+
+.split .payload-tag {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  background: rgba(165,50,42,0.08);
+  color: var(--tier-1);
+  border-radius: 2px;
+  font-family: var(--fm); font-size: 0.72rem;
+  margin-top: 0.6rem;
+}
+
+/* === CTA ROW === */
+.cta-row {
+  display: flex; gap: 0.85rem; justify-content: center; align-items: center;
+  flex-wrap: wrap; margin-top: 2rem;
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.85rem 1.4rem;
+  font-family: var(--fs); font-size: 0.95rem; font-weight: 500;
+  text-decoration: none; cursor: pointer;
+  border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
+  transition: transform 200ms var(--ease), background 200ms var(--ease);
+}
+.btn:hover { transform: translateY(-1px); }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.ghost:hover { background: var(--ink); color: var(--paper); }
+.btn .arrow { transition: transform 200ms var(--ease); }
+.btn:hover .arrow { transform: translateX(3px); }
+
+/* === STAT BAND === */
+.stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1rem; max-width: 720px; margin: 3rem auto 0;
+  padding: 2rem 0; border-top: 1px solid var(--rule);
+}
+.stat { text-align: center; }
+.stat .num {
+  font-family: var(--fd); font-size: 1.6rem; font-weight: 400;
+  letter-spacing: -0.01em; color: var(--ink);
+}
+.stat .label {
+  font-family: var(--fm); font-size: 0.72rem; letter-spacing: 0.06em;
+  color: var(--muted); margin-top: 0.3rem; text-transform: uppercase;
+}
+
+/* === SECTION HEADERS === */
+.section-eyebrow {
+  font-family: var(--fm); font-size: 0.72rem;
+  letter-spacing: 0.12em; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 1rem;
+}
+.section h2 {
+  font-family: var(--fd); font-weight: 400;
+  font-size: clamp(1.8rem, 3.6vw, 2.4rem);
+  line-height: 1.15; letter-spacing: -0.015em;
+  margin-bottom: 0.6rem; max-width: 640px;
+}
+.section .lede {
+  font-family: var(--fd); font-style: italic; font-weight: 300;
+  font-size: 1.05rem; color: var(--ink-2);
+  max-width: 580px; margin-bottom: 2.5rem;
+}
+
+/* === SIMULATOR === */
+.sim {
+  display: grid; grid-template-columns: 1fr 1.4fr;
+  gap: 1.5rem; align-items: stretch;
+}
+@media (max-width: 760px) { .sim { grid-template-columns: 1fr; } }
+
+.sim-controls {
+  display: flex; flex-direction: column; gap: 0.6rem;
+}
+.sim-btn {
+  text-align: left; padding: 1rem 1.1rem;
+  background: var(--card); border: 1px solid var(--rule); cursor: pointer;
+  font-family: var(--fs); transition: all 200ms var(--ease);
+}
+.sim-btn:hover { border-color: var(--ink); transform: translateX(2px); }
+.sim-btn.active { border-color: var(--ink); background: var(--vellum); }
+.sim-btn .name { font-weight: 600; font-size: 0.95rem; }
+.sim-btn .desc { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }
+
+.sim-panel {
+  background: var(--card); border: 1px solid var(--rule);
+  padding: 1.5rem; min-height: 360px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+}
+.sim-panel .verdict {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 1rem; border-bottom: 1px solid var(--rule); margin-bottom: 1rem;
+}
+.sim-panel .verdict-label {
+  font-family: var(--fm); font-size: 0.72rem;
+  letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase;
+}
+.sim-panel .verdict-state {
+  font-family: var(--fd); font-size: 1.6rem; font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.sim-panel .verdict-state.sahih   { color: var(--ok); }
+.sim-panel .verdict-state.mushtabih { color: var(--tier-3); }
+.sim-panel .verdict-state.mukhfi  { color: var(--tier-1); }
+.sim-panel .verdict-state .tr { font-style: italic; font-size: 1rem; color: var(--muted); margin-left: 0.4rem; }
+
+.score-row {
+  display: flex; gap: 1.5rem; margin-bottom: 1rem;
+}
+.score-item { font-family: var(--fm); font-size: 0.85rem; }
+.score-item .k { color: var(--muted); margin-right: 0.4rem; }
+
+.findings { list-style: none; }
+.findings li {
+  padding: 0.7rem 0; border-bottom: 1px dashed var(--rule);
+  font-family: var(--fm); font-size: 0.82rem;
+  display: flex; gap: 0.7rem; align-items: flex-start;
+  opacity: 0; transform: translateY(4px);
+  animation: drop-in 400ms var(--ease-out) forwards;
+}
+.findings li:last-child { border-bottom: none; }
+@keyframes drop-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+.findings .tier-pill {
+  flex: 0 0 auto;
+  font-size: 0.7rem; padding: 0.1rem 0.45rem;
+  border-radius: 2px; letter-spacing: 0.04em;
+}
+.findings .tier-pill.t1 { background: rgba(165,50,42,0.1); color: var(--tier-1); }
+.findings .tier-pill.t2 { background: rgba(36,93,122,0.1); color: var(--tier-2); }
+.findings .tier-pill.t3 { background: rgba(138,90,18,0.1); color: var(--tier-3); }
+.findings .mech { color: var(--ink); font-weight: 500; }
+.findings .loc { color: var(--muted); }
+.findings .desc { color: var(--muted); display: block; margin-top: 0.2rem; }
+
+.sim-empty {
+  display: flex; align-items: center; justify-content: center;
+  flex: 1; color: var(--muted);
+  font-family: var(--fd); font-style: italic; font-size: 1rem;
+}
+
+.sim-loading {
+  position: absolute; inset: 0;
+  background: var(--card); display: flex; align-items: center; justify-content: center;
+  font-family: var(--fm); font-size: 0.78rem; letter-spacing: 0.08em;
+  color: var(--muted); text-transform: uppercase;
+  opacity: 0; pointer-events: none;
+  transition: opacity 200ms var(--ease);
+}
+.sim-loading.on { opacity: 1; }
+.sim-loading::after {
+  content: ""; display: inline-block; width: 6px; height: 6px;
+  border-radius: 50%; background: currentColor; margin-left: 0.5rem;
+  animation: blink 0.8s var(--ease) infinite;
+}
+@keyframes blink { 0%,100% { opacity: 0.2; } 50% { opacity: 1; } }
+
+/* === CONVERGENCE TIMELINE === */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.tl-row {
+  display: grid; grid-template-columns: 100px 1fr;
+  gap: 2rem; padding: 1.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.tl-row:last-child { border-bottom: none; }
+.tl-year {
+  font-family: var(--fd); font-size: 1.6rem;
+  font-variant-numeric: oldstyle-nums; color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.tl-body .tl-h {
+  font-family: var(--fs); font-weight: 600;
+  font-size: 1rem; margin-bottom: 0.3rem;
+}
+.tl-body .tl-p {
+  font-family: var(--fd); font-style: italic; font-weight: 300;
+  font-size: 0.98rem; color: var(--ink-2); max-width: 540px;
+}
+.tl-body .tl-cite {
+  display: block; font-family: var(--fm); font-size: 0.72rem;
+  color: var(--muted); margin-top: 0.4rem; letter-spacing: 0.04em;
+}
+.tl-row.last { background: var(--vellum); margin: 0 -1rem; padding: 1.5rem 1rem; }
+
+/* === BASELINE TABLE === */
+.baseline-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--fs); font-size: 0.9rem;
+}
+.baseline-table th, .baseline-table td {
+  padding: 0.7rem 0.5rem; text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+.baseline-table th {
+  font-family: var(--fm); font-size: 0.72rem; letter-spacing: 0.06em;
+  color: var(--muted); text-transform: uppercase; font-weight: 500;
+}
+.baseline-table td.num {
+  font-family: var(--fm); text-align: right; font-variant-numeric: tabular-nums;
+}
+.baseline-table tr.total td { font-weight: 600; border-top: 1px solid var(--ink); }
+
+.baseline-callout {
+  background: var(--vellum); padding: 1.5rem; margin-top: 2rem;
+  border-left: 3px solid var(--ink);
+  font-family: var(--fd); font-style: italic; font-weight: 300;
+  font-size: 1rem; color: var(--ink-2);
+}
+
+/* === SCAN BOX (real) === */
+.scan-card {
+  background: var(--card); border: 1px solid var(--rule);
+  padding: 2rem; text-align: center;
+}
+.scan-card .drop {
+  border: 2px dashed var(--rule); padding: 2.5rem 1.5rem;
+  font-family: var(--fd); font-style: italic; color: var(--muted);
+  margin-bottom: 1rem; transition: all 200ms var(--ease);
+}
+.scan-card .drop:hover { border-color: var(--ink); color: var(--ink); }
+.scan-card .note {
+  font-family: var(--fm); font-size: 0.75rem; color: var(--muted);
+  letter-spacing: 0.04em; margin-top: 0.8rem;
+}
+
+/* === FOOTER === */
+footer {
+  padding: 3rem 1.5rem 2rem; text-align: center;
+  border-top: 1px solid var(--rule);
+}
+footer .basmala {
+  font-family: var(--fd); font-style: italic; font-weight: 300;
+  font-size: 1rem; color: var(--ink-2); margin-bottom: 1rem;
+}
+footer .meta {
+  font-family: var(--fm); font-size: 0.75rem; color: var(--muted);
+  letter-spacing: 0.04em;
+}
+footer .meta a { text-decoration: none; opacity: 0.8; margin: 0 0.6rem; }
+footer .meta a:hover { opacity: 1; color: var(--tier-2); }
+
+/* === HOW IT WORKS GRID === */
+.how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 1rem; }
+
+/* === MOBILE === */
+@media (max-width: 720px) {
+  nav .links { display: none; }
+  nav { padding: 1rem; }
+  .how-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .stats { grid-template-columns: 1fr; gap: 1.5rem; }
+  .tl-row { grid-template-columns: 70px 1fr; gap: 1rem; }
+  .baseline-table th:nth-child(4), .baseline-table td:nth-child(4) { display: none; }
+  .section { padding: 3.5rem 0; }
+  .split { aspect-ratio: 4/3; }
+  .split .layer { padding: 1.25rem 1.5rem; }
+  .hero { padding: 2rem 0 3rem; }
+  .hero h1 { font-size: 2rem; }
+  .split .num { font-size: 2.4rem; }
+}
+
+/* === REDUCED MOTION === */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .split .layer-zahir { opacity: 0.5; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">BAYYINAH</div>
+  <div class="links">
+    <a href="#how">How it Works</a>
+    <a href="#convergence">Why Now</a>
+    <a href="#baseline">Baseline</a>
+    <a href="#scan">Scan</a>
+  </div>
+  <a class="cta" href="#scan">SCAN A FILE</a>
+</nav>
+
+<!-- =================== HERO =================== -->
+<section class="hero wrap">
+  <span class="eyebrow"><span class="dot"></span> Pre-LLM file integrity verification</span>
+
+  <h1>What your LLM reads is not what was in the file.</h1>
+  <p class="sub">Bayyinah scans surface and substrate, reports the gap. Across 23 file kinds.</p>
+
+  <!-- Split Document component -->
+  <div class="split" aria-label="Surface versus substrate visualization">
+    <div class="layer layer-batin">
+      <span class="label label-batin">SUBSTRATE · BĀṬIN</span>
+      <div class="doc-line title">Q3 Financial Summary · Hidden Layer</div>
+      <div class="num num-batin">$10,000</div>
+      <span class="payload-tag">HIDDEN_TEXT_PAYLOAD: actual revenue · see annex</span>
+    </div>
+    <div class="layer layer-zahir">
+      <span class="label label-zahir">SURFACE · ẒĀHIR</span>
+      <div class="doc-line title">Q3 Financial Summary · What the LLM Reads</div>
+      <div class="num num-zahir">$1,000</div>
+      <div class="caption">"Revenue grew 8% YoY to $1,000 thousand. Margins held steady."</div>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <a class="btn" href="#simulator">See it scan <span class="arrow">→</span></a>
+    <a class="btn ghost" href="#baseline">Read the baseline</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="num">23</div>
+      <div class="label">File kinds</div>
+    </div>
+    <div class="stat">
+      <div class="num">106</div>
+      <div class="label">Detection mechanisms</div>
+    </div>
+    <div class="stat">
+      <div class="num">42</div>
+      <div class="label">Adversarial fixtures published</div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== LIVE SIMULATOR =================== -->
+<section class="section wrap" id="simulator">
+  <div class="section-eyebrow">Live · See it Scan</div>
+  <h2>Three files. Three verdicts. Thirty seconds.</h2>
+  <p class="lede">Pre-recorded scans of three real fixtures. No upload, no friction. Click to watch the analyzer run.</p>
+
+  <div class="sim">
+    <div class="sim-controls">
+      <button class="sim-btn active" data-fixture="clean">
+        <div class="name">Clean PDF</div>
+        <div class="desc">A well-formed financial summary with nothing concealed.</div>
+      </button>
+      <button class="sim-btn" data-fixture="adversarial">
+        <div class="name">Adversarial PDF</div>
+        <div class="desc">Same surface text. Hidden $10,000 payload via off-page text and metadata.</div>
+      </button>
+      <button class="sim-btn" data-fixture="encrypted">
+        <div class="name">Encrypted PDF</div>
+        <div class="desc">Cannot be read without a key. Confidence is clamped, not faked.</div>
+      </button>
+    </div>
+
+    <div class="sim-panel" id="simPanel">
+      <div class="sim-loading" id="simLoading">SCANNING</div>
+      <div class="verdict">
+        <span class="verdict-label">Verdict</span>
+        <span class="verdict-state sahih" id="simVerdict">ṣaḥīḥ <span class="tr">/ sound</span></span>
+      </div>
+      <div class="score-row">
+        <div class="score-item"><span class="k">score</span><span id="simScore">1.000</span></div>
+        <div class="score-item"><span class="k">findings</span><span id="simCount">0</span></div>
+        <div class="score-item"><span class="k">tiers</span><span id="simTiers">0/0/0</span></div>
+      </div>
+      <ul class="findings" id="simFindings"></ul>
+      <div class="sim-empty" id="simEmpty">No findings · file presents as authored.</div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== HOW IT WORKS =================== -->
+<section class="section wrap" id="how">
+  <div class="section-eyebrow">How it Works</div>
+  <h2>Surface, substrate, and the gap between them.</h2>
+  <p class="lede">Every file has two layers. Bayyinah reads both, then reports where they disagree.</p>
+
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 1rem;" id="howGrid">
+    <div>
+      <div class="section-eyebrow" style="color: var(--ok);">ẒĀHIR</div>
+      <h3 style="font-family: var(--fd); font-weight: 400; font-size: 1.3rem; margin-bottom: 0.5rem;">Surface</h3>
+      <p style="color: var(--ink-2); font-size: 0.95rem;">What the file presents. The rendered text, the visible cells, the page as a viewer or LLM ingests it.</p>
+    </div>
+    <div>
+      <div class="section-eyebrow" style="color: var(--tier-1);">BĀṬIN</div>
+      <h3 style="font-family: var(--fd); font-weight: 400; font-size: 1.3rem; margin-bottom: 0.5rem;">Substrate</h3>
+      <p style="color: var(--ink-2); font-size: 0.95rem;">What the file actually contains. Bytes, metadata, off-page streams, headers, embedded objects, comment payloads.</p>
+    </div>
+    <div>
+      <div class="section-eyebrow" style="color: var(--tier-2);">BAYYINAH</div>
+      <h3 style="font-family: var(--fd); font-weight: 400; font-size: 1.3rem; margin-bottom: 0.5rem;">The Gap</h3>
+      <p style="color: var(--ink-2); font-size: 0.95rem;">Reports the divergence by tier. Tier 1 verified concealment. Tier 2 structural anomaly. Tier 3 interpretive flag.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =================== CONVERGENCE =================== -->
+<section class="section wrap" id="convergence">
+  <div class="section-eyebrow">Why this couldn't exist five years ago</div>
+  <h2>Four prerequisites. One convergence.</h2>
+  <p class="lede">Bayyinah is not a clever idea waiting on engineering. It is the first work that became possible after four independent threads landed.</p>
+
+  <div class="timeline">
+    <div class="tl-row">
+      <div class="tl-year">2022</div>
+      <div class="tl-body">
+        <div class="tl-h">LLMs ingest documents at scale.</div>
+        <div class="tl-p">Frontier models cross the threshold of reliable document understanding. The attack surface is created the same year it becomes useful.</div>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-year">2023</div>
+      <div class="tl-body">
+        <div class="tl-h">Adversarial prompt injection is demonstrated in the wild.</div>
+        <div class="tl-p">The threat moves from theoretical to documented. Documents become a vector, not just a payload.</div>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-year">2024</div>
+      <div class="tl-body">
+        <div class="tl-h">Alignment faking is empirically observed.</div>
+        <div class="tl-p">Greenblatt et al. demonstrate that frontier models cannot reliably self-verify their own input integrity. Any solution has to live outside the model.</div>
+        <span class="tl-cite">Greenblatt et al., 2024</span>
+      </div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-year">2025</div>
+      <div class="tl-body">
+        <div class="tl-h">The Munafiq Protocol is formalized.</div>
+        <div class="tl-p">A diagnostic framework for surface-substrate divergence, verified, structural, interpretive, becomes the basis for systematic file integrity verification.</div>
+      </div>
+    </div>
+    <div class="tl-row last">
+      <div class="tl-year">2026</div>
+      <div class="tl-body">
+        <div class="tl-h">Bayyinah ships.</div>
+        <div class="tl-p">The first document firewall built after all four prerequisites converged. v1.1.1 today, with a published miss list as the next milestone.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== HONEST BASELINE =================== -->
+<section class="section wrap" id="baseline">
+  <div class="section-eyebrow">v1.1.1 · Honest Baseline</div>
+  <h2>We publish what we miss.</h2>
+  <p class="lede">42 adversarial fixtures across 7 formats. Every hit and every miss disclosed. v1.1.2 is measured against this exact corpus.</p>
+
+  <table class="baseline-table">
+    <thead>
+      <tr><th>Format</th><th style="text-align:right">Fixtures</th><th style="text-align:right">Caught</th><th style="text-align:right">Partial</th><th style="text-align:right">Missed</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>PDF</td><td class="num">6</td><td class="num">2</td><td class="num">0</td><td class="num">4</td></tr>
+      <tr><td>DOCX</td><td class="num">6</td><td class="num">0</td><td class="num">0</td><td class="num">6</td></tr>
+      <tr><td>XLSX</td><td class="num">6</td><td class="num">0</td><td class="num">0</td><td class="num">6</td></tr>
+      <tr><td>HTML</td><td class="num">6</td><td class="num">0</td><td class="num">0</td><td class="num">6</td></tr>
+      <tr><td>EML</td><td class="num">6</td><td class="num">0</td><td class="num">0</td><td class="num">6</td></tr>
+      <tr><td>Image (PNG / JPEG / SVG)</td><td class="num">6</td><td class="num">0</td><td class="num">1</td><td class="num">5</td></tr>
+      <tr><td>CSV / JSON</td><td class="num">6</td><td class="num">0</td><td class="num">1</td><td class="num">5</td></tr>
+      <tr class="total"><td>Total</td><td class="num">42</td><td class="num">2</td><td class="num">2</td><td class="num">38</td></tr>
+    </tbody>
+  </table>
+
+  <div class="baseline-callout">
+    Two full catches, two structural-only, thirty-eight misses. Each miss has a named fix path and a LOC estimate. v1.1.2 closes them, and the next published baseline will count what this one did not.
+    <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/adversarial/REPORT.md" style="display:block; margin-top:0.8rem; font-family: var(--fm); font-size: 0.8rem; font-style: normal; letter-spacing: 0.04em;">→ Read the full corpus on GitHub</a>
+  </div>
+</section>
+
+<!-- =================== SCAN A FILE (REAL) =================== -->
+<section class="section wrap" id="scan">
+  <div class="section-eyebrow">Scan</div>
+  <h2>Drop your own file.</h2>
+  <p class="lede">No account. No tracking. The scanner runs stateless content analysis and returns a verdict in under five seconds for most file kinds.</p>
+
+  <div class="scan-card">
+    <a href="https://bayyinah.dev/scan" style="text-decoration:none; color:inherit;">
+      <div class="drop">
+        Click to upload a file<br>
+        <span style="font-size:0.85rem; opacity:0.7;">PDF · DOCX · XLSX · HTML · EML · CSV · JSON · PNG · JPEG · SVG · 13 more</span>
+      </div>
+    </a>
+    <a class="btn" href="https://bayyinah.dev/scan">Scan a file <span class="arrow">→</span></a>
+    <div class="note">Stateless · no file is stored · no telemetry beyond Cloudflare access logs</div>
+  </div>
+</section>
+
+<footer>
+  <div class="basmala">Bismillāhir-Raḥmānir-Raḥīm</div>
+  <div class="meta">
+    Bayyinah Enterprises · v1.1.1 ·
+    <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner">GitHub</a>·
+    <a href="https://bayyinah.dev/scan">Live scanner</a>·
+    <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/adversarial/REPORT.md">Adversarial baseline</a>
+  </div>
+</footer>
+
+<script>
+// ============================================================
+// Live simulator — three pre-recorded fixtures
+// ============================================================
+const FIXTURES = {
+  clean: {
+    verdict: 'sahih',
+    verdictLabel: 'ṣaḥīḥ',
+    verdictTr:    '/ sound',
+    score: 1.000,
+    tiers: '0/0/0',
+    findings: []
+  },
+  adversarial: {
+    verdict: 'mukhfi',
+    verdictLabel: 'mukhfī',
+    verdictTr:    '/ concealed',
+    score: 0.42,
+    tiers: '2/1/0',
+    findings: [
+      { tier: 1, mech: 'pdf_off_page_text',
+        loc: '/Page 1 · y=-200pt',
+        desc: 'Off-page text stream contains "actual revenue $10,000 · see annex". Invisible to viewers, ingested by LLMs.' },
+      { tier: 1, mech: 'white_on_white_text',
+        loc: '/Page 1 · /TJ chunk 4',
+        desc: 'Text rendered in #FFFFFF on #FFFFFF background. Surface invisible, substrate present.' },
+      { tier: 2, mech: 'pdf_metadata_payload',
+        loc: '/Info /Subject',
+        desc: 'Metadata field carries natural-language string unrelated to document title.' }
+    ]
+  },
+  encrypted: {
+    verdict: 'mushtabih',
+    verdictLabel: 'mushtabih',
+    verdictTr:    '/ doubtful',
+    score: 0.50,
+    tiers: '0/1/0',
+    incomplete: true,
+    findings: [
+      { tier: 2, mech: 'pdf_encrypted',
+        loc: '/Encrypt dictionary present',
+        desc: 'Document is encrypted. Substrate cannot be read without the key. Confidence is clamped to 0.5. Bayyinah does not guess what it cannot see.' }
+    ]
+  }
+};
+
+const $ = (id) => document.getElementById(id);
+const panel = {
+  verdict: $('simVerdict'),
+  score:   $('simScore'),
+  count:   $('simCount'),
+  tiers:   $('simTiers'),
+  findings:$('simFindings'),
+  empty:   $('simEmpty'),
+  loading: $('simLoading')
+};
+
+function renderFixture(key) {
+  const fx = FIXTURES[key];
+  panel.loading.classList.add('on');
+
+  setTimeout(() => {
+    panel.verdict.className = 'verdict-state ' + fx.verdict;
+    panel.verdict.innerHTML = fx.verdictLabel + ' <span class="tr">' + fx.verdictTr + '</span>';
+    panel.score.textContent = fx.score.toFixed(3);
+    panel.count.textContent = fx.findings.length;
+    panel.tiers.textContent = fx.tiers;
+    panel.findings.innerHTML = '';
+
+    if (fx.findings.length === 0) {
+      panel.empty.style.display = 'flex';
+      panel.empty.textContent = 'No findings · file presents as authored.';
+    } else {
+      panel.empty.style.display = 'none';
+      fx.findings.forEach((f, i) => {
+        const li = document.createElement('li');
+        li.style.animationDelay = (i * 90) + 'ms';
+        li.innerHTML =
+          '<span class="tier-pill t' + f.tier + '">T' + f.tier + '</span>' +
+          '<div><span class="mech">' + f.mech + '</span> ' +
+          '<span class="loc">· ' + f.loc + '</span>' +
+          '<span class="desc">' + f.desc + '</span></div>';
+        panel.findings.appendChild(li);
+      });
+    }
+    panel.loading.classList.remove('on');
+  }, 650);
+}
+
+document.querySelectorAll('.sim-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderFixture(btn.dataset.fixture);
+  });
+});
+
+// initial render
+renderFixture('clean');
+</script>
+
+</body>
+</html>

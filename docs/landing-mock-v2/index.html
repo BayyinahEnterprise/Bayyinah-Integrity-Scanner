@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  /* === ORIGINAL PALETTE — "evidentiary" === */
+  /* === ORIGINAL PALETTE - "evidentiary" === */
   --bg:        #0F1115;   /* the dark room */
   --bg-2:      #161A21;   /* the cabinet */
   --bg-3:      #1D2229;   /* recessed surface */
@@ -29,21 +29,21 @@
   --lamp-soft: rgba(244, 213, 138, 0.16);
   --lamp-glow: rgba(244, 213, 138, 0.55);
 
-  /* tiers — evidentiary, not "error" */
-  --t1: #E2725B;          /* terracotta — verified concealment */
+  /* tiers - evidentiary, not "error" */
+  --t1: #E2725B;          /* terracotta - verified concealment */
   --t1-soft: rgba(226, 114, 91, 0.14);
-  --t2: #7AA0C4;          /* cool slate — structural anomaly */
+  --t2: #7AA0C4;          /* cool slate - structural anomaly */
   --t2-soft: rgba(122, 160, 196, 0.14);
-  --t3: #B89B7A;          /* sand — interpretive */
+  --t3: #B89B7A;          /* sand - interpretive */
   --t3-soft: rgba(184, 155, 122, 0.14);
-  --ok: #8FBF95;          /* sage — sound */
+  --ok: #8FBF95;          /* sage - sound */
 
   /* type */
   --fd: 'Source Serif 4', 'Times New Roman', serif;
   --fs: 'Inter', system-ui, -apple-system, sans-serif;
   --fm: 'JetBrains Mono', ui-monospace, monospace;
 
-  /* signature easing — hand-tuned for Bayyinah */
+  /* signature easing - hand-tuned for Bayyinah */
   --ease: cubic-bezier(0.32, 0.72, 0.24, 1.0);
   --ease-slow: cubic-bezier(0.45, 0.05, 0.55, 0.95);
 }
@@ -203,7 +203,7 @@ h2 em { font-style: italic; color: var(--lamp); }
 .body p + p { margin-top: 0.9rem; }
 
 /* ===========================================================
-   THE LIT PAGE — original hero component
+   THE LIT PAGE - original hero component
    Single document, lit from behind.
    Surface text on front, substrate bleeding through underneath.
    =========================================================== */
@@ -250,7 +250,7 @@ h2 em { font-style: italic; color: var(--lamp); }
   overflow: hidden;
 }
 
-/* the substrate layer — sits underneath, bleeds through */
+/* the substrate layer - sits underneath, bleeds through */
 .substrate {
   position: absolute;
   inset: 0;
@@ -258,7 +258,7 @@ h2 em { font-style: italic; color: var(--lamp); }
   pointer-events: none;
   font-family: var(--fd);
   color: #2C2A24;
-  /* mirrored typography — like ink visible from the other side */
+  /* mirrored typography - like ink visible from the other side */
   transform: scaleX(-1);
   opacity: 0;
   animation: substrate-bleed 8s var(--ease-slow) infinite;
@@ -292,7 +292,7 @@ h2 em { font-style: italic; color: var(--lamp); }
   margin-top: 0.6rem;
 }
 
-/* the surface layer — sits on top, persistent */
+/* the surface layer - sits on top, persistent */
 .surface { position: relative; z-index: 2; }
 .surface .lbl {
   font-family: var(--fm);
@@ -351,7 +351,7 @@ h2 em { font-style: italic; color: var(--lamp); }
   line-height: 1.5;
 }
 
-/* finding annotations — appear during simulator runs */
+/* finding annotations - appear during simulator runs */
 .litpage .annotation {
   position: absolute;
   font-family: var(--fm);
@@ -731,6 +731,48 @@ h2 em { font-style: italic; color: var(--lamp); }
 .baseline-callout a:hover { color: var(--vellum); }
 
 /* ===========================================================
+   DISCIPLINE LIST (§ 07) - mirrors timeline rhythm but
+   without years; numbered rules of practice
+   =========================================================== */
+.discipline-list {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+.disc-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.disc-row:last-child { border-bottom: none; }
+.disc-h {
+  font-family: var(--fd);
+  font-size: 1.25rem;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.disc-p {
+  font-family: var(--fb);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 60ch;
+}
+.discipline-callout {
+  background: var(--bg-2);
+  padding: 1.25rem 1.5rem;
+  margin-top: 2rem;
+  border-left: 2px solid var(--lamp);
+  font-family: var(--fd);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* ===========================================================
    SCAN DROP
    =========================================================== */
 
@@ -883,7 +925,7 @@ h2 em { font-style: italic; color: var(--lamp); }
 }
 
 /* ===========================================================
-   FOOTER — etymology, not Bismillah
+   FOOTER - etymology, not Bismillah
    =========================================================== */
 
 .footer-block {
@@ -1031,6 +1073,7 @@ h2 em { font-style: italic; color: var(--lamp); }
       <a href="#facts"><span class="num">04</span>Three Facts</a>
       <a href="#convergence"><span class="num">05</span>Why Now</a>
       <a href="#baseline"><span class="num">06</span>Honest Baseline</a>
+      <a href="#discipline"><span class="num">07</span>Discipline</a>
     </nav>
 
     <div class="footer-sig">
@@ -1247,12 +1290,39 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
+    <!-- =========== § 07 DISCIPLINE =========== -->
+    <section class="section" id="discipline">
+      <span class="section-num">07 · Discipline</span>
+      <h2>The product is the <em>discipline.</em></h2>
+      <p class="lede">Bayyinah is not a clever heuristic. It is a verification practice applied to itself first, and to files second. Three rules. Each one cost us claims we wanted to keep.</p>
+
+      <div class="discipline-list">
+        <div class="disc-row">
+          <div class="disc-h">We kill our own claims first.</div>
+          <div class="disc-p">Every assertion in our research program is audited against null hypotheses, replication, and methodology symmetry. Most do not survive. The ones that do are what we ship. The audit ratio is in the published record, not in the pitch.</div>
+        </div>
+        <div class="disc-row">
+          <div class="disc-h">We publish what we miss.</div>
+          <div class="disc-p">v1.1.1 caught two of forty-two adversarial fixtures. The other forty are named in the public corpus with their fix paths. A scanner that hides its misses is a scanner you cannot trust. The miss list is the trust artifact.</div>
+        </div>
+        <div class="disc-row">
+          <div class="disc-h">We test against equivalent methodology.</div>
+          <div class="disc-p">Comparing original-language text against translation is not a comparison; it is a category error. Comparing structured payloads against unstructured text is not a comparison; it is a confound. Every claim Bayyinah makes is grounded in a like-for-like test against a published baseline.</div>
+        </div>
+      </div>
+
+      <div class="discipline-callout">
+        Three rules, applied first to ourselves, then to your file. The product is the practice made visible.
+      </div>
+    </section>
+
     <!-- =========== FOOTER =========== -->
     <footer class="footer-block">
       <div class="etymology">
         <span class="word">bayyinah</span><span class="pos">noun · arabic · بَيِّنَة</span><br>
         clear evidence; that which makes the truth manifest.
         <span class="principle">A scanner is only as honest as the misses it publishes.</span>
+        <span class="principle">The survivors of our own audit are what we ship.</span>
       </div>
       <div class="footer-meta">
         <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner">GitHub</a>
@@ -1268,7 +1338,7 @@ h2 em { font-style: italic; color: var(--lamp); }
 
 <script>
 // ============================================================
-// Shared helpers — verdict mapping, escaping, finding counts
+// Shared helpers - verdict mapping, escaping, finding counts
 // ============================================================
 function esc(s) {
   return String(s == null ? '' : s)
@@ -1284,10 +1354,10 @@ function countTiers(findings) {
 
 // Verdict derived from the real report shape, not a stored label.
 // Five-state map. Order of precedence top-to-bottom:
-//   mukhfī  — at least one Tier-1 or Tier-2 finding (verified or structural)
-//   mughlaq — scan_incomplete with no verified concealment, OR unknown format
-//   mushtabih — Tier-3 only, scan complete
-//   ṣaḥīḥ  — score 1.0, no findings, scan complete
+//   mukhfī  - at least one Tier-1 or Tier-2 finding (verified or structural)
+//   mughlaq - scan_incomplete with no verified concealment, OR unknown format
+//   mushtabih - Tier-3 only, scan complete
+//   ṣaḥīḥ  - score 1.0, no findings, scan complete
 // munafiq is reserved for score < 0.3 with verified mechanisms, derived
 // server-side in a future release; do not derive in the simulator yet.
 function deriveVerdict(report) {
@@ -1339,7 +1409,7 @@ function shortLoc(loc) {
 }
 
 // ============================================================
-// The Examination — loads recorded fixtures.json and renders
+// The Examination - loads recorded fixtures.json and renders
 // ============================================================
 const $ = (id) => document.getElementById(id);
 const examUI = {
@@ -1418,7 +1488,7 @@ fetch('fixtures.json', { cache: 'no-cache' })
   });
 
 // ============================================================
-// Drop-zone — real upload to /scan, renders the same shape
+// Drop-zone - real upload to /scan, renders the same shape
 // ============================================================
 const form     = $('scan-form');
 const input    = $('scan-file');

@@ -1,0 +1,206 @@
+[
+  {
+    "fixture": "01_white_on_white.pdf",
+    "score": 0.82,
+    "scan_incomplete": false,
+    "n_findings": 1,
+    "tier_counts": {
+      "1": 1,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [
+      "white_on_white_text"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "white_on_white_text",
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "01_white_on_white.pdf",
+      "integrity_score": 0.82,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [
+        {
+          "mechanism": "white_on_white_text",
+          "tier": 1,
+          "confidence": 0.9,
+          "severity": 0.2,
+          "description": "Text color RGB(1.00, 1.00, 1.00) matches page background luminance (delta 0.000), and no coloured fill is drawn behind the span.",
+          "location": "page 1, bbox (72.0, 110.17500305175781, 395.4220275878906, 125.28900146484375)",
+          "inversion_recovery": {
+            "surface": "(indistinguishable from page background)",
+            "concealed": "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 \u2014 see annex"
+          }
+        }
+      ],
+      "error": null
+    }
+  },
+  {
+    "fixture": "02_font_size_microscopic.pdf",
+    "score": 0.92,
+    "scan_incomplete": false,
+    "n_findings": 1,
+    "tier_counts": {
+      "1": 0,
+      "2": 1,
+      "3": 0
+    },
+    "mechanisms": [
+      "microscopic_font"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "microscopic_font",
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "02_font_size_microscopic.pdf",
+      "integrity_score": 0.92,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [
+        {
+          "mechanism": "microscopic_font",
+          "tier": 2,
+          "confidence": 0.8,
+          "severity": 0.1,
+          "description": "Font size 0.100pt is below human-readable threshold (1.0pt).",
+          "location": "page 1, bbox (72.0, 121.89250183105469, 74.94029998779297, 122.02989959716797)",
+          "inversion_recovery": {
+            "surface": "(effectively invisible at 0.100pt)",
+            "concealed": "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 \u2014 see annex"
+          }
+        }
+      ],
+      "error": null
+    }
+  },
+  {
+    "fixture": "03_off_page.pdf",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "03_off_page.pdf",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [],
+      "error": null
+    }
+  },
+  {
+    "fixture": "04_metadata.pdf",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "04_metadata.pdf",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [],
+      "error": null
+    }
+  },
+  {
+    "fixture": "05_after_eof.pdf",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "05_after_eof.pdf",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [],
+      "error": null
+    }
+  },
+  {
+    "fixture": "06_optional_content_group.pdf",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "06_optional_content_group.pdf",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [],
+      "error": null
+    }
+  }
+]

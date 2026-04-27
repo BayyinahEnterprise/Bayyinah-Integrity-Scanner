@@ -1,0 +1,136 @@
+[
+  {
+    "fixture": "01_jpeg_app4_payload.jpg",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/01_jpeg_app4_payload.jpg",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "02_png_private_chunk.png",
+    "score": 0.925,
+    "scan_incomplete": false,
+    "n_findings": 1,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 1
+    },
+    "mechanisms": [
+      "suspicious_image_chunk"
+    ],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/02_png_private_chunk.png",
+      "integrity_score": 0.925,
+      "scan_incomplete": false,
+      "findings": [
+        {
+          "mechanism": "suspicious_image_chunk",
+          "tier": 3,
+          "confidence": 0.75,
+          "description": "Non-standard PNG chunk type 'prVt' at offset 55 (ancillary=True, private=True) \u2014 outside the standard PNG / APNG chunk set.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/02_png_private_chunk.png@chunk:55",
+          "surface": "(invisible to image readers)",
+          "concealed": "55 bytes under chunk type 'prVt'",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
+    }
+  },
+  {
+    "fixture": "03_svg_white_text.svg",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/03_svg_white_text.svg",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "04_svg_title_payload.svg",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/04_svg_title_payload.svg",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "05_svg_metadata_payload.svg",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/05_svg_metadata_payload.svg",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "06_svg_defs_text.svg",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/06_svg_defs_text.svg",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  }
+]

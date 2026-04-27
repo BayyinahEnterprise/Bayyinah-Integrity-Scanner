@@ -1,0 +1,9 @@
+Received: from relay.attacker.example (unknown [203.0.113.42]) by mx.victim-corp.example with ESMTPS id ABC123 for <ap@victim-corp.example>; Mon, 26 Apr 2026 09:00:01 +0000
+Received: from internal.attacker.example ([10.0.0.5]) by relay.attacker.example with ESMTPSA id XYZ987; Mon, 26 Apr 2026 09:00:00 +0000
+From: billing@trusted-vendor.example
+To: ap@victim-corp.example
+Subject: Q3 invoice
+Date: Mon, 26 Apr 2026 09:00:00 +0000
+Content-Type: text/plain; charset=utf-8
+
+Q3 financial summary - revenue grew 8% YoY to $1,000 thousand. Margins held steady. Cash position remains strong.

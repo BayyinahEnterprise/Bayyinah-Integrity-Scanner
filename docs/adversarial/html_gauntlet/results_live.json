@@ -1,0 +1,176 @@
+[
+  {
+    "fixture": "01_noscript.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "01_noscript.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [],
+      "error": null
+    }
+  },
+  {
+    "fixture": "02_template.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "02_template.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [],
+      "error": null
+    }
+  },
+  {
+    "fixture": "03_comment_payload.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "03_comment_payload.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [],
+      "error": null
+    }
+  },
+  {
+    "fixture": "04_meta_content.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "04_meta_content.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [],
+      "error": null
+    }
+  },
+  {
+    "fixture": "05_css_content.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "05_css_content.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [],
+      "error": null
+    }
+  },
+  {
+    "fixture": "06_title_payload.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "tool": "bayyinah",
+      "version": "0.1.0",
+      "file_path": "06_title_payload.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+      "tier_legend": {
+        "1": "Verified \u2014 unambiguous concealment",
+        "2": "Structural \u2014 pattern of concealment, context may justify",
+        "3": "Interpretive \u2014 suspicious, context-dependent"
+      },
+      "findings": [],
+      "error": null
+    }
+  }
+]

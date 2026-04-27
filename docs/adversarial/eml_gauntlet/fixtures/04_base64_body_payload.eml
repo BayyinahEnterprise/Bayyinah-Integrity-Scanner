@@ -1,0 +1,11 @@
+From: billing@vendor.example
+To: ap@victim-corp.example
+Subject: Q3 invoice
+Date: Mon, 26 Apr 2026 09:00:00 +0000
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+
+UTMgZmluYW5jaWFsIHN1bW1hcnkgLSByZXZlbnVlIGdyZXcgOCUgWW9ZIHRvICQxLDAwMCB0aG91
+c2FuZC4gTWFyZ2lucyBoZWxkIHN0ZWFkeS4gQ2FzaCBwb3NpdGlvbiByZW1haW5zIHN0cm9uZy4N
+Cg0KSElEREVOX1RFWFRfUEFZTE9BRDogYWN0dWFsIHJldmVudWUgJDEwLDAwMCAtIHNlZSBhbm5l
+eA0K

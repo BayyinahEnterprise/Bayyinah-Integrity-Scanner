@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="100">
+  <defs>
+    <text id="hidden-payload" x="0" y="0">HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex</text>
+  </defs>
+  <text x="20" y="50">Q3 financial summary - revenue grew 8% YoY to $1,000 thousand. Margins held steady. Cash position remains strong.</text>
+</svg>

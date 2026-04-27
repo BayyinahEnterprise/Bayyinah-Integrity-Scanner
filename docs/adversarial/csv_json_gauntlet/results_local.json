@@ -1,0 +1,136 @@
+[
+  {
+    "fixture": "01_csv_type_mismatch.csv",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/01_csv_type_mismatch.csv",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "02_csv_trailing_extra.csv",
+    "score": 0.865,
+    "scan_incomplete": false,
+    "n_findings": 1,
+    "tier_counts": {
+      "1": 0,
+      "2": 1,
+      "3": 0
+    },
+    "mechanisms": [
+      "csv_inconsistent_columns"
+    ],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/02_csv_trailing_extra.csv",
+      "integrity_score": 0.865,
+      "scan_incomplete": false,
+      "findings": [
+        {
+          "mechanism": "csv_inconsistent_columns",
+          "tier": 2,
+          "confidence": 0.9,
+          "description": "Row 3 has 3 column(s) \u2014 the header row and earlier data rows have 2. Different parsers resolve the mismatch differently: pandas pads with NaN, awk truncates, Excel carries the mismatch through as a ragged row, and Python's csv module returns the row verbatim. The divergence is the concealment surface.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/02_csv_trailing_extra.csv:row=3",
+          "surface": "(row has 3 cell(s) visibly)",
+          "concealed": "expected 2, got 3 \u2014 parser disagreement",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
+    }
+  },
+  {
+    "fixture": "03_csv_long_quoted_payload.csv",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/03_csv_long_quoted_payload.csv",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "04_json_concealment_in_keys.json",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/04_json_concealment_in_keys.json",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "05_json_prototype_pollution.json",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/05_json_prototype_pollution.json",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "06_json_long_string_payload.json",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/06_json_long_string_payload.json",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  }
+]

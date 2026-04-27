@@ -1,0 +1,122 @@
+[
+  {
+    "fixture": "01_noscript.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/01_noscript.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "02_template.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/02_template.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "03_comment_payload.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/03_comment_payload.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "04_meta_content.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/04_meta_content.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "05_css_content.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/05_css_content.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "06_title_payload.html",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/06_title_payload.html",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  }
+]

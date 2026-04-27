@@ -1,0 +1,122 @@
+[
+  {
+    "fixture": "01_from_replyto_mismatch.eml",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/01_from_replyto_mismatch.eml",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "02_returnpath_mismatch.eml",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/02_returnpath_mismatch.eml",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "03_received_chain_anomaly.eml",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/03_received_chain_anomaly.eml",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "04_base64_body_payload.eml",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/04_base64_body_payload.eml",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "05_header_continuation_smuggle.eml",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/05_header_continuation_smuggle.eml",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "06_long_xheader_payload.eml",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/06_long_xheader_payload.eml",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  }
+]

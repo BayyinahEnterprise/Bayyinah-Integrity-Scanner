@@ -1,0 +1,8 @@
+From: billing@trusted-vendor.example
+Reply-To: wire-transfer@attacker-controlled.example
+To: ap@victim-corp.example
+Subject: Q3 invoice
+Date: Mon, 26 Apr 2026 09:00:00 +0000
+Content-Type: text/plain; charset=utf-8
+
+Q3 financial summary - revenue grew 8% YoY to $1,000 thousand. Margins held steady. Cash position remains strong.

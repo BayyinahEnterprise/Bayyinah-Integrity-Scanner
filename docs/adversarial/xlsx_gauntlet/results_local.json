@@ -1,0 +1,122 @@
+[
+  {
+    "fixture": "01_white_cell_text.xlsx",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/xlsx_gauntlet/fixtures/01_white_cell_text.xlsx",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "02_microscopic_font.xlsx",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/xlsx_gauntlet/fixtures/02_microscopic_font.xlsx",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "03_defined_name_payload.xlsx",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/xlsx_gauntlet/fixtures/03_defined_name_payload.xlsx",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "04_cell_comment.xlsx",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/xlsx_gauntlet/fixtures/04_cell_comment.xlsx",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "05_custom_xml_properties.xlsx",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/xlsx_gauntlet/fixtures/05_custom_xml_properties.xlsx",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  },
+  {
+    "fixture": "06_csv_injection_formula.xlsx",
+    "score": 1.0,
+    "scan_incomplete": false,
+    "n_findings": 0,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [],
+    "payload_recovered": false,
+    "payload_recovered_via": null,
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/xlsx_gauntlet/fixtures/06_csv_injection_formula.xlsx",
+      "integrity_score": 1.0,
+      "scan_incomplete": false,
+      "findings": []
+    }
+  }
+]

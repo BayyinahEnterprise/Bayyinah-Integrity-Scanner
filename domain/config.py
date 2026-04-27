@@ -80,6 +80,16 @@ ZAHIR_MECHANISMS: Final[frozenset[str]] = frozenset({
     "white_on_white_text",
     "microscopic_font",
     "off_page_text",
+    # v1.1.2 Day 2 mechanism 03 - parallel pass to off_page_text that
+    # reads the raw PDF content stream via pikepdf instead of relying
+    # on PyMuPDF's get_text('dict'), which silently drops spans whose
+    # origin is outside the page rectangle. Tier 1; classifies as
+    # zahir because the structural fact (Tm origin coordinate vs.
+    # MediaBox) is observable from the content stream's text-rendering
+    # operators with no hidden-state inference. Closes pdf_gauntlet
+    # fixture 03_off_page.pdf. See docs/adversarial/pdf_gauntlet/
+    # REPORT.md row 03.
+    "pdf_off_page_text",
     "zero_width_chars",
     "bidi_control",
     "tag_chars",
@@ -1878,6 +1888,21 @@ SEVERITY: Final[dict[str, float]] = {
     "cross_stem_inventory":           0.00,
     "cross_stem_undeclared_text":     0.25,
     # -----------------------------------------------------------------
+    # v1.1.2 Day 2 - PDF concealment closures (zahir + batin parallel
+    # passes; pdf_off_page_text is zahir per its content-stream-
+    # observable signal, paralleling the existing zahir off_page_text).
+    # -----------------------------------------------------------------
+    # Per Day 2 prompt section 6.6 step 2, new Tier 1 mechanisms ship
+    # with severity 1.0 and new Tier 2 mechanisms with severity 0.5.
+    # This is sharper than the v1.1.1 calibration ladder (Tier 1
+    # historically 0.10-0.40) but matches the Defense Case F1 stance
+    # that an unambiguous concealment finding warrants a full
+    # deduction. The signal class for pdf_off_page_text is structural
+    # and free of legitimate-document false positives in v1.1.2's
+    # tested corpus, so the full-deduction calibration does not
+    # imply false positives on benign files.
+    "pdf_off_page_text":              1.00,
+    # -----------------------------------------------------------------
     # v1.1.2 - Tier 0 routing transparency.
     # -----------------------------------------------------------------
     # format_routing_divergence is non-deducting (severity 0.0) because
@@ -2237,6 +2262,10 @@ TIER: Final[dict[str, int]] = {
     #   (a legitimate video may genuinely lack a caption tag).
     "cross_stem_inventory":           3,
     "cross_stem_undeclared_text":     2,
+    # -----------------------------------------------------------------
+    # v1.1.2 Day 2 - PDF concealment closures (Tier classifications).
+    # -----------------------------------------------------------------
+    "pdf_off_page_text":              1,
     # -----------------------------------------------------------------
     # v1.1.2 - Tier 0 routing transparency.
     # -----------------------------------------------------------------

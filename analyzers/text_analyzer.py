@@ -173,6 +173,20 @@ class ZahirTextAnalyzer(BaseAnalyzer):
                 )
                 findings.extend(self._scan_overlapping_spans(page, page_idx))
 
+            # v1.1.2 Day 2 mechanism 03 - parallel pass to off_page_text
+            # that reads the raw PDF content stream via pikepdf instead
+            # of relying on PyMuPDF's get_text('dict'), which silently
+            # drops spans whose origin is outside the page rectangle.
+            # Classifies as zahir alongside off_page_text: the structural
+            # signal (Tm origin coordinate vs. MediaBox) is observable
+            # from the content stream's text-rendering operators with
+            # no hidden-state inference. Local import to keep the
+            # module head untouched; the detector opens its own
+            # pikepdf handle and is independent of the pymupdf doc
+            # used above. Closes pdf_gauntlet fixture 03_off_page.pdf.
+            from analyzers.pdf_off_page_text import detect_pdf_off_page_text
+            findings.extend(detect_pdf_off_page_text(file_path))
+
             report = IntegrityReport(
                 file_path=str(file_path),
                 integrity_score=compute_muwazana_score(findings),

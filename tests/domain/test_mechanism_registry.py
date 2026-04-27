@@ -36,28 +36,41 @@ def test_registry_is_frozenset() -> None:
     assert isinstance(MECHANISM_REGISTRY, frozenset)
 
 
-def test_registry_count_is_exact_109() -> None:
+def test_registry_count_is_exact_110() -> None:
     """Pin the count. Adding a mechanism must update this number;
     that is itself a structural reminder to update SEVERITY + TIER +
     the source-layer set in the same commit.
 
-    v1.1.2 - the count moves from 108 (27 zahir + 81 batin) to 109
-    with the addition of format_routing_divergence in
-    ROUTING_MECHANISMS."""
-    assert len(MECHANISM_REGISTRY) == 109, (
-        f"Mechanism count drift: expected 109 "
-        f"(27 zahir + 81 batin + 1 routing), "
+    v1.1.2 Day 1 raised the count from 108 (27 zahir + 81 batin) to
+    109 with the addition of format_routing_divergence in
+    ROUTING_MECHANISMS. Day 2 mechanism 03 (pdf_off_page_text)
+    brings the count to 110 (28 zahir + 81 batin + 1 routing) -
+    pdf_off_page_text classifies as zahir because the Tm origin
+    coordinate is observable from the content stream's text-
+    rendering operators with no hidden-state inference, paralleling
+    the existing zahir off_page_text mechanism. Subsequent Day 2
+    commits will bump this assertion further as each PDF mechanism
+    lands."""
+    assert len(MECHANISM_REGISTRY) == 110, (
+        f"Mechanism count drift: expected 110 "
+        f"(28 zahir + 81 batin + 1 routing), "
         f"got {len(MECHANISM_REGISTRY)} "
         f"(zahir={len(ZAHIR_MECHANISMS)}, batin={len(BATIN_MECHANISMS)}, "
         f"routing={len(ROUTING_MECHANISMS)})"
     )
 
 
-def test_zahir_count_is_exact_27() -> None:
-    assert len(ZAHIR_MECHANISMS) == 27
+def test_zahir_count_is_exact_28() -> None:
+    """v1.1.2 Day 2 mechanism 03 (pdf_off_page_text) added a zahir
+    entry; the count moves from 27 to 28."""
+    assert len(ZAHIR_MECHANISMS) == 28
 
 
 def test_batin_count_is_exact_81() -> None:
+    """The v1.0 baseline batin count holds. Day 2 mechanism 03
+    classifies as zahir, not batin, because its structural signal
+    is observable from the content stream's text-rendering operators
+    with no hidden-state inference."""
     assert len(BATIN_MECHANISMS) == 81
 
 

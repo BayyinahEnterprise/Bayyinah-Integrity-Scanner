@@ -226,6 +226,66 @@ _INDEX_HTML = """<!doctype html>
       color: var(--muted); font-size: 0.85rem;
     }
     .footer a { color: var(--muted); text-decoration: underline; }
+    .muted { color: var(--muted); }
+    .warn {
+      background: rgba(255, 165, 0, 0.08);
+      border-left: 3px solid #d68b00;
+      padding: 0.6rem 0.9rem; border-radius: 4px;
+      margin: 0.75rem 0;
+      font-size: 0.95rem;
+    }
+    .result { margin-top: 1rem; }
+    .score-row {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.75rem 0;
+      border-top: 1px solid rgba(128,128,128,0.15);
+    }
+    .score-num {
+      font-size: 2.4rem; font-weight: 600;
+      min-width: 4rem; text-align: center;
+      padding: 0.25rem 0.6rem; border-radius: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+    .score-label { font-size: 0.95rem; line-height: 1.4; }
+    .band-clean   { color: #1a7f3c; background: rgba(26, 127, 60, 0.10); }
+    .band-mostly  { color: #2e7d32; background: rgba(46, 125, 50, 0.08); }
+    .band-mixed   { color: #b8860b; background: rgba(184, 134, 11, 0.10); }
+    .band-concern { color: #c0392b; background: rgba(192, 57, 43, 0.10); }
+    .band-severe  { color: #fff;    background: #b3261e; }
+    ul.findings { list-style: none; padding: 0; margin: 1rem 0; }
+    ul.findings li {
+      border: 1px solid rgba(128,128,128,0.25);
+      border-radius: 8px;
+      padding: 0.7rem 0.9rem;
+      margin-bottom: 0.6rem;
+      font-size: 0.92rem;
+    }
+    li.f-tier-1 { border-left: 3px solid #c0392b; }
+    li.f-tier-2 { border-left: 3px solid #d68b00; }
+    li.f-tier-3 { border-left: 3px solid #888; }
+    .f-head {
+      display: flex; flex-wrap: wrap; align-items: baseline;
+      gap: 0.5rem 0.75rem; margin-bottom: 0.25rem;
+    }
+    .f-tier {
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--muted); font-weight: 600;
+    }
+    .f-mech {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.9em;
+      background: rgba(128,128,128,0.12);
+      padding: 0.1em 0.4em; border-radius: 4px;
+    }
+    .f-meta {
+      margin-left: auto;
+      font-size: 0.8rem; color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .f-desc { line-height: 1.5; margin: 0.2rem 0 0.3rem; }
+    .f-explain { font-size: 0.8rem; line-height: 1.4; }
+    .raw-json { margin-top: 1rem; }
+    .raw-json pre { font-size: 0.78rem; max-height: 40vh; }
     @media (prefers-color-scheme: dark) {
       pre { background: #1e1e1e; color: #eee; }
     }
@@ -358,7 +418,15 @@ _INDEX_HTML = """<!doctype html>
     const form = document.getElementById('form');
     const out = document.getElementById('out');
 
-    drop.addEventListener('click', () => fileInput.click());
+    // Note: a <label> wrapping <input type="file"> already opens the
+    // file dialog natively when clicked. Adding our own click handler
+    // would open it twice. We only handle keyboard activation explicitly.
+    drop.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
     drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
     drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
     drop.addEventListener('drop', e => {
@@ -379,20 +447,99 @@ _INDEX_HTML = """<!doctype html>
       }
     }
 
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
+
+    function scoreBand(score, hasFindings) {
+      if (score >= 0.99 && !hasFindings) return {label:'Clean', cls:'band-clean'};
+      if (score >= 0.85) return {label:'Mostly clean', cls:'band-mostly'};
+      if (score >= 0.5)  return {label:'Mixed signal', cls:'band-mixed'};
+      if (score >= 0.2)  return {label:'Concerning', cls:'band-concern'};
+      return {label:'Severe concealment', cls:'band-severe'};
+    }
+
+    const TIER_LABEL = {
+      1: 'Verified',
+      2: 'Structural',
+      3: 'Informational',
+    };
+    const TIER_EXPLAIN = {
+      1: 'A concrete concealment mechanism was identified and validated.',
+      2: 'A structural anomaly was observed; context determines whether it is a problem.',
+      3: 'An observation about the file. Does not lower the score; included for completeness.',
+    };
+
+    function renderReport(j) {
+      if (j.error) {
+        return '<div class="result"><h3>Scan failed</h3><p>' + escapeHtml(j.detail || j.error) + '</p></div>';
+      }
+      const score = j.integrity_score;
+      const findings = j.findings || [];
+      const incomplete = j.scan_incomplete === true;
+      const band = scoreBand(score, findings.length > 0);
+
+      const tierCounts = {1: 0, 2: 0, 3: 0};
+      for (const f of findings) {
+        const t = f.tier || 3;
+        tierCounts[t] = (tierCounts[t] || 0) + 1;
+      }
+
+      let html = '<div class="result">';
+      html += '<div class="score-row"><div class="score-num ' + band.cls + '">' +
+              score.toFixed(2) + '</div><div class="score-label"><strong>' +
+              band.label + '</strong><br><span class="muted">Integrity score (0.0 = severe concealment, 1.0 = clean)</span></div></div>';
+
+      if (incomplete) {
+        html += '<p class="warn"><strong>Scan incomplete.</strong> The scanner ran but did not cover the entire file. Absence of findings here is not evidence of cleanness.</p>';
+      }
+
+      if (findings.length === 0) {
+        html += '<p class="muted">No findings. The scanner inspected the file at every supported layer and surfaced nothing.</p>';
+      } else {
+        html += '<p class="muted">' + findings.length + ' finding' + (findings.length === 1 ? '' : 's') +
+                ' across ' + Object.values(tierCounts).filter(n => n > 0).length + ' tier' +
+                (Object.values(tierCounts).filter(n => n > 0).length === 1 ? '' : 's') + '.</p>';
+        html += '<ul class="findings">';
+        for (const f of findings) {
+          const t = f.tier || 3;
+          const sev = (f.severity || 0).toFixed(2);
+          const conf = (f.confidence || 0).toFixed(2);
+          html += '<li class="f-tier-' + t + '">';
+          html += '<div class="f-head"><span class="f-tier">' + (TIER_LABEL[t] || 'Tier ' + t) +
+                  '</span> <span class="f-mech">' + escapeHtml(f.mechanism || '?') + '</span>';
+          html += '<span class="f-meta">severity ' + sev + ' · confidence ' + conf + '</span></div>';
+          if (f.description) {
+            html += '<div class="f-desc">' + escapeHtml(f.description) + '</div>';
+          }
+          html += '<div class="f-explain muted">' + (TIER_EXPLAIN[t] || '') + '</div>';
+          html += '</li>';
+        }
+        html += '</ul>';
+      }
+
+      html += '<details class="raw-json"><summary class="muted">Raw JSON response</summary><pre>' +
+              escapeHtml(JSON.stringify(j, null, 2)) + '</pre></details>';
+      html += '</div>';
+      return html;
+    }
+
     form.addEventListener('submit', async e => {
       e.preventDefault();
       submit.disabled = true;
       submit.textContent = 'Scanning...';
       out.style.display = 'block';
-      out.textContent = 'Scanning...';
+      out.innerHTML = '<p class="muted">Scanning...</p>';
       const fd = new FormData();
       fd.append('file', fileInput.files[0]);
       try {
         const r = await fetch('/scan', { method: 'POST', body: fd });
         const j = await r.json();
-        out.textContent = JSON.stringify(j, null, 2);
+        out.innerHTML = renderReport(j);
       } catch (err) {
-        out.textContent = 'Request failed: ' + err;
+        out.innerHTML = '<p>Request failed: ' + escapeHtml(String(err)) + '</p>';
       } finally {
         submit.disabled = false;
         submit.textContent = 'Scan';

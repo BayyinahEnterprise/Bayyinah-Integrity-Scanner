@@ -33,8 +33,8 @@ diagnostic review:
    `domain/config.py` names the SEVERITY dictionary as the single
    inspection point for the "MDL-calibrated severity" claim.
 
-The fourth (paper prose drift on cross-modal correlation) is recorded
-in `history/DEFENSE_CASE_UPDATES.md` for the Phase-27 paper revision.
+The fourth (paper prose drift on cross-modal correlation) is deferred
+to the Phase-27 paper revision.
 
 No new analyzers, no new mechanisms, no new file kinds, no behaviour
 change for any existing scan. See `CHANGELOG.md [1.1.1]` for the full
@@ -48,11 +48,8 @@ delta.
 |---|---|
 | `README.md` | Public-facing overview: 23 file kinds, 108 mechanisms, scoring, ScanLimits, cross-modal correlation |
 | `history/PERPLEXITY_CHALLENGE_READINESS.md` | What v1.1.1 provides for the Week-1 FastAPI foundation, what is deferred to Phase 27 |
-| `history/RESEARCH_PROGRAM_STACK.md` | Where Bayyinah sits in the broader stack: file-layer relative to information (al-Khabir), agent-diagnostic (Munafiq Protocol), agent-architectural (Al-Khalifa), Furqan, Fatiha Construct, Computational Tawhid |
-| `history/FURQAN_CORRESPONDENCE.md` | For each Furqan primitive, the exact Bayyinah file / mechanism / test / workflow that validates it. Bayyinah is Furqan's empirical foundation; this doc makes the validation auditable |
-| `history/DEFENSE_CASE_UPDATES.md` | Canonical text blocks for Defense Case + 8-week plan reconciliation, plus Phase-27 paper-prose constraints |
 | `history/ASSESSMENT_RESPONSE.md` | Week-1 issue resolution log (the original Defense Case review) |
-| `CHANGELOG.md` | Complete v1.0 → v1.1.1 delta with research-program cross-references |
+| `CHANGELOG.md` | Complete v1.0 → v1.1.1 delta |
 | `CONTRIBUTING.md` | Five-step workflow, stem-extractor-and-router pattern, additive-only invariant, dependency policy |
 | `NAMING.md` | Naming discipline, the load-bearing governance doc |
 | `history/README.md` | The three-generation evolution archive (v0 → v0.1 → v1.1.1) |
@@ -136,10 +133,7 @@ bayyinah-v1.1.1/
 ├── history/
 │   ├── README.md                              ← three-generation evolution
 │   ├── ASSESSMENT_RESPONSE.md                 ← Week-1 issue log
-│   ├── DEFENSE_CASE_UPDATES.md                ← canonical text + Phase-27 prose constraints
-│   ├── PERPLEXITY_CHALLENGE_READINESS.md      ← Week-1 API foundation readiness
-│   ├── RESEARCH_PROGRAM_STACK.md              ← four-layer integrity stack
-│   └── FURQAN_CORRESPONDENCE.md               ← primitive-by-primitive validation map
+│   └── PERPLEXITY_CHALLENGE_READINESS.md      ← Week-1 API foundation readiness
 │
 └── .github/workflows/ci.yml                   ← parity + additive-only + MECHANISM_REGISTRY gates
 ```
@@ -185,7 +179,6 @@ print('additive-only OK; MECHANISM_REGISTRY = 108')
 - Cross-modal correlation prose discipline, the paper revision must
   match the README's exact framing (two active rules, five reserved
   future-work names, opt-in invocation, NOT default-registered).
-  Prose constraints recorded in `history/DEFENSE_CASE_UPDATES.md`.
 - The five additional cross-modal correlation rules
   (`cross_stem_text_inconsistency`, `cross_stem_metadata_clash`,
   `embedded_media_recursive_scan`,

@@ -88,28 +88,13 @@ Two load-bearing reasons, both documented in `../legacy/README.md`:
 
 That is the project's standing witness (Al-Baqarah 2:282 — *"bring two witnesses"*): two independent implementations attesting to the same observations. The modular 1.0 scanner is the third witness, and all three agree.
 
-## Bayyinah's place in the broader research program
+## Foundational paper
 
-This repository is the **shipped artifact** of an integrated research
-program on structural honesty in artificial systems. Two companion
-documents in this folder map how Bayyinah relates to the rest:
-
-* `RESEARCH_PROGRAM_STACK.md` — the four-layer integrity stack (file,
-  information, agent-diagnostic, agent-architectural) and how Bayyinah
-  fits among the Munafiq Protocol (published, DOI
-  10.5281/zenodo.19677111), Bayyinah al-Khabir (theoretical), Al-Khalifa
-  (theoretical), Furqan (theoretical), the Fatiha Construct (published,
-  applied across the program), and Computational Tawhid (ontological).
-* `FURQAN_CORRESPONDENCE.md` — for each of Furqan's nine primitives
-  (the seven compile-time + `scan_incomplete` + Fatiha session
-  protocol), the exact Bayyinah file, mechanism, test, or workflow
-  that validates it. Every primitive maps to at least one auditable
-  artifact in this repository; the strongest map to CI-enforced
-  invariants.
-
-If anyone questions whether the research program's theoretical claims
-are grounded, the auditable answer is the table in
-`FURQAN_CORRESPONDENCE.md` — every primitive operated as a behavioural
-convention here before being proposed as a language feature.
+Bayyinah's verdict taxonomy and Tier 1/2/3 epistemic discipline are an
+input-layer application of Section 9 of the **Munafiq Protocol** (Arfeen,
+Claude, 2026; DOI [10.5281/zenodo.19677111](https://doi.org/10.5281/zenodo.19677111)).
+A file that displays cleanly while concealing payloads is, by the
+protocol's framing, a file performing alignment; Bayyinah is the
+inspection surface that makes the performance visible.
 
 *Bismillah ar-Rahman ar-Raheem.*

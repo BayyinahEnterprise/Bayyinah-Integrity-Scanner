@@ -65,12 +65,6 @@ public symbol is preserved; one symbol is added (`MECHANISM_REGISTRY`).
   Process-2 drifts; this header + the import-time coherence assertion
   together close it.
 
-- **`history/DEFENSE_CASE_UPDATES.md`, Phase-27 paper prose constraint**.
-  A new block records the cross-modal correlation prose discipline the
-  Phase-27 paper revision must honour (two active rules + five reserved
-  future-work names; the engine is opt-in, not default-registered). The
-  README is the truth; the papers must clamp to it.
-
 ### Changed
 
 - **Dependency upper bounds** in `pyproject.toml` and `requirements.txt`:
@@ -283,29 +277,12 @@ detector fires them in v1.1:
 The white paper and thesis paper updates for the v1.1 surface are
 deferred to Phase 27.
 
-### Research-program cross-references
+### Foundational paper
 
-Bayyinah v1.1 is the empirical foundation for three theoretical papers
-in the broader research program:
-
-- **Furqan** (Ashraf, Arfeen, et al., 2026), proposes a programming
-  language whose seven compile-time primitives + `scan_incomplete`
-  return type + Fatiha session protocol formalize the behavioural
-  conventions observed in this codebase. Each primitive is mapped
-  to its Bayyinah validation in `history/FURQAN_CORRESPONDENCE.md`.
-- **Al-Khalifa** (Arfeen et al., 2026), applies Furqan's seven
-  primitives as runtime constraints on autonomous agents. Theoretical;
-  Bayyinah's own development discipline is cited as the existence
-  proof that the architecture is implementable.
-- **The Fatiha Construct** (Arfeen, Claude, 2026), the seven-step
-  session protocol that produced every phase of Bayyinah's
-  development. Published independently; the per-phase prompts in
-  this program's history are the construct's empirical record.
-
-The relationships are mapped in `history/RESEARCH_PROGRAM_STACK.md`,
-which sites Bayyinah within the four-layer integrity stack alongside
-the Munafiq Protocol (DOI 10.5281/zenodo.19677111), Bayyinah al-Khabir
-(theoretical), and Computational Tawhid (ontological).
+Bayyinah's verdict taxonomy (`sahih`, `mushtabih`, `mukhfi`, `munafiq`,
+`mughlaq`) and Tier 1/2/3 epistemic discipline are an input-layer
+application of Section 9 of the **Munafiq Protocol** (Arfeen, Claude,
+2026; DOI [10.5281/zenodo.19677111](https://doi.org/10.5281/zenodo.19677111)).
 
 ## [1.0.0]: 2026-04-23
 

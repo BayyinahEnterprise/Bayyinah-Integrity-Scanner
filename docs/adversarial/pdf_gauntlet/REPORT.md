@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-26
 **Scanner version:** Bayyinah 1.1.1 (live at https://bayyinah.dev)
-**Triggered by:** External adversarial probe by Osman, software engineer ("I hid some text in a second PDF and it gave me the same score")
+**Triggered by:** External adversarial probe by an independent software engineer ("I hid some text in a second PDF and it gave me the same score")
 **Result:** 2 of 6 techniques caught. 4 misses documented as v1.1.2 targets.
 
 This is an honest baseline. It is published so the next reviewer can verify each claim and so the gaps are visible to anyone considering Bayyinah for production use. Surfacing failures is part of the protocol; concealing them would defeat the tool's purpose.
@@ -134,4 +134,4 @@ The fixture builder is deterministic; running it twice produces byte-identical P
 
 ---
 
-*This report was triggered by Osman's adversarial probe and produced in the same session as the v1.1.1 deployment. Honest baselines beat polished press.*
+*This report was triggered by an external adversarial probe and produced in the same session as the v1.1.1 deployment. Honest baselines beat polished press.*

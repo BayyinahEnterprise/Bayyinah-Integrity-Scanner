@@ -82,6 +82,6 @@ Three reasons.
 
 **Two.** Every miss in this corpus is a named, scoped, LOC-estimated fix. Publishing them turns vague "future work" into a concrete v1.1.2 milestone that anyone can verify when v1.1.2 ships — re-run this exact corpus, count the converted misses.
 
-**Three.** Reviewers — including the cousin doing IT release management who is currently testing this scanner adversarially — deserve to see the gaps before they find them. Pre-disclosing a miss list is more useful to a release reviewer than a sanitized highlight reel.
+**Three.** Reviewers, including the external adversarial tester currently probing the scanner, deserve to see the gaps before they find them. Pre-disclosing a miss list is more useful to a release reviewer than a sanitized highlight reel.
 
 This baseline is the v1.1.1 honest commit. v1.1.2 will be measured against it.

@@ -283,6 +283,30 @@ _INDEX_HTML = """<!doctype html>
       font-variant-numeric: tabular-nums;
     }
     .f-desc { line-height: 1.5; margin: 0.2rem 0 0.3rem; }
+    .f-loc { font-size: 0.82rem; margin: 0.2rem 0; }
+    .f-loc strong { color: var(--muted); font-weight: 600; }
+    .f-inv {
+      margin: 0.5rem 0;
+      padding: 0.5rem 0.7rem;
+      background: rgba(128,128,128,0.06);
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+    .f-inv-label {
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--muted); font-weight: 600; margin-bottom: 0.3rem;
+    }
+    .f-inv-row { margin: 0.2rem 0; line-height: 1.5; }
+    .f-inv-key {
+      display: inline-block; min-width: 5.5rem;
+      font-weight: 600; color: var(--muted);
+    }
+    .f-inv-conceal { color: #b3261e; }
+    .f-inv code {
+      background: rgba(0,0,0,0.04); padding: 0.1em 0.4em;
+      border-radius: 4px; word-break: break-word;
+      white-space: pre-wrap;
+    }
     .f-explain { font-size: 0.8rem; line-height: 1.4; }
     .raw-json { margin-top: 1rem; }
     .raw-json pre { font-size: 0.78rem; max-height: 40vh; }
@@ -513,6 +537,22 @@ _INDEX_HTML = """<!doctype html>
           html += '<span class="f-meta">severity ' + sev + ' · confidence ' + conf + '</span></div>';
           if (f.description) {
             html += '<div class="f-desc">' + escapeHtml(f.description) + '</div>';
+          }
+          if (f.location) {
+            html += '<div class="f-loc muted"><strong>Where:</strong> ' + escapeHtml(f.location) + '</div>';
+          }
+          if (f.inversion_recovery && (f.inversion_recovery.surface || f.inversion_recovery.concealed)) {
+            html += '<div class="f-inv">';
+            html += '<div class="f-inv-label">What the scanner extracted:</div>';
+            if (f.inversion_recovery.surface) {
+              html += '<div class="f-inv-row"><span class="f-inv-key">Surface:</span> <code>' +
+                      escapeHtml(f.inversion_recovery.surface) + '</code></div>';
+            }
+            if (f.inversion_recovery.concealed) {
+              html += '<div class="f-inv-row"><span class="f-inv-key f-inv-conceal">Concealed:</span> <code>' +
+                      escapeHtml(f.inversion_recovery.concealed) + '</code></div>';
+            }
+            html += '</div>';
           }
           html += '<div class="f-explain muted">' + (TIER_EXPLAIN[t] || '') + '</div>';
           html += '</li>';

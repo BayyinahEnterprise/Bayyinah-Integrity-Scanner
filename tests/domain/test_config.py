@@ -18,13 +18,19 @@ from domain import config
 
 def test_every_severity_mechanism_is_classified_by_source_layer() -> None:
     """Every mechanism with a SEVERITY entry MUST be classified into
-    exactly one of ZAHIR_MECHANISMS or BATIN_MECHANISMS. An unclassified
-    mechanism would default to 'batin' silently, losing signal."""
+    exactly one of ZAHIR_MECHANISMS, BATIN_MECHANISMS, or (v1.1.2)
+    ROUTING_MECHANISMS. An unclassified mechanism would default to
+    'batin' silently, losing signal."""
     mechanisms = set(config.SEVERITY.keys())
-    classified = config.ZAHIR_MECHANISMS | config.BATIN_MECHANISMS
+    classified = (
+        config.ZAHIR_MECHANISMS
+        | config.BATIN_MECHANISMS
+        | config.ROUTING_MECHANISMS
+    )
     unclassified = mechanisms - classified
     assert not unclassified, (
-        f"Mechanisms in SEVERITY but not classified as zahir/batin: {unclassified}"
+        f"Mechanisms in SEVERITY but not classified as zahir/batin/"
+        f"routing: {unclassified}"
     )
 
 
@@ -52,9 +58,11 @@ def test_all_severities_are_in_unit_interval() -> None:
         assert 0.0 <= sev <= 1.0, f"{mech} severity {sev} outside [0, 1]"
 
 
-def test_all_tiers_are_one_two_or_three() -> None:
+def test_all_tiers_are_zero_one_two_or_three() -> None:
+    """v1.1.2 widens the legal tier set to admit Tier 0 (routing
+    transparency). Tier 0 mechanisms live in ROUTING_MECHANISMS."""
     for mech, tier in config.TIER.items():
-        assert tier in (1, 2, 3), f"{mech} tier {tier} not in {{1, 2, 3}}"
+        assert tier in (0, 1, 2, 3), f"{mech} tier {tier} not in {{0, 1, 2, 3}}"
 
 
 def test_scan_incomplete_clamp_is_half() -> None:

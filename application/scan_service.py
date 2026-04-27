@@ -72,6 +72,8 @@ from analyzers import (
     VideoAnalyzer,
     XlsxAnalyzer,
     ZahirTextAnalyzer,
+    # v1.1.2 - Tier 0 routing transparency (Mughlaq Trap closure).
+    detect_format_routing_divergence,
 )
 from domain import (
     DEFAULT_LIMITS,
@@ -411,7 +413,59 @@ class ScanService:
         # concurrent scans with different limits isolated.
         # ------------------------------------------------------------------
         with limits_context(self.limits):
-            return self._scan_inner(file_path)
+            report = self._scan_inner(file_path)
+
+        # ------------------------------------------------------------------
+        # v1.1.2 - Tier 0 routing transparency.
+        # The post-inner injection point is single-source: every return
+        # path inside ``_scan_inner`` (file-not-found, oversize-clamp,
+        # PDF-preflight-error, non-PDF-merged, PDF-success, UNKNOWN-
+        # error) flows through here. The Tier 0 layer fires
+        # independently of the per-format analyzer and prepends a
+        # routing-divergence finding when warranted; the verdict
+        # resolver in domain.value_objects.tamyiz_verdict floors at
+        # mughlaq when this finding is present. Closes the 2026-04-27
+        # Mughlaq Trap stress test.
+        #
+        # The detector is best-effort: if the router cannot read the
+        # file, no Tier 0 finding fires (the inner scan's own error
+        # reporting is the honest disclosure in that path).
+        # ------------------------------------------------------------------
+        try:
+            file_size = file_path.stat().st_size
+            with file_path.open("rb") as fh:
+                head = fh.read(FileRouter.HEAD_BYTES)
+            tier0_detection = self.file_router.detect(file_path)
+            tier0_finding = detect_format_routing_divergence(
+                file_path,
+                tier0_detection,
+                file_size,
+                head=head,
+            )
+        except OSError:
+            tier0_finding = None
+
+        if tier0_finding is not None:
+            # Prepend so the routing disclosure surfaces first in the
+            # findings list. The verdict resolver scans for any Tier 0
+            # finding regardless of position, but the user-facing copy
+            # ordering matters for the demo.
+            #
+            # Score is NOT recomputed. format_routing_divergence carries
+            # severity 0.0, so a recompute over the extended findings
+            # would either be a no-op (when the inner scan computed the
+            # score from findings only) or a regression (when the inner
+            # scan forcibly set the score - e.g., 0.0 on
+            # PDF-preflight-failure, 0.5 via the scan_incomplete clamp -
+            # in which case recomputing would undo that clamp and
+            # mis-report a sahih-shaped 1.0 from the in-process Muwazana
+            # formula). Leaving the score untouched preserves every
+            # downstream invariant. The verdict floor at mughlaq is
+            # what carries the Tier 0 disclosure to the user; the
+            # numeric score is intentionally orthogonal.
+            report.findings.insert(0, tier0_finding)
+
+        return report
 
     def _scan_inner(self, file_path: Path) -> IntegrityReport:
         """Body of ``scan``, invoked inside the limits context.

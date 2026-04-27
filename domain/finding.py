@@ -28,11 +28,25 @@ from typing import Any
 from domain.config import (
     BATIN_MECHANISMS,
     DEFAULT_SEVERITY,
+    ROUTING_MECHANISMS,
     SEVERITY,
     ZAHIR_MECHANISMS,
     SourceLayer,
 )
 from domain.exceptions import InvalidFindingError
+
+# v1.1.2 - Tier 0 routing findings carry a five-key disclosure schema
+# in their `evidence` field. The schema is the contract a reviewer
+# inspects to verify what the scanner decided about routing. Every key
+# is required; missing keys are a structural defect, not a benign
+# omission. See docs/scope/v1_1_2_framework_report.md section 3.0.
+ROUTING_DISCLOSURE_KEYS: frozenset[str] = frozenset({
+    "claimed_format",
+    "inferred_format",
+    "routing_decision",
+    "bytes_sampled",
+    "analyzer_invoked",
+})
 
 
 # ---------------------------------------------------------------------------
@@ -43,15 +57,22 @@ def _infer_source_layer(mechanism: str) -> SourceLayer:
     """Derive source_layer from the mechanism name.
 
     Zahir mechanisms manifest in the text/rendering surface; batin
-    mechanisms live in the inner object graph. For unknown mechanism
-    names we default to 'batin' — concealment we don't yet have a name
-    for is structurally suspicious by nature, and the report consumer
-    should see that classification, not silently lose it.
+    mechanisms live in the inner object graph. v1.1.2 routing
+    mechanisms (the Tier 0 layer) classify as 'zahir' because the
+    routing decision is observable from the file's surface (filename
+    plus first bytes); they sit before any analyzer in the call graph
+    and do not inspect the document's inner object graph. For unknown
+    mechanism names we default to 'batin' - concealment we don't yet
+    have a name for is structurally suspicious by nature, and the
+    report consumer should see that classification, not silently lose
+    it.
     """
     if mechanism in ZAHIR_MECHANISMS:
         return "zahir"
     if mechanism in BATIN_MECHANISMS:
         return "batin"
+    if mechanism in ROUTING_MECHANISMS:
+        return "zahir"
     return "batin"
 
 
@@ -110,6 +131,12 @@ class Finding:
     # "caller did not supply one" vs. "caller explicitly passed 'zahir'".
     # When the sentinel is seen we infer from the mechanism name.
     source_layer: SourceLayer = field(default="")  # type: ignore[assignment]
+    # v1.1.2 - structured disclosure dict for Tier 0 routing findings.
+    # Optional and excluded from to_dict() when None to preserve byte-
+    # parity with v0/v0.1 for every existing analyzer that does not set
+    # it. Tier 0 findings MUST set evidence, and the dict MUST contain
+    # every key in ROUTING_DISCLOSURE_KEYS (validated in __post_init__).
+    evidence: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         # ------ mechanism ------
@@ -119,9 +146,12 @@ class Finding:
             )
 
         # ------ tier ------
-        if self.tier not in (1, 2, 3):
+        # v1.1.2 widens the validator to admit Tier 0 (routing
+        # transparency) alongside the existing 1/2/3 concealment tiers.
+        # See domain.config.TIER_LEGEND.
+        if self.tier not in (0, 1, 2, 3):
             raise InvalidFindingError(
-                f"Finding.tier must be 1, 2, or 3 — got {self.tier!r}"
+                f"Finding.tier must be 0, 1, 2, or 3 - got {self.tier!r}"
             )
 
         # ------ confidence ------
@@ -155,6 +185,36 @@ class Finding:
                 f"got {self.source_layer!r}"
             )
 
+        # ------ evidence (Tier 0 disclosure schema, v1.1.2) ------
+        # Tier 0 routing findings MUST carry a complete five-key
+        # disclosure schema in `evidence`. Missing keys are a structural
+        # defect (the user is owed exactly those five facts about the
+        # routing decision); a benign Tier 0 finding without evidence
+        # would itself be the Process 3 surface this layer was added to
+        # close. See ROUTING_DISCLOSURE_KEYS at the top of this module.
+        # Concealment-tier findings (1, 2, 3) do not require evidence;
+        # if they do supply it, it must be a dict.
+        if self.evidence is not None and not isinstance(self.evidence, dict):
+            raise InvalidFindingError(
+                f"Finding.evidence must be a dict or None - "
+                f"got {type(self.evidence).__name__}"
+            )
+        if self.tier == 0:
+            if self.evidence is None:
+                raise InvalidFindingError(
+                    "Finding.tier == 0 requires a complete disclosure-"
+                    f"schema dict in evidence; got None. Required keys: "
+                    f"{sorted(ROUTING_DISCLOSURE_KEYS)}"
+                )
+            missing = ROUTING_DISCLOSURE_KEYS - set(self.evidence.keys())
+            if missing:
+                raise InvalidFindingError(
+                    f"Tier 0 finding missing required disclosure keys: "
+                    f"{sorted(missing)}. Required: "
+                    f"{sorted(ROUTING_DISCLOSURE_KEYS)}; "
+                    f"supplied: {sorted(self.evidence.keys())}"
+                )
+
     # ------------------------------------------------------------------
     # Derived / serialisation surface
     # ------------------------------------------------------------------
@@ -172,14 +232,21 @@ class Finding:
         return SEVERITY.get(self.mechanism, DEFAULT_SEVERITY)
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialise to the Phase 0 report shape — byte-identical to v0.1.
+        """Serialise to the Phase 0 report shape - byte-identical to v0.1
+        for every existing zahir/batin mechanism.
 
         ``source_layer`` is deliberately NOT emitted. Exposing it would
         break the v0/v0.1 parity invariant asserted by
         ``tests/test_fixtures.py::test_v0_v01_parity``. It is available
         to in-process callers via attribute access only.
+
+        v1.1.2 - ``evidence`` is emitted only when present (Tier 0
+        routing findings carry it; existing zahir/batin mechanisms do
+        not). The conditional include preserves the v0/v0.1 byte-parity
+        invariant - PDF analyzers never set evidence, so their dict
+        shape is unchanged. Tier 0 is new and has no parity contract.
         """
-        return {
+        out: dict[str, Any] = {
             "mechanism": self.mechanism,
             "tier": self.tier,
             "confidence": round(self.confidence, 3),
@@ -191,6 +258,9 @@ class Finding:
                 "concealed": self.concealed,
             },
         }
+        if self.evidence is not None:
+            out["evidence"] = dict(self.evidence)
+        return out
 
 
-__all__ = ["Finding"]
+__all__ = ["Finding", "ROUTING_DISCLOSURE_KEYS"]

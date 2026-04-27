@@ -61,7 +61,11 @@ TEXT_FIXTURE_EXPECTATIONS: dict[str, list[str]] = {
     "adversarial/duplicate_keys.json":         ["duplicate_keys"],
     "adversarial/excessive_nesting.json":      ["excessive_nesting"],
     "adversarial/tag_in_json.json":            ["tag_chars"],
-    "adversarial/extension_mismatch.json":     ["extension_mismatch"],
+    # v1.1.2 - the Tier 0 routing layer fires alongside the existing
+    # Tier 2 extension_mismatch finding on this fixture (a JSON file
+    # with PNG magic bytes - both layers correctly disagree with the
+    # claimed extension). Both findings are present in the report.
+    "adversarial/extension_mismatch.json":     ["extension_mismatch", "format_routing_divergence"],
 }
 
 

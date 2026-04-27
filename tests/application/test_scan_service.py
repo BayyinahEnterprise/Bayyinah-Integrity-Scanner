@@ -344,11 +344,24 @@ class TestUnopenablePdf:
         assert report.scan_incomplete is True
 
     def test_no_findings_on_open_failure(self, tmp_path: Path) -> None:
-        """Analyzers must not run when pymupdf pre-flight fails."""
+        """Per-format analyzers must not run when pymupdf pre-flight fails.
+
+        v1.1.2 - the Tier 0 routing layer (added in this release) DOES
+        run on every scan and may legitimately fire on a 7-byte file
+        (below the content-depth floor) regardless of pre-flight
+        success. The test's original intent (no per-format analyzer
+        ever processed the corrupt bytes) is preserved by filtering
+        Tier 0 findings out of the comparison: any concealment finding
+        from a per-format analyzer would be a regression.
+        """
         junk = tmp_path / "corrupt.pdf"
         junk.write_bytes(b"garbage")
         report = ScanService().scan(junk)
-        assert report.findings == []
+        per_format_findings = [f for f in report.findings if f.tier != 0]
+        assert per_format_findings == [], (
+            f"Per-format analyzer fired on corrupt-PDF pre-flight "
+            f"failure path: {[f.mechanism for f in per_format_findings]}"
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -312,6 +312,26 @@ ZAHIR_MECHANISMS: Final[frozenset[str]] = frozenset({
     "audio_lyrics_prompt_injection",
 })
 
+# v1.1.2 - Tier 0 routing mechanisms (the meta-evidence layer).
+#
+# Tier 0 mechanisms are not concealment findings about the *document*; they
+# are disclosure findings about the *scanner's own routing decision*. They
+# fire before any per-format analyzer and floor the verdict at mughlaq
+# regardless of downstream Tier 1/2/3 findings. The user-facing claim is:
+# "the scanner could not honestly decide what kind of file you uploaded;
+# here is what was claimed and here is what was inferred."
+#
+# Tier 0 is structurally distinct from zahir/batin (which classify
+# concealment mechanisms); routing transparency is its own layer. The
+# ROUTING_MECHANISMS set carries the finding identifiers so the registry
+# coherence assertion below can verify SEVERITY and TIER coverage.
+#
+# See docs/adversarial/mughlaq_trap_REPORT.md and
+# docs/scope/v1_1_2_framework_report.md section 3.0 for the rationale.
+ROUTING_MECHANISMS: Final[frozenset[str]] = frozenset({
+    "format_routing_divergence",
+})
+
 # Mechanisms whose concealment lives in the document's inner object graph.
 BATIN_MECHANISMS: Final[frozenset[str]] = frozenset({
     "javascript",
@@ -1857,6 +1877,18 @@ SEVERITY: Final[dict[str, float]] = {
     #   video_metadata_suspicious — the cross-stem analogue.
     "cross_stem_inventory":           0.00,
     "cross_stem_undeclared_text":     0.25,
+    # -----------------------------------------------------------------
+    # v1.1.2 - Tier 0 routing transparency.
+    # -----------------------------------------------------------------
+    # format_routing_divergence is non-deducting (severity 0.0) because
+    # it does not claim concealment - it claims uncertainty about which
+    # analyzer should have run. The verdict floor at mughlaq is the
+    # honest disclosure; pulling the integrity score down on top of that
+    # would double-count the same epistemic gap. The verdict resolver
+    # in domain.value_objects.tamyiz_verdict applies the floor by
+    # short-circuiting to VERDICT_MUGHLAQ when any Tier 0 finding is
+    # present.
+    "format_routing_divergence":      0.00,
 }
 
 # Default severity for any unknown mechanism — mirrors v0 behaviour.
@@ -2205,6 +2237,13 @@ TIER: Final[dict[str, int]] = {
     #   (a legitimate video may genuinely lack a caption tag).
     "cross_stem_inventory":           3,
     "cross_stem_undeclared_text":     2,
+    # -----------------------------------------------------------------
+    # v1.1.2 - Tier 0 routing transparency.
+    # -----------------------------------------------------------------
+    # format_routing_divergence is Tier 0: it does not claim concealment,
+    # it claims uncertainty about which analyzer should have run. The
+    # verdict resolver floors at mughlaq when this finding is present.
+    "format_routing_divergence":      0,
 }
 
 
@@ -2257,6 +2296,19 @@ TIER_LEGEND: Final[dict[str, str]] = {
     "3": "Interpretive — suspicious, context-dependent",
 }
 
+# v1.1.2 - the full tier legend including Tier 0 (routing transparency).
+# Kept separate from TIER_LEGEND because TIER_LEGEND is embedded in
+# IntegrityReport.to_dict for v0/v0.1 byte-parity. The full legend is
+# what the api.py /scan response surfaces alongside the report; in-
+# process callers and the test suite consume it via this name. A Tier 0
+# finding never appears in a report whose to_dict is asserted byte-
+# identical to v0/v0.1, so the legend that travels with such reports
+# does not need a Tier 0 entry.
+TIER_LEGEND_FULL: Final[dict[str, str]] = {
+    "0": "Routing - meta-evidence about the scanner's routing decision; floors verdict at mughlaq",
+    **TIER_LEGEND,
+}
+
 # Verbatim disclaimer exposed in IntegrityReport.to_dict output.
 VERDICT_DISCLAIMER: Final[str] = (
     "This report presents observed mechanisms and their validity tiers. "
@@ -2270,6 +2322,16 @@ VERDICT_DISCLAIMER: Final[str] = (
 # ---------------------------------------------------------------------------
 
 TOOL_NAME: Final[str] = "bayyinah"
+# TOOL_VERSION is the in-process module identity. It has been frozen at
+# "0.1.0" since v0 because IntegrityReport.to_dict embeds it, and any
+# change here would break the byte-parity invariant the PDF analyzer
+# inherits from bayyinah_v0_1 (which hardcodes "0.1.0" in its own
+# Finding.to_dict shape). The five-surface version coherence named in
+# v1.1.2 success criterion #2 (/scan, /version, /healthz, OpenAPI,
+# pyproject) is achieved at the api.py layer instead - api.py imports
+# bayyinah.__version__ (which IS 1.1.2) for its response shape, while
+# leaving TOOL_VERSION untouched so the in-process to_dict surface
+# stays byte-identical to v0/v0.1.
 TOOL_VERSION: Final[str] = "0.1.0"
 
 
@@ -2277,32 +2339,36 @@ TOOL_VERSION: Final[str] = "0.1.0"
 # MECHANISM_REGISTRY — the single auditable mechanism set
 # ---------------------------------------------------------------------------
 #
-# Every mechanism Bayyinah emits is in exactly one of two sets above
-# (ZAHIR_MECHANISMS or BATIN_MECHANISMS) and has exactly one entry in
-# the SEVERITY and TIER tables. The three views are kept in lockstep
-# by the import-time assertion below. Exposing the union as a single
-# public symbol makes the count auditable from one import:
+# Every mechanism Bayyinah emits is in exactly one of three sets above
+# (ZAHIR_MECHANISMS, BATIN_MECHANISMS, or ROUTING_MECHANISMS) and has
+# exactly one entry in the SEVERITY and TIER tables. The four views
+# are kept in lockstep by the import-time assertion below. Exposing the
+# union as a single public symbol makes the count auditable from one
+# import:
 #
 #     >>> from bayyinah import MECHANISM_REGISTRY
 #     >>> len(MECHANISM_REGISTRY)
-#     108
+#     109
 #
 # The assertion at module import time means the file cannot load if
-# any of the four tables (ZAHIR, BATIN, SEVERITY, TIER) drift apart.
-# This converts a documentation claim ("108 mechanisms, 27 zahir + 81
-# batin, every one with SEVERITY and TIER") into a structural
-# invariant — the file fails to import if the claim is false. This is
-# the Mizan calibration table made externally inspectable: SEVERITY
-# values live below in this file, but their coverage relative to the
-# mechanism universe is verified at import.
+# any of the five tables (ZAHIR, BATIN, ROUTING, SEVERITY, TIER) drift
+# apart. This converts a documentation claim ("109 mechanisms - 27
+# zahir + 81 batin + 1 routing, every one with SEVERITY and TIER")
+# into a structural invariant: the file fails to import if the claim
+# is false. This is the Mizan calibration table made externally
+# inspectable. Tier 0 ROUTING mechanisms are tracked alongside zahir
+# and batin so the registry coherence assertion covers the whole
+# mechanism universe, not just concealment findings.
 
 MECHANISM_REGISTRY: Final[frozenset[str]] = (
-    ZAHIR_MECHANISMS | BATIN_MECHANISMS
+    ZAHIR_MECHANISMS | BATIN_MECHANISMS | ROUTING_MECHANISMS
 )
 
-assert len(MECHANISM_REGISTRY) == len(ZAHIR_MECHANISMS) + len(BATIN_MECHANISMS), (
-    "ZAHIR_MECHANISMS and BATIN_MECHANISMS must be disjoint — every "
-    "mechanism belongs to exactly one source layer"
+assert len(MECHANISM_REGISTRY) == (
+    len(ZAHIR_MECHANISMS) + len(BATIN_MECHANISMS) + len(ROUTING_MECHANISMS)
+), (
+    "ZAHIR_MECHANISMS, BATIN_MECHANISMS, and ROUTING_MECHANISMS must be "
+    "pairwise disjoint - every mechanism belongs to exactly one layer"
 )
 assert set(SEVERITY.keys()) == MECHANISM_REGISTRY, (
     f"SEVERITY drift: missing="

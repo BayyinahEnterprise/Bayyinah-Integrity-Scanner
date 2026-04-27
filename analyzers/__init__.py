@@ -36,6 +36,8 @@ from analyzers.text_analyzer import ZahirTextAnalyzer
 from analyzers.text_file_analyzer import TextFileAnalyzer
 from analyzers.video_analyzer import VideoAnalyzer
 from analyzers.xlsx_analyzer import XlsxAnalyzer
+# v1.1.2 - Tier 0 routing transparency (Mughlaq Trap closure).
+from analyzers.format_routing import detect_format_routing_divergence
 
 __all__ = [
     "BaseAnalyzer",
@@ -131,4 +133,12 @@ __all__ = [
     # not wired into ScanService's default_registry while the rule
     # set is still being calibrated.
     "CrossModalCorrelationEngine",
+    # v1.1.2 - Tier 0 routing transparency. Runs before any per-format
+    # analyzer; emits a single Finding when the routing decision is
+    # itself in dispute (extension/magic divergence, content-depth
+    # below floor, unknown format, OOXML internal-path divergence).
+    # The verdict resolver in domain.value_objects.tamyiz_verdict
+    # floors at mughlaq when this finding is present. See
+    # docs/adversarial/mughlaq_trap_REPORT.md.
+    "detect_format_routing_divergence",
 ]

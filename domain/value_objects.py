@@ -83,8 +83,11 @@ def compute_muwazana_score(findings: Iterable[Finding]) -> float:
 def tamyiz_verdict(report: IntegrityReport) -> Verdict:
     """Categorical verdict derived from an IntegrityReport.
 
-    Decision table (checked top-down — first match wins):
+    Decision table (checked top-down - first match wins):
 
+        0. any Tier 0 (routing) finding present
+               -> VERDICT_MUGHLAQ (routing in dispute, scan_incomplete
+                  semantically though the bytes were read)
         1. scan_incomplete OR error present
                -> VERDICT_MUGHLAQ (closed / withheld)
         2. score == 1.0 AND no findings
@@ -97,19 +100,37 @@ def tamyiz_verdict(report: IntegrityReport) -> Verdict:
            but all low-severity)
                -> VERDICT_MUSHTABIH (suspicious)
 
-    The mughlaq branch is checked *first* because an incomplete scan
-    invalidates every other inference: a document we did not fully look
-    at cannot be certified sound, no matter what the partial score says.
+    v1.1.2 - rule 0 (Tier 0 routing floor) is checked first because
+    routing transparency is a precondition for every claim downstream.
+    A polyglot file that contains genuinely concealed content reports
+    BOTH the Tier 0 routing-divergence finding AND any Tier 1/2/3
+    concealment findings; the downstream findings are recorded but the
+    verdict cannot rise above mughlaq while the routing question is
+    open. See docs/adversarial/mughlaq_trap_REPORT.md.
+
+    The classic mughlaq branch (rule 1) is checked next because an
+    incomplete scan invalidates every other inference: a document we
+    did not fully look at cannot be certified sound, no matter what
+    the partial score says.
 
     The munafiq branch requires BOTH a low score AND a tier-1 finding.
-    Tier-1 findings are "verified — unambiguous concealment"; tier-2
+    Tier-1 findings are "verified - unambiguous concealment"; tier-2
     and tier-3 findings are structural or interpretive and can
-    accumulate to a low score without meeting the unambiguous-concealment
-    bar. This keeps the strongest label from being issued on purely
-    circumstantial evidence.
+    accumulate to a low score without meeting the unambiguous-
+    concealment bar. This keeps the strongest label from being issued
+    on purely circumstantial evidence.
 
     Pure. Reads from the report; does not mutate it.
     """
+    # 0. Tier 0 routing finding: the routing decision itself is in
+    # dispute. Verdict floors at mughlaq regardless of any Tier 1/2/3
+    # finding's content. This is the v1.1.2 closure of the Mughlaq
+    # Trap stress test (2026-04-27): the scanner cannot honestly
+    # render a verdict above mughlaq while it cannot honestly state
+    # which file kind it just analyzed.
+    if any(f.tier == 0 for f in report.findings):
+        return VERDICT_MUGHLAQ
+
     # 1. Incomplete / errored scans are inconclusive. Verdict withheld.
     if report.scan_incomplete or report.error is not None:
         return VERDICT_MUGHLAQ

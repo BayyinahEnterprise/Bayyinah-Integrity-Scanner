@@ -20,6 +20,7 @@ from domain.config import (
     CONFUSABLE_TO_LATIN,
     DEFAULT_LIMITS,
     MECHANISM_REGISTRY,
+    ROUTING_MECHANISMS,
     SEVERITY,
     ScanLimits,
     TIER,
@@ -45,7 +46,7 @@ from domain.exceptions import (
     PDFParseError,
     ScanError,
 )
-from domain.finding import Finding
+from domain.finding import Finding, ROUTING_DISCLOSURE_KEYS
 from domain.integrity_report import IntegrityReport
 from domain.value_objects import (
     apply_scan_incomplete_clamp,
@@ -76,6 +77,8 @@ __all__ = [
     "TOOL_VERSION",
     "ZAHIR_MECHANISMS",
     "BATIN_MECHANISMS",
+    "ROUTING_MECHANISMS",
+    "ROUTING_DISCLOSURE_KEYS",
     "CONFUSABLE_TO_LATIN",
     "SourceLayer",
     "Verdict",

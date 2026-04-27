@@ -21,7 +21,7 @@ The hero shows one document. The "surface" layer is the sanitized story (`$1,000
 - Transmission imaging metaphor (lamp + vellum + mirrored substrate). Not a particle field, not concentric rings, not a dashboard.
 - Lab-notebook layout. Sticky 200px left margin index carries case file metadata (CASE / DATE / SCANS / CORPUS), a §-numbered TOC, and a bottom signature. The main column never exceeds 760px, like a single page in a binder.
 - Color palette built from physical materials: dark room (`#0F1115`), warm vellum (`#E8E4D8`), raking lamp light (`#F4D58A`), terracotta evidence ink (`#E2725B`). Deliberately not the Settle slate palette.
-- Type stack: Instrument Serif display, Inter body, JetBrains Mono data. Deliberately not Fraunces / Inter Tight / IBM Plex Mono.
+- Type stack: Newsreader display, Inter body, JetBrains Mono data. Newsreader is Production Type's variable serif designed for long-form reading; it reads like a printed report, not editorial. Deliberately not Fraunces / Inter Tight / IBM Plex Mono.
 - Hand-tuned easing `cubic-bezier(0.32, 0.72, 0.24, 1.0)` over an 8-second cycle. Slow enough to feel like patient examination, not a hover effect.
 - Etymology footer in place of a Bismillah card. `bayyinah · noun · arabic · بَيِّنَة` defined as clear evidence; that which makes the truth manifest. The signature reads "A scanner is only as honest as the misses it publishes."
 

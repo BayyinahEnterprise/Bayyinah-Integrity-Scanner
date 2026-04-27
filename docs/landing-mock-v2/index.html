@@ -999,11 +999,11 @@ h2 em { font-style: italic; color: var(--lamp); }
 
     <nav class="toc">
       <a href="#hero"><span class="num">01</span>Premise</a>
-      <a href="#exam"><span class="num">02</span>Examination</a>
-      <a href="#facts"><span class="num">03</span>Three Facts</a>
-      <a href="#convergence"><span class="num">04</span>Why Now</a>
-      <a href="#baseline"><span class="num">05</span>Honest Baseline</a>
-      <a href="#scan"><span class="num">06</span>Scan</a>
+      <a href="#scan"><span class="num">02</span>Scan</a>
+      <a href="#exam"><span class="num">03</span>Examination</a>
+      <a href="#facts"><span class="num">04</span>Three Facts</a>
+      <a href="#convergence"><span class="num">05</span>Why Now</a>
+      <a href="#baseline"><span class="num">06</span>Honest Baseline</a>
     </nav>
 
     <div class="footer-sig">
@@ -1044,8 +1044,8 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
 
       <div class="cta-row">
-        <a class="btn" href="#exam">See it examine <span class="arrow">→</span></a>
-        <a class="btn ghost" href="#baseline">Read what we miss</a>
+        <a class="btn" href="#scan">Try a file <span class="arrow">→</span></a>
+        <a class="btn ghost" href="#exam">See it examine</a>
       </div>
 
       <div class="stats">
@@ -1064,9 +1064,29 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 02 EXAMINATION =========== -->
+    <!-- =========== § 02 SCAN =========== -->
+    <section class="section" id="scan">
+      <span class="section-num">02 · Scan</span>
+      <h2>Drop your <em>own file.</em></h2>
+      <p class="lede">No account. No tracking. The scanner runs stateless content analysis and returns a verdict in under five seconds for most file kinds.</p>
+
+      <div class="scan-card">
+        <form id="scan-form" enctype="multipart/form-data" novalidate>
+          <label class="drop" id="drop-zone" for="scan-file">
+            <span id="drop-prompt">Click or drop a file</span>
+            <span class="ext">PDF · DOCX · XLSX · HTML · EML · CSV · JSON · PNG · JPEG · SVG · 13 more</span>
+            <input type="file" id="scan-file" name="file" hidden>
+          </label>
+          <button class="btn" type="submit" id="scan-submit" disabled>Scan file <span class="arrow">→</span></button>
+        </form>
+        <div id="scan-status" class="note">Stateless · no file is stored · no telemetry beyond Cloudflare access logs</div>
+        <div id="scan-result" class="scan-result" hidden></div>
+      </div>
+    </section>
+
+    <!-- =========== § 03 EXAMINATION =========== -->
     <section class="section" id="exam">
-      <span class="section-num">02 · Examination</span>
+      <span class="section-num">03 · Examination</span>
       <h2>Three files. Three verdicts. <em>Thirty seconds.</em></h2>
       <p class="lede">Pre-recorded examinations of three real fixtures. No upload, no friction. Click to watch the analyzer read both layers.</p>
 
@@ -1105,9 +1125,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 03 THREE FACTS =========== -->
+    <!-- =========== § 04 THREE FACTS =========== -->
     <section class="section" id="facts">
-      <span class="section-num">03 · Three Facts</span>
+      <span class="section-num">04 · Three Facts</span>
       <h2>The product, in <em>three terms.</em></h2>
 
       <div class="facts">
@@ -1126,9 +1146,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 04 CONVERGENCE =========== -->
+    <!-- =========== § 05 CONVERGENCE =========== -->
     <section class="section" id="convergence">
-      <span class="section-num">04 · Why Now</span>
+      <span class="section-num">05 · Why Now</span>
       <h2>Four prerequisites. <em>One convergence.</em></h2>
       <p class="lede">Bayyinah is not a clever idea waiting on engineering. It is the first work that became possible after four independent threads landed.</p>
 
@@ -1172,9 +1192,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 05 BASELINE =========== -->
+    <!-- =========== § 06 BASELINE =========== -->
     <section class="section" id="baseline">
-      <span class="section-num">05 · Honest Baseline</span>
+      <span class="section-num">06 · Honest Baseline</span>
       <h2>We publish <em>what we miss.</em></h2>
       <p class="lede">42 adversarial fixtures across 7 formats. Every hit and every miss disclosed. v1.1.2 is measured against this exact corpus.</p>
 
@@ -1197,26 +1217,6 @@ h2 em { font-style: italic; color: var(--lamp); }
       <div class="baseline-callout">
         Two full catches, two structural-only, thirty-eight misses. Each miss has a named fix path and a LOC estimate. v1.1.2 closes them, and the next published baseline will count what this one did not.
         <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/adversarial/REPORT.md">→ Read the full corpus on GitHub</a>
-      </div>
-    </section>
-
-    <!-- =========== § 06 SCAN =========== -->
-    <section class="section" id="scan">
-      <span class="section-num">06 · Scan</span>
-      <h2>Drop your <em>own file.</em></h2>
-      <p class="lede">No account. No tracking. The scanner runs stateless content analysis and returns a verdict in under five seconds for most file kinds.</p>
-
-      <div class="scan-card">
-        <form id="scan-form" enctype="multipart/form-data" novalidate>
-          <label class="drop" id="drop-zone" for="scan-file">
-            <span id="drop-prompt">Click or drop a file</span>
-            <span class="ext">PDF · DOCX · XLSX · HTML · EML · CSV · JSON · PNG · JPEG · SVG · 13 more</span>
-            <input type="file" id="scan-file" name="file" hidden>
-          </label>
-          <button class="btn" type="submit" id="scan-submit" disabled>Scan file <span class="arrow">→</span></button>
-        </form>
-        <div id="scan-status" class="note">Stateless · no file is stored · no telemetry beyond Cloudflare access logs</div>
-        <div id="scan-result" class="scan-result" hidden></div>
       </div>
     </section>
 

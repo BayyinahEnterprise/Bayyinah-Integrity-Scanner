@@ -184,6 +184,15 @@ class BatinObjectAnalyzer(BaseAnalyzer):
             findings.extend(self._scan_annotations(reader))
             findings.extend(self._scan_embedded_files(reader))
             findings.extend(self._scan_tounicode_cmaps(reader))
+            # v1.1.2 Day 2 mechanism 04 - PDF document-metadata
+            # concealment via /Info dict and XMP stream. Classifies as
+            # batin (object-graph signal independent of the rendered
+            # surface) and runs in parallel to the v1.1.1 metadata
+            # walk above; does not modify _scan_metadata. Local import
+            # to keep the module head untouched. Closes pdf_gauntlet
+            # fixture 04_metadata.pdf.
+            from analyzers.pdf_metadata_analyzer import detect_pdf_metadata_analyzer
+            findings.extend(detect_pdf_metadata_analyzer(file_path))
 
             return IntegrityReport(
                 file_path=str(file_path),

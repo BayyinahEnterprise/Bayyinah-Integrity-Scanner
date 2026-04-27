@@ -354,6 +354,13 @@ BATIN_MECHANISMS: Final[frozenset[str]] = frozenset({
     "metadata_anomaly",
     "hidden_ocg",
     "tounicode_anomaly",
+    # v1.1.2 Day 2 mechanism 04 - PDF document-metadata concealment.
+    # The /Info dictionary and XMP stream live in the document's
+    # inner object graph; their text is ingested by AI extractors but
+    # never displayed on a rendered page. Classifies as batin (object-
+    # graph signal, no rendered-surface presence) per Day 2 prompt
+    # section 6.6. Closes pdf_gauntlet fixture 04_metadata.pdf.
+    "pdf_metadata_analyzer",
     # Phase 9 — structural concealment in non-PDF formats. A JSON document
     # may silently ship a duplicate key (second occurrence wins in most
     # parsers, first in others — two readers see two meanings); a deeply
@@ -1897,11 +1904,12 @@ SEVERITY: Final[dict[str, float]] = {
     # This is sharper than the v1.1.1 calibration ladder (Tier 1
     # historically 0.10-0.40) but matches the Defense Case F1 stance
     # that an unambiguous concealment finding warrants a full
-    # deduction. The signal class for pdf_off_page_text is structural
+    # deduction. The signal class for these mechanisms is structural
     # and free of legitimate-document false positives in v1.1.2's
     # tested corpus, so the full-deduction calibration does not
     # imply false positives on benign files.
     "pdf_off_page_text":              1.00,
+    "pdf_metadata_analyzer":          1.00,
     # -----------------------------------------------------------------
     # v1.1.2 - Tier 0 routing transparency.
     # -----------------------------------------------------------------
@@ -2266,6 +2274,7 @@ TIER: Final[dict[str, int]] = {
     # v1.1.2 Day 2 - PDF concealment closures (Tier classifications).
     # -----------------------------------------------------------------
     "pdf_off_page_text":              1,
+    "pdf_metadata_analyzer":          1,
     # -----------------------------------------------------------------
     # v1.1.2 - Tier 0 routing transparency.
     # -----------------------------------------------------------------

@@ -36,22 +36,22 @@ def test_registry_is_frozenset() -> None:
     assert isinstance(MECHANISM_REGISTRY, frozenset)
 
 
-def test_registry_count_is_exact_111() -> None:
+def test_registry_count_is_exact_112() -> None:
     """Pin the count. Adding a mechanism must update this number;
     that is itself a structural reminder to update SEVERITY + TIER +
     the source-layer set in the same commit.
 
-    v1.1.2 Day 1 raised the count from 108 (27 zahir + 81 batin) to
-    109 with the addition of format_routing_divergence in
-    ROUTING_MECHANISMS. Day 2 mechanism 03 (pdf_off_page_text, zahir)
-    raised it to 110. Day 2 mechanism 04 (pdf_metadata_analyzer,
-    batin) raises it to 111 (28 zahir + 82 batin + 1 routing).
-    pdf_metadata_analyzer classifies as batin because the /Info
-    dictionary and XMP stream live in the document's inner object
-    graph, not the rendered surface."""
-    assert len(MECHANISM_REGISTRY) == 111, (
-        f"Mechanism count drift: expected 111 "
-        f"(28 zahir + 82 batin + 1 routing), "
+    Progression for v1.1.2:
+      - Day 1 added format_routing_divergence (routing): 108 -> 109.
+      - Day 2 mechanism 03 (pdf_off_page_text, zahir): 109 -> 110.
+      - Day 2 mechanism 04 (pdf_metadata_analyzer, batin): 110 -> 111.
+      - Day 2 mechanism 05 (pdf_trailer_analyzer, batin): 111 -> 112.
+    pdf_trailer_analyzer classifies as batin because the trailing
+    region after the final %%EOF marker is outside the rendered
+    surface and outside the parsed object graph."""
+    assert len(MECHANISM_REGISTRY) == 112, (
+        f"Mechanism count drift: expected 112 "
+        f"(28 zahir + 83 batin + 1 routing), "
         f"got {len(MECHANISM_REGISTRY)} "
         f"(zahir={len(ZAHIR_MECHANISMS)}, batin={len(BATIN_MECHANISMS)}, "
         f"routing={len(ROUTING_MECHANISMS)})"
@@ -64,12 +64,14 @@ def test_zahir_count_is_exact_28() -> None:
     assert len(ZAHIR_MECHANISMS) == 28
 
 
-def test_batin_count_is_exact_82() -> None:
-    """v1.1.2 Day 2 mechanism 04 (pdf_metadata_analyzer) classifies
-    as batin because /Info and XMP signals live in the document's
-    inner object graph; the count moves from 81 (v1.0 baseline) to
-    82."""
-    assert len(BATIN_MECHANISMS) == 82
+def test_batin_count_is_exact_83() -> None:
+    """v1.1.2 Day 2 mechanisms 04 (pdf_metadata_analyzer) and 05
+    (pdf_trailer_analyzer) both classify as batin; the count moves
+    from 81 (v1.0 baseline) through 82 (after mechanism 04) to 83
+    (after mechanism 05). The trailing region after %%EOF is
+    structurally outside the document's parsed object graph and the
+    rendered surface."""
+    assert len(BATIN_MECHANISMS) == 83
 
 
 def test_registry_is_union_of_zahir_batin_and_routing() -> None:

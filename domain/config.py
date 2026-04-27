@@ -361,6 +361,13 @@ BATIN_MECHANISMS: Final[frozenset[str]] = frozenset({
     # graph signal, no rendered-surface presence) per Day 2 prompt
     # section 6.6. Closes pdf_gauntlet fixture 04_metadata.pdf.
     "pdf_metadata_analyzer",
+    # v1.1.2 Day 2 mechanism 05 - non-whitespace bytes after the
+    # final %%EOF marker. Tier 2 (structural anomaly worth review,
+    # not verified concealment). Pure byte scan; no parser needed.
+    # Classifies as batin (the trailing region is outside the
+    # document's rendered surface and outside its parsed object
+    # graph). Closes pdf_gauntlet fixture 05_after_eof.pdf.
+    "pdf_trailer_analyzer",
     # Phase 9 — structural concealment in non-PDF formats. A JSON document
     # may silently ship a duplicate key (second occurrence wins in most
     # parsers, first in others — two readers see two meanings); a deeply
@@ -1910,6 +1917,7 @@ SEVERITY: Final[dict[str, float]] = {
     # imply false positives on benign files.
     "pdf_off_page_text":              1.00,
     "pdf_metadata_analyzer":          1.00,
+    "pdf_trailer_analyzer":           0.50,
     # -----------------------------------------------------------------
     # v1.1.2 - Tier 0 routing transparency.
     # -----------------------------------------------------------------
@@ -2275,6 +2283,7 @@ TIER: Final[dict[str, int]] = {
     # -----------------------------------------------------------------
     "pdf_off_page_text":              1,
     "pdf_metadata_analyzer":          1,
+    "pdf_trailer_analyzer":           2,
     # -----------------------------------------------------------------
     # v1.1.2 - Tier 0 routing transparency.
     # -----------------------------------------------------------------

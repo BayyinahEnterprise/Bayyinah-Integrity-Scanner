@@ -150,6 +150,15 @@ class BatinObjectAnalyzer(BaseAnalyzer):
         try:
             findings: list[Finding] = []
             findings.extend(self._scan_incremental_updates(client))
+            # v1.1.2 Day 2 mechanism 05 - non-whitespace bytes after
+            # the final %%EOF marker. Tier 2 structural anomaly. Pure
+            # byte scan, no parser invoked - placed alongside
+            # _scan_incremental_updates so it works even when pypdf
+            # cannot open the file (mirroring the v1.1.1 incremental-
+            # update discipline). Local import to keep the module
+            # head untouched. Closes pdf_gauntlet fixture 05_after_eof.pdf.
+            from analyzers.pdf_trailer_analyzer import detect_pdf_trailer_analyzer
+            findings.extend(detect_pdf_trailer_analyzer(file_path))
 
             try:
                 reader, err = client.try_pypdf()

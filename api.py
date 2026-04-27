@@ -48,6 +48,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 import bayyinah
 from bayyinah import scan_file
+from domain.value_objects import tamyiz_verdict
 
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MiB hard cap for the demo endpoint
 
@@ -134,6 +135,7 @@ async def scan(file: UploadFile = File(...)) -> JSONResponse:
         # caller does not see the temp path.
         payload = report.to_dict()
         payload["file_path"] = file.filename
+        payload["verdict"] = tamyiz_verdict(report)
         return JSONResponse(content=payload)
     finally:
         try:

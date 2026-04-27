@@ -202,6 +202,21 @@ class BatinObjectAnalyzer(BaseAnalyzer):
             # fixture 04_metadata.pdf.
             from analyzers.pdf_metadata_analyzer import detect_pdf_metadata_analyzer
             findings.extend(detect_pdf_metadata_analyzer(file_path))
+            # v1.1.2 Day 2 mechanism 06 - hidden /Text annotation
+            # with suppression bit + non-whitespace /Contents.
+            # Classifies as zahir (the /F flag and /Contents string
+            # are surface-readable from a single /Annots walk with
+            # no hidden-state inference). Runs in parallel to the
+            # v1.1.1 _scan_annotations walk above and does not
+            # modify it; the existing walk handles file-attachment,
+            # launch-action, and JavaScript subtypes while this new
+            # pass handles text-bearing subtypes with suppression
+            # bits. Local import to keep the module head untouched.
+            # Closes pdf_gauntlet fixture 06_optional_content_group.pdf.
+            from analyzers.pdf_hidden_text_annotation import (
+                detect_pdf_hidden_text_annotation,
+            )
+            findings.extend(detect_pdf_hidden_text_annotation(file_path))
 
             return IntegrityReport(
                 file_path=str(file_path),

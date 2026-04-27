@@ -90,6 +90,16 @@ ZAHIR_MECHANISMS: Final[frozenset[str]] = frozenset({
     # fixture 03_off_page.pdf. See docs/adversarial/pdf_gauntlet/
     # REPORT.md row 03.
     "pdf_off_page_text",
+    # v1.1.2 Day 2 mechanism 06 - hidden /Text annotation with
+    # suppression bit (Hidden, NoView, or LockedContents) AND non-
+    # whitespace /Contents. Tier 1; classifies as zahir because the
+    # /F flag and /Contents string are surface-readable from a single
+    # walk of /Annots with no hidden-state inference, paralleling
+    # pdf_off_page_text and the v1.1.1 off_page_text mechanism.
+    # Closes pdf_gauntlet fixture 06_optional_content_group.pdf
+    # (filename historical; structural signal is the annotation /F=2
+    # bit per pdf_gauntlet/REPORT.md row 06).
+    "pdf_hidden_text_annotation",
     "zero_width_chars",
     "bidi_control",
     "tag_chars",
@@ -1918,6 +1928,7 @@ SEVERITY: Final[dict[str, float]] = {
     "pdf_off_page_text":              1.00,
     "pdf_metadata_analyzer":          1.00,
     "pdf_trailer_analyzer":           0.50,
+    "pdf_hidden_text_annotation":     1.00,
     # -----------------------------------------------------------------
     # v1.1.2 - Tier 0 routing transparency.
     # -----------------------------------------------------------------
@@ -2284,6 +2295,7 @@ TIER: Final[dict[str, int]] = {
     "pdf_off_page_text":              1,
     "pdf_metadata_analyzer":          1,
     "pdf_trailer_analyzer":           2,
+    "pdf_hidden_text_annotation":     1,
     # -----------------------------------------------------------------
     # v1.1.2 - Tier 0 routing transparency.
     # -----------------------------------------------------------------

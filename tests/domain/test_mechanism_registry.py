@@ -36,7 +36,7 @@ def test_registry_is_frozenset() -> None:
     assert isinstance(MECHANISM_REGISTRY, frozenset)
 
 
-def test_registry_count_is_exact_112() -> None:
+def test_registry_count_is_exact_113() -> None:
     """Pin the count. Adding a mechanism must update this number;
     that is itself a structural reminder to update SEVERITY + TIER +
     the source-layer set in the same commit.
@@ -46,31 +46,40 @@ def test_registry_count_is_exact_112() -> None:
       - Day 2 mechanism 03 (pdf_off_page_text, zahir): 109 -> 110.
       - Day 2 mechanism 04 (pdf_metadata_analyzer, batin): 110 -> 111.
       - Day 2 mechanism 05 (pdf_trailer_analyzer, batin): 111 -> 112.
-    pdf_trailer_analyzer classifies as batin because the trailing
-    region after the final %%EOF marker is outside the rendered
-    surface and outside the parsed object graph."""
-    assert len(MECHANISM_REGISTRY) == 112, (
-        f"Mechanism count drift: expected 112 "
-        f"(28 zahir + 83 batin + 1 routing), "
+      - Day 2 mechanism 06 (pdf_hidden_text_annotation, zahir): 112 -> 113.
+    pdf_hidden_text_annotation classifies as zahir because the
+    annotation /F flag and /Contents string are surface-readable
+    from a single /Annots walk with no hidden-state inference,
+    paralleling pdf_off_page_text and the v1.1.1 off_page_text
+    mechanism. With mechanism 06 the Day 2 PDF gauntlet closure
+    is complete: 4 of 4 fixtures CAUGHT (was 2 of 6 on v1.1.1)."""
+    assert len(MECHANISM_REGISTRY) == 113, (
+        f"Mechanism count drift: expected 113 "
+        f"(29 zahir + 83 batin + 1 routing), "
         f"got {len(MECHANISM_REGISTRY)} "
         f"(zahir={len(ZAHIR_MECHANISMS)}, batin={len(BATIN_MECHANISMS)}, "
         f"routing={len(ROUTING_MECHANISMS)})"
     )
 
 
-def test_zahir_count_is_exact_28() -> None:
-    """v1.1.2 Day 2 mechanism 03 (pdf_off_page_text) added a zahir
-    entry; the count moves from 27 to 28."""
-    assert len(ZAHIR_MECHANISMS) == 28
+def test_zahir_count_is_exact_29() -> None:
+    """v1.1.2 Day 2 mechanisms 03 (pdf_off_page_text) and 06
+    (pdf_hidden_text_annotation) both classify as zahir; the count
+    moves from 27 (v1.0 baseline) through 28 (after mechanism 03)
+    to 29 (after mechanism 06). Both signals are surface-readable
+    once the parser walks the relevant object-graph slice (content
+    stream for mechanism 03, /Annots for mechanism 06) with no
+    hidden-state inference."""
+    assert len(ZAHIR_MECHANISMS) == 29
 
 
 def test_batin_count_is_exact_83() -> None:
     """v1.1.2 Day 2 mechanisms 04 (pdf_metadata_analyzer) and 05
     (pdf_trailer_analyzer) both classify as batin; the count moves
     from 81 (v1.0 baseline) through 82 (after mechanism 04) to 83
-    (after mechanism 05). The trailing region after %%EOF is
-    structurally outside the document's parsed object graph and the
-    rendered surface."""
+    (after mechanism 05). Mechanism 06 (pdf_hidden_text_annotation)
+    classifies as zahir, so the batin count remains at 83 for the
+    Day 2 closure."""
     assert len(BATIN_MECHANISMS) == 83
 
 

@@ -373,7 +373,7 @@ _TEXT_FIXTURE_EXPECTED: dict[str, frozenset[str]] = {
     "text.zero_width":       frozenset({"zero_width_chars"}),
     "text.tag_characters":   frozenset({"tag_chars"}),
     "text.bidi_control":     frozenset({"bidi_control"}),
-    "text.homoglyph":        frozenset({"homoglyph"}),
+    "text.homoglyph":        frozenset({"homoglyph", "tounicode_anomaly"}),
     "text.invisible_render": frozenset({"invisible_render_mode"}),
     "text.microscopic_font": frozenset({"microscopic_font"}),
     "text.white_on_white":   frozenset({"white_on_white_text"}),

@@ -1,5 +1,11 @@
 # Handoff: Bayyinah v1.1.1
 
+> **Note:** This document describes v1.1.1. The current release is
+> **v1.1.2** (145 mechanisms, 1,671 tests, six closed format gauntlets).
+> See [CHANGELOG.md](CHANGELOG.md) for the v1.1.1 to v1.1.2 delta.
+> A full v1.1.2 rewrite of this handoff is scheduled for the next
+> hygiene pass.
+
 *Bismillah ar-Rahman ar-Raheem.*
 
 This folder is the full Bayyinah v1.1.1 patch release. It is the

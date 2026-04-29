@@ -1,122 +1,217 @@
 [
   {
     "fixture": "01_noscript.html",
-    "score": 1.0,
+    "score": 0.0,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "html_noscript_payload"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "html_noscript_payload (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/01_noscript.html",
-      "integrity_score": 1.0,
+      "integrity_score": 0.0,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "html_noscript_payload",
+          "tier": 1,
+          "confidence": 1.0,
+          "description": "<noscript> element carries 55 characters of body text. The browser renders this only when JavaScript is disabled, but indexers, crawlers, and LLM ingestion pipelines read the body verbatim regardless of script state. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/01_noscript.html:line9:noscript",
+          "surface": "(rendered view omits this text)",
+          "concealed": "noscript body: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "02_template.html",
-    "score": 1.0,
+    "score": 0.0,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "html_template_payload"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "html_template_payload (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/02_template.html",
-      "integrity_score": 1.0,
+      "integrity_score": 0.0,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "html_template_payload",
+          "tier": 1,
+          "confidence": 1.0,
+          "description": "<template> element carries 55 characters of body text. The browser parses but does not render <template> contents until JavaScript instantiates them; indexers and LLM ingestion paths flatten the body to text regardless. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/02_template.html:line9:template",
+          "surface": "(rendered view omits this text)",
+          "concealed": "template body: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "03_comment_payload.html",
-    "score": 1.0,
+    "score": 0.0,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "html_comment_payload"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "html_comment_payload (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/03_comment_payload.html",
-      "integrity_score": 1.0,
+      "integrity_score": 0.0,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "html_comment_payload",
+          "tier": 1,
+          "confidence": 1.0,
+          "description": "HTML comment carries 55 non-whitespace characters - well above routine comment length. Comments are stripped from the rendered tree but preserved verbatim in source view, indexers, and LLM ingestion paths. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/03_comment_payload.html:line9:comment",
+          "surface": "(rendered view omits this text)",
+          "concealed": "comment body: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "04_meta_content.html",
-    "score": 1.0,
+    "score": 0.0,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 2,
     "tier_counts": {
-      "1": 0,
+      "1": 2,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "html_meta_payload"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "html_meta_payload (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/04_meta_content.html",
-      "integrity_score": 1.0,
+      "integrity_score": 0.0,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "html_meta_payload",
+          "tier": 1,
+          "confidence": 1.0,
+          "description": "<meta name='description' content=...> carries 55 characters that do not appear anywhere in the rendered body of the document. Indexers and unfurlers read this verbatim; the rendered page does not. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/04_meta_content.html:line6:meta:description",
+          "surface": "(rendered view omits this text)",
+          "concealed": "meta description content: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        },
+        {
+          "mechanism": "html_meta_payload",
+          "tier": 1,
+          "confidence": 1.0,
+          "description": "<meta name='keywords' content=...> carries 55 characters that do not appear anywhere in the rendered body of the document. Indexers and unfurlers read this verbatim; the rendered page does not. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/04_meta_content.html:line7:meta:keywords",
+          "surface": "(rendered view omits this text)",
+          "concealed": "meta keywords content: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "05_css_content.html",
-    "score": 1.0,
+    "score": 0.0,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "html_style_content_payload"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "html_style_content_payload (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/05_css_content.html",
-      "integrity_score": 1.0,
+      "integrity_score": 0.0,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "html_style_content_payload",
+          "tier": 1,
+          "confidence": 1.0,
+          "description": "<style> block contains a CSS content: declaration on '.invoice-note::before' that lives in a rule body that also carries a render-suppressing declaration (white / transparent / opacity:0 / display:none / visibility:hidden). Pseudo-element content reaches the DOM via getComputedStyle and is read by indexers and LLM ingestion paths regardless of color or visibility. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/05_css_content.html:line8:style:.invoice-note::before",
+          "surface": "(rendered view suppresses or omits this text)",
+          "concealed": "CSS content payload on '.invoice-note::before': 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "06_title_payload.html",
-    "score": 1.0,
+    "score": 0.0,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "html_title_text_divergence"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "html_title_text_divergence (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/06_title_payload.html",
-      "integrity_score": 1.0,
+      "integrity_score": 0.0,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "html_title_text_divergence",
+          "tier": 1,
+          "confidence": 1.0,
+          "description": "<title> is 55 characters and does not appear anywhere in the rendered body of the document. Browser tab, bookmarks, search results, and social-media unfurlers display this string while the rendered body shows different content. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/html_gauntlet/fixtures/06_title_payload.html:line5:title",
+          "surface": "browser tab title: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'",
+          "concealed": "title diverges from rendered body: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'",
+          "source_layer": "zahir",
+          "inversion_recovery": {}
+        }
+      ]
     }
   }
 ]

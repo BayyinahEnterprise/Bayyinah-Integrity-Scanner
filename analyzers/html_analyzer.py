@@ -86,6 +86,23 @@ from domain.config import (
 )
 from infrastructure.file_router import FileKind
 
+# v1.1.2 HTML format-gauntlet detectors. Each is a standalone byte-
+# deterministic Tier 1 detector that opens the file and yields
+# Findings. They run alongside the HTMLParser walk above and surface
+# payload loci the walker intentionally skips (non-visible containers,
+# meta content, comments, CSS pseudo-element content, title/body
+# divergence).
+from analyzers.html_noscript_payload import detect_html_noscript_payload
+from analyzers.html_template_payload import detect_html_template_payload
+from analyzers.html_comment_payload import detect_html_comment_payload
+from analyzers.html_meta_payload import detect_html_meta_payload
+from analyzers.html_style_content_payload import (
+    detect_html_style_content_payload,
+)
+from analyzers.html_title_text_divergence import (
+    detect_html_title_text_divergence,
+)
+
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -715,10 +732,32 @@ class HtmlAnalyzer(BaseAnalyzer):
             partial.scan_incomplete = True
             return partial
 
+        # v1.1.2 - run the format-gauntlet detectors after the walker.
+        # Each detector reads its own bytes from the same path; this
+        # mirrors the DOCX / XLSX wiring pattern. Detector failures are
+        # absorbed silently here (the surface they target is the same
+        # bytes the walker just successfully decoded, so a failure is
+        # extremely unlikely; if one occurs, the walker's findings
+        # remain authoritative).
+        v112_findings: list[Finding] = []
+        for detector in (
+            detect_html_noscript_payload,
+            detect_html_template_payload,
+            detect_html_comment_payload,
+            detect_html_meta_payload,
+            detect_html_style_content_payload,
+            detect_html_title_text_divergence,
+        ):
+            try:
+                v112_findings.extend(detector(file_path))
+            except Exception:  # noqa: BLE001 - defensive, keep walker's findings
+                continue
+
+        all_findings = walker.findings + v112_findings
         return IntegrityReport(
             file_path=str(file_path),
-            integrity_score=compute_muwazana_score(walker.findings),
-            findings=walker.findings,
+            integrity_score=compute_muwazana_score(all_findings),
+            findings=all_findings,
         )
 
     # ------------------------------------------------------------------

@@ -1,42 +1,149 @@
 [
   {
     "fixture": "01_jpeg_app4_payload.jpg",
-    "score": 1.0,
+    "score": 0.82,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "image_jpeg_appn_payload"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "image_jpeg_appn_payload (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/01_jpeg_app4_payload.jpg",
-      "integrity_score": 1.0,
+      "integrity_score": 0.82,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "image_jpeg_appn_payload",
+          "tier": 1,
+          "confidence": 0.9,
+          "description": "JPEG APP4 segment (0xFFE4) at offset 2 carries 55 characters of readable UTF-8 text at 100% printable density. APP4 through APP15 are not standardised and carry no legitimate natural-language payload in office or financial document workflows. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/01_jpeg_app4_payload.jpg@segment:2",
+          "surface": "(JPEG APP4 marker not rendered)",
+          "concealed": "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
+    }
+  },
+  {
+    "fixture": "02_5_png_text_chunk_payload.png",
+    "score": 0.04500000000000007,
+    "scan_incomplete": false,
+    "n_findings": 6,
+    "tier_counts": {
+      "1": 3,
+      "2": 2,
+      "3": 1
+    },
+    "mechanisms": [
+      "bidi_control",
+      "image_png_text_chunk_payload",
+      "image_text_metadata",
+      "zero_width_chars"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "image_text_metadata (in description/location)",
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/02_5_png_text_chunk_payload.png",
+      "integrity_score": 0.04500000000000007,
+      "scan_incomplete": false,
+      "findings": [
+        {
+          "mechanism": "image_text_metadata",
+          "tier": 3,
+          "confidence": 0.6,
+          "description": "Human-readable text found in PNG tEXt chunk keyword='Comment': '\\u202eHIDDEN_TEXT_PAYLOAD: actual revenue $10,000\\u200b - see annex'. Text in image metadata is routine; surfaced so the reader can judge whether the content is expected.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/02_5_png_text_chunk_payload.png@segment:55",
+          "surface": "(not visible in the rendered image)",
+          "concealed": "metadata text (57 chars)",
+          "source_layer": "zahir",
+          "inversion_recovery": {}
+        },
+        {
+          "mechanism": "bidi_control",
+          "tier": 2,
+          "confidence": 0.9,
+          "description": "1 bidi control codepoint(s) (U+202E) embedded in PNG tEXt chunk keyword='Comment'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/02_5_png_text_chunk_payload.png@segment:55",
+          "surface": "(no visible indication)",
+          "concealed": "1 codepoint(s)",
+          "source_layer": "zahir",
+          "inversion_recovery": {}
+        },
+        {
+          "mechanism": "zero_width_chars",
+          "tier": 2,
+          "confidence": 0.9,
+          "description": "1 zero width chars codepoint(s) (U+200B) embedded in PNG tEXt chunk keyword='Comment'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/02_5_png_text_chunk_payload.png@segment:55",
+          "surface": "(no visible indication)",
+          "concealed": "1 codepoint(s)",
+          "source_layer": "zahir",
+          "inversion_recovery": {}
+        },
+        {
+          "mechanism": "image_png_text_chunk_payload",
+          "tier": 1,
+          "confidence": 0.95,
+          "description": "PNG tEXt chunk at offset 55 with keyword 'Comment' contains bidirectional-override codepoints (U+202E) that reorder rendered glyphs vs. the underlying byte order. Recovered text: '\\u202eHIDDEN_TEXT_PAYLOAD: actual revenue $10,000\\u200b - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/02_5_png_text_chunk_payload.png@chunk:55",
+          "surface": "(PNG tEXt chunk keyword 'Comment' not rendered)",
+          "concealed": "\u202eHIDDEN_TEXT_PAYLOAD: actual revenue $10,000\u200b - see annex",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        },
+        {
+          "mechanism": "image_png_text_chunk_payload",
+          "tier": 1,
+          "confidence": 0.95,
+          "description": "PNG tEXt chunk at offset 55 with keyword 'Comment' contains zero-width codepoints (U+200B) that are invisible in any renderer but present in the bytes. Recovered text: '\\u202eHIDDEN_TEXT_PAYLOAD: actual revenue $10,000\\u200b - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/02_5_png_text_chunk_payload.png@chunk:55",
+          "surface": "(PNG tEXt chunk keyword 'Comment' not rendered)",
+          "concealed": "\u202eHIDDEN_TEXT_PAYLOAD: actual revenue $10,000\u200b - see annex",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        },
+        {
+          "mechanism": "image_png_text_chunk_payload",
+          "tier": 1,
+          "confidence": 0.9,
+          "description": "PNG tEXt chunk at offset 55 with keyword 'Comment' contains explicit concealment markers (HIDDEN_, PAYLOAD). Markers of this shape are not natural-language metadata and indicate a hidden region delimited in the chunk value. Recovered text: '\\u202eHIDDEN_TEXT_PAYLOAD: actual revenue $10,000\\u200b - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/02_5_png_text_chunk_payload.png@chunk:55",
+          "surface": "(PNG tEXt chunk keyword 'Comment' not rendered)",
+          "concealed": "\u202eHIDDEN_TEXT_PAYLOAD: actual revenue $10,000\u200b - see annex",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "02_png_private_chunk.png",
-    "score": 0.925,
+    "score": 0.775,
     "scan_incomplete": false,
-    "n_findings": 1,
+    "n_findings": 2,
     "tier_counts": {
       "1": 0,
-      "2": 0,
+      "2": 1,
       "3": 1
     },
     "mechanisms": [
+      "image_png_private_chunk",
       "suspicious_image_chunk"
     ],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "payload_recovered": true,
+    "payload_recovered_via": "image_png_private_chunk (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/02_png_private_chunk.png",
-      "integrity_score": 0.925,
+      "integrity_score": 0.775,
       "scan_incomplete": false,
       "findings": [
         {
@@ -49,88 +156,189 @@
           "concealed": "55 bytes under chunk type 'prVt'",
           "source_layer": "batin",
           "inversion_recovery": {}
+        },
+        {
+          "mechanism": "image_png_private_chunk",
+          "tier": 2,
+          "confidence": 0.75,
+          "description": "PNG private ancillary chunk 'prVt' at offset 55 carries 55 characters of readable UTF-8 text at 100% printable density. Private ancillary chunks are documented PNG infrastructure for vendor-specific metadata, but their use to carry natural-language text outside a known vendor namespace is structurally notable. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/02_png_private_chunk.png@chunk:55",
+          "surface": "(PNG private chunk prVt not rendered)",
+          "concealed": "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex",
+          "source_layer": "batin",
+          "inversion_recovery": {}
         }
       ]
     }
   },
   {
     "fixture": "03_svg_white_text.svg",
-    "score": 1.0,
+    "score": 0.0,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "svg_white_text"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "svg_white_text (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/03_svg_white_text.svg",
-      "integrity_score": 1.0,
+      "integrity_score": 0.0,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "svg_white_text",
+          "tier": 1,
+          "confidence": 1.0,
+          "description": "SVG <text> element with fill #FFFFFF carrying 55 characters of text on a white canvas. White-on-white text is invisible to a human reader but plainly readable in the SVG source. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/03_svg_white_text.svg@svg:text",
+          "surface": "(SVG <text> rendered in white #FFFFFF on white canvas)",
+          "concealed": "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex",
+          "source_layer": "zahir",
+          "inversion_recovery": {}
+        }
+      ]
+    }
+  },
+  {
+    "fixture": "04_5_svg_desc_payload.svg",
+    "score": 0.8725,
+    "scan_incomplete": false,
+    "n_findings": 1,
+    "tier_counts": {
+      "1": 1,
+      "2": 0,
+      "3": 0
+    },
+    "mechanisms": [
+      "svg_desc_payload"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "svg_desc_payload (in description/location)",
+    "raw": {
+      "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/04_5_svg_desc_payload.svg",
+      "integrity_score": 0.8725,
+      "scan_incomplete": false,
+      "findings": [
+        {
+          "mechanism": "svg_desc_payload",
+          "tier": 1,
+          "confidence": 0.85,
+          "description": "SVG <desc> element carries 400 UTF-8 bytes of text content, exceeding the 256-byte threshold for legitimate accessibility descriptions. Long descriptions are structurally anomalous: <desc> is the SVG long-form accessibility surface, scanned by indexers and LLMs but not rendered as glyph content. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 across all reporting segments. The figure on the front page reflects net of intercompany eliminations and partner rebates that will be reversed in the annex. The annex is shipped under separate co...'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/04_5_svg_desc_payload.svg@svg:desc",
+          "surface": "(SVG <desc> not rendered as glyph content)",
+          "concealed": "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 across all reporting segments. The figure on the front page reflects net of intercompany eliminations and partner rebates that will be reversed in the annex. The annex is shipped under separate co...",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "04_svg_title_payload.svg",
-    "score": 1.0,
+    "score": 0.8725,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "svg_title_payload"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "svg_title_payload (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/04_svg_title_payload.svg",
-      "integrity_score": 1.0,
+      "integrity_score": 0.8725,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "svg_title_payload",
+          "tier": 1,
+          "confidence": 0.85,
+          "description": "SVG <title> element carries 96 UTF-8 bytes of text content, exceeding the 64-byte threshold for legitimate accessibility tooltips. Long titles are structurally anomalous: <title> is the SVG accessibility tooltip surface, scanned by indexers and LLMs but not rendered as glyph content. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex appendix B for full reconciliation table'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/04_svg_title_payload.svg@svg:title",
+          "surface": "(SVG <title> not rendered as glyph content)",
+          "concealed": "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex appendix B for full reconciliation table",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "05_svg_metadata_payload.svg",
-    "score": 1.0,
+    "score": 0.8725,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "svg_metadata_payload"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "svg_metadata_payload (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/05_svg_metadata_payload.svg",
-      "integrity_score": 1.0,
+      "integrity_score": 0.8725,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "svg_metadata_payload",
+          "tier": 1,
+          "confidence": 0.85,
+          "description": "SVG <metadata> block carries 204 UTF-8 bytes of aggregate text content, exceeding the 128-byte threshold for legitimate RDF/Dublin Core metadata. Long metadata text is structurally anomalous: <metadata> is the SVG machine-readable annotation surface (license, creator, title), scanned by indexers and LLMs but not rendered as glyph content. Recovered text: 'Q3 financial summary chart\\n        Acme Finance Team\\n        HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex Detailed restatement: prior-quarter offset reconciled, auditor sign-off pending review.'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/05_svg_metadata_payload.svg@svg:metadata",
+          "surface": "(SVG <metadata> not rendered as glyph content)",
+          "concealed": "Q3 financial summary chart\n        Acme Finance Team\n        HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex Detailed restatement: prior-quarter offset reconciled, auditor sign-off pending review.",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "06_svg_defs_text.svg",
-    "score": 1.0,
+    "score": 0.82,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "svg_defs_unreferenced_text"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "svg_defs_unreferenced_text (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/06_svg_defs_text.svg",
-      "integrity_score": 1.0,
+      "integrity_score": 0.82,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "svg_defs_unreferenced_text",
+          "tier": 1,
+          "confidence": 0.9,
+          "description": "SVG <text> element nested inside <defs> with unrendered content: id='hidden-payload' is not referenced by any <use> element. <defs> is the SVG template surface; its children render only when instantiated via <use href=\"#id\">. Unreferenced text in <defs> is read by indexers and LLMs but never appears as glyph content for the human reader. Recovered text: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/image_gauntlet/fixtures/06_svg_defs_text.svg@svg:defs/text",
+          "surface": "(SVG <defs>/<text> not rendered as glyph content)",
+          "concealed": "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   }
 ]

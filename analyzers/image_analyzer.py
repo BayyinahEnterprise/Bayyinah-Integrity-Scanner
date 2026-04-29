@@ -98,6 +98,11 @@ from domain.config import (
 )
 from infrastructure.file_router import FileKind
 
+# v1.1.2 image gauntlet detectors (standalone modules).
+from analyzers.image_jpeg_appn_payload import detect_image_jpeg_appn_payload
+from analyzers.image_png_private_chunk import detect_image_png_private_chunk
+from analyzers.image_png_text_chunk_payload import detect_image_png_text_chunk_payload
+
 # Phase 12 — pre-compiled cipher-shape regexes.
 _B64_RE = re.compile(GENERATIVE_CIPHER_B64_PATTERN)
 _HEX_RE = re.compile(GENERATIVE_CIPHER_HEX_PATTERN)
@@ -472,8 +477,13 @@ class ImageAnalyzer(BaseAnalyzer):
 
         if data.startswith(_PNG_SIGNATURE):
             findings = list(self._scan_png(data, file_path))
+            # v1.1.2 image gauntlet: post-walker PNG detectors.
+            findings.extend(detect_image_png_private_chunk(file_path))
+            findings.extend(detect_image_png_text_chunk_payload(file_path))
         elif data.startswith(_JPEG_SOI):
             findings = list(self._scan_jpeg(data, file_path))
+            # v1.1.2 image gauntlet: post-walker JPEG detectors.
+            findings.extend(detect_image_jpeg_appn_payload(file_path))
         else:
             # Router sent us this file but the magic doesn't match.
             # Rather than silently pass, emit a scan_error so the final

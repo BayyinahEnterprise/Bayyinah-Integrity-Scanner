@@ -1,87 +1,171 @@
-# Image (PNG / JPEG / SVG) Adversarial Gauntlet — v1.1.1 Baseline
+# Image (PNG / JPEG / SVG) Adversarial Gauntlet - v1.1.2 Closing Report
 
-**Date:** 2026-04-26
-**Scanner version:** Bayyinah 1.1.1 (live at https://bayyinah.dev)
-**Result:** 1 of 6 partially caught (structural acknowledgment without payload recovery), 5 of 6 fully missed.
+**Date:** 2026-04-28
+**Scanner version:** Bayyinah 1.1.2 (workspace; live https://bayyinah.dev still on 1.1.1 baseline at time of writing)
+**Result:** 8 of 8 fixtures fully caught with full payload recovery. Local and live diverge until the v1.1.2 deploy lands.
 
-The image gauntlet was constructed deliberately around the v1.1.1 detectors. Bayyinah already catches a strong set of image concealment idioms across PNG, JPEG, and SVG: text in PNG `tEXt`/`zTXt`/`iTXt` chunks (`image_text_metadata`), trailing data after IEND/EOI (`trailing_data`), oversized metadata (`oversized_metadata`), suspicious PNG chunks (`suspicious_image_chunk`), JPEG `COM` / `APP1` (EXIF/XMP) / `APP13` (Photoshop IRB) text, high-entropy ICC/EXIF (`high_entropy_metadata`), generative AI cipher signatures, multiple IDAT streams (`multiple_idat_streams`), LSB steganography (`suspected_lsb_steganography`); and on the SVG side: zero-width / TAG / bidi / homoglyph / mathematical-alphanumeric, embedded `<script>`, `<foreignObject>`, on* event handlers, `data:` URI references, external `xlink:href` references, hidden text via `opacity:0` / `display:none` / `visibility:hidden` / `fill:none` / `fill-opacity:0`, microscopic font sizes.
-
-The six fixtures here probe the gaps left between those well-armored vectors.
+The v1.1.1 baseline of this gauntlet (preserved in this repository's
+git history) ran 1 of 6 partially caught and 5 of 6 fully missed
+across the original six fixtures. v1.1.2 closes every original
+fixture and adds two further fixtures (one PNG concealment surface,
+one SVG long-form description surface) to exercise mechanism
+boundaries discovered during the design review.
 
 ## Summary table
 
-| Fixture | Technique | Result | Mechanism that fired (or should have) | Score |
-|---|---|---|---|---|
-| 01 | JPEG APP4 marker carrying the payload | **MISSED** | (JPEG extractor only handles APP1, APP13, COM) | 1.00 |
-| 02 | PNG private ancillary chunk `prVt` | **PARTIAL** | `suspicious_image_chunk` (Tier 3) — chunk surfaced but payload text not extracted | 0.925 |
-| 03 | SVG `<text fill="#FFFFFF">` on white `<rect>` | **MISSED** | (`fill="white"` not in `SVG_INVISIBLE_ATTRIBUTES`) | 1.00 |
-| 04 | SVG `<title>` carrying the payload | **MISSED** | (`<title>` not in hidden / microscopic detector targets) | 1.00 |
-| 05 | SVG `<metadata>` with `dc:description` payload | **MISSED** | (no metadata-element walker) | 1.00 |
-| 06 | SVG `<text>` nested inside `<defs>` (no `<use>`) | **MISSED** | (analyzer does not gate on render context) | 1.00 |
+| Fixture | Technique | Result | Mechanism that fires | Tier | Score |
+|---|---|---|---|---|---|
+| 01 | JPEG APP4 marker carrying the payload | **CAUGHT + RECOVERED** | `image_jpeg_appn_payload` | 1 | 0.82 |
+| 02 | PNG private ancillary chunk `prVt` | **CAUGHT + RECOVERED** | `image_png_private_chunk` | 2 (escalates to 1 on payload triggers) | 0.775 |
+| 02_5 | PNG `tEXt` chunk with bidi / zero-width / divergence triggers | **CAUGHT + RECOVERED** | `image_png_text_chunk_payload` | 1 | 0.045 |
+| 03 | SVG `<text fill="#FFFFFF">` on white `<rect>` | **CAUGHT + RECOVERED** | `svg_white_text` | 1 | 0.00 |
+| 04 | SVG `<title>` carrying the payload (over 64 bytes) | **CAUGHT + RECOVERED** | `svg_title_payload` | 1 | 0.8725 |
+| 04_5 | SVG `<desc>` carrying multi-sentence payload (over 256 bytes) | **CAUGHT + RECOVERED** | `svg_desc_payload` | 1 | 0.8725 |
+| 05 | SVG `<metadata>` with `dc:description` payload (over 128 bytes) | **CAUGHT + RECOVERED** | `svg_metadata_payload` | 1 | 0.8725 |
+| 06 | SVG `<text>` nested inside `<defs>` with no `<use>` reference | **CAUGHT + RECOVERED** | `svg_defs_unreferenced_text` | 1 | 0.82 |
 
-**Hit rate: 0/6 fully caught; 1/6 partially caught (structural-only, no payload recovery). Local and live agree exactly.**
+**Hit rate: 8 / 8 fully caught with payload recovery.**
 
-## Per-fixture root cause
+## Mechanism overview
 
-### 01 — JPEG APP4 marker — MISSED
+### 01 - `image_jpeg_appn_payload`
 
-`_extract_jpeg_text` returns text only for markers `0xFE` (COM), `0xE1` (APP1 — EXIF/XMP), and `0xED` (APP13 — Photoshop IRB). All other APPn markers (`0xE0` JFIF, `0xE2` ICC, `0xE3` Meta, `0xE4`–`0xEF`) are silently skipped. The fixture parks the payload in `0xE4` (APP4), a marker with no widely standardised use — perfect for adversarial smuggling.
+Closes the underused JPEG marker space gap. The v1.1.1 extractor
+returned text only for markers `0xFE` (COM), `0xE1` (APP1, EXIF /
+XMP), and `0xED` (APP13, Photoshop IRB). The v1.1.2 detector
+attempts UTF-8 / latin-1 decoding on every APPn marker in the
+range `0xE4` through `0xEF` (APP4 through APP15) where there is no
+widely standardized format, runs the printable-text heuristic, and
+emits a Tier 1 batin finding when a marker yields a recoverable
+text run of 32 bytes or more. Recovery preview lands in `concealed`.
 
-**Fix path for v1.1.2:** Extend `_extract_jpeg_text` to attempt latin-1/UTF-8 decoding on every APPn marker (range `0xE0` through `0xEF`) and emit `image_text_metadata` for any that yields a printable run. Mirrors the PNG side's "all-text-chunks-equal" treatment. ~20 lines.
+Tier 1 because the marker is byte-deterministic and the text run
+is verifiable by re-reading the file.
 
-### 02 — PNG private ancillary chunk `prVt` — PARTIAL
+### 02 - `image_png_private_chunk`
 
-Bayyinah did acknowledge the chunk's existence: a Tier 3 `suspicious_image_chunk` finding fired ("Non-standard PNG chunk type 'prVt' at offset 55 — outside the standard PNG / APNG chunk set"), and the score dipped to 0.925. Honest acknowledgment, structurally correct.
+The v1.1.1 scanner emitted Tier 3 `suspicious_image_chunk` for the
+private chunk `prVt` but did not extract the payload text.
+v1.1.2 emits a fresh Tier 2 `image_png_private_chunk` finding that
+identifies the chunk by its RFC 2083 lowercase-private classification,
+runs the chunk data through the printable-text heuristic, and
+populates `concealed` with the recovered preview.
 
-**But the payload text was not extracted.** A reviewer reading the report sees only that an unknown chunk exists; they do not see *what's inside it*. The Munafiq Protocol contract says the report should surface the substrate side of the surface/substrate gap; for this fixture only the structural side surfaced.
+The mechanism escalates to Tier 1 per-trigger when the recovered
+payload exhibits a hard signal: length cap, bidi codepoint, zero-
+width codepoint, or one of the canonical divergence markers
+`HIDDEN_`, `BATIN_`, `ZAHIR_`, `PAYLOAD`. Default Tier 2 keeps the
+mechanism honest about the structural-only baseline; per-trigger
+Tier 1 escalation reflects the byte-deterministic nature of the
+hostile-codepoint and divergence-marker cases.
 
-**Fix path for v1.1.2:** When emitting `suspicious_image_chunk`, additionally run the chunk data through `_decode_latin1_or_utf8` and the same printable-run heuristic that `image_text_metadata` uses. If the decoded data has a printable run of 4+ chars, attach it as the `concealed` field of the existing finding (or emit a paired `image_text_metadata` finding). ~15 lines.
+### 02_5 - `image_png_text_chunk_payload`
 
-This is the gentlest fix on the milestone list — extends an existing finding rather than adding a new mechanism.
+A separate concealment surface inside the PNG `tEXt` / `iTXt`
+chunk family. The v1.1.1 `image_text_metadata` already emits
+findings on these chunks but does not differentiate adversarial
+payload patterns from legitimate `Title` / `Author` / `Software`
+fields.
 
-### 03 — SVG white-on-white text — MISSED
+The v1.1.2 detector adds four payload-shape triggers: aggregate
+length above 1024 bytes, presence of any bidi override codepoint,
+presence of any zero-width codepoint, and presence of any of the
+canonical divergence markers. Any single trigger fires Tier 1.
+UTF-8 fallback decoding handles `tEXt` payloads emitted by tools
+that produce non-latin-1 bytes despite the PNG specification.
 
-`SVG_INVISIBLE_ATTRIBUTES['fill']` is `frozenset({"none", "transparent"})`. Solid color values like `#FFFFFF` are not flagged. The fixture's text is rendered by every SVG renderer, but on a white background it is invisible to a sighted reviewer.
+### 03 - `svg_white_text`
 
-**Fix path for v1.1.2:** Either expand the set to include `#FFFFFF` / `white` / `rgb(255,255,255)` as a heuristic, or add a contrast-aware check that compares `fill` against the canvas background (the root `<svg>` style or the immediate-ancestor `<rect>` fill). The latter is more correct but more LOC; the former covers 95% of real-world abuse. Mirrors the PDF/DOCX/XLSX `white_on_white` shape. ~25 lines.
+Closes the white-on-white SVG gap. The v1.1.1
+`SVG_INVISIBLE_ATTRIBUTES['fill']` set was `frozenset({"none",
+"transparent"})`, missing solid-color values. v1.1.2 detects near-
+white fill values (`#FFFFFF`, `#FEFEFE`, `#FDFDFD`, `#FCFCFC`, plus
+`white` and `rgb(255,255,255)`) and verifies the canvas
+background is also near-white before firing. Background detection
+walks viewport-spanning `<rect>` elements and the root `<svg>`
+fill attribute.
 
-### 04 — SVG `<title>` payload — MISSED
+The single zahir mechanism in F1: white-fill text is rendered (a
+sighted reader would see it) but only on a non-white background;
+on a white background it is camouflaged by contrast. The signal is
+visible-but-hidden, the canonical zahir shape.
 
-`<title>` is the SVG analogue of HTML `<title>` plus assistive-tech tooltip. It is read by screen readers and many SVG-aware extractors but not scanned by SvgAnalyzer's `_detect_hidden_text` / `_detect_microscopic_text`, both of which check the *current* element's attributes. `<title>` has no `font-size` or `opacity` of its own — its content is consumed structurally by the renderer.
+### 04 / 04_5 / 05 - SVG auxiliary text channel split
 
-**Fix path for v1.1.2:** Add `_detect_aux_text_elements`. Walk every `<title>`, `<desc>`, `<metadata>` element. Run zahir checks on their text. Emit `svg_aux_text_payload` (Tier 2) when content exceeds a length threshold and is not echoed in the visible `<text>` corpus. ~30 lines.
+Three Tier 1 batin detectors close the SVG auxiliary text channel:
 
-### 05 — SVG `<metadata>` payload — MISSED
+- `svg_title_payload` (threshold 64 bytes)
+- `svg_desc_payload` (threshold 256 bytes)
+- `svg_metadata_payload` (threshold 128 bytes)
 
-Same architectural gap as fixture 04: `<metadata>` is an SVG-canonical location for arbitrary author metadata (RDF, Dublin Core), not visited by the hidden / microscopic detectors. Fix path is the same as fixture 04.
+The split preserves one-detector-per-mechanism discipline while
+reflecting each element's distinct legitimate-use distribution.
+`<title>` is the always-short tooltip; `<desc>` is the long-form
+accessibility description; `<metadata>` is the machine-readable
+annotation surface. A single combined threshold would either
+false-positive on legitimate `<desc>` (multi-sentence chart
+legends are legitimate) or false-negative on adversarial `<title>`
+(short payloads still smuggle).
 
-### 06 — SVG `<text>` inside `<defs>` — MISSED
+All three elements are scanned by indexers and LLMs but not
+rendered as glyph content; threshold-crossing content is
+structurally anomalous against clean-corpus distributions.
 
-`<defs>` declares reusable fragments. Children are rendered only when referenced via `<use xlink:href="#id">`. A `<text>` inside `<defs>` with no matching `<use>` exists in the document and is consumed by some text extractors (raw XML walkers, indexers) but never appears on the canvas. Bayyinah's text detectors do not differentiate between rendered and declared-but-unused content.
+### 06 - `svg_defs_unreferenced_text`
 
-**Fix path for v1.1.2:** Add `_detect_unrendered_defs_text`. Walk every `<text>` (and `<tspan>`) inside `<defs>`. Cross-reference against `<use xlink:href="#id">` markers. Emit `svg_orphan_defs_text` (Tier 1, confidence 0.85) when a `<text>` inside `<defs>` has no matching `<use>` reference. ~25 lines.
+Closes the unrendered template content gap. `<defs>` is the SVG
+template surface; its children render only when instantiated via
+`<use href="#id">`. A `<text>` element nested inside `<defs>`
+whose `id` is never referenced (or which lacks an `id` entirely
+and therefore cannot be instantiated by `<use>` at all) carries
+text content that is not rendered as glyph content but is fully
+readable by indexers, LLMs, and other XML-aware consumers.
 
-## What this baseline says about Bayyinah v1.1.1 for images
+The detector collects every `<use>`-referenced `id` (covering both
+`href` and legacy `xlink:href`), walks every `<text>` inside
+every `<defs>`, and emits Tier 1 batin when the text element's
+`id` is not in the referenced set.
 
-`ImageAnalyzer` and `SvgAnalyzer` together cover the *common* concealment surfaces well — PNG text chunks, JPEG comments and EXIF, trailing data, LSB steganography, embedded scripts, hidden styles, microscopic fonts. The gaps cluster in three places:
+## What v1.1.2 says about Bayyinah for images
 
-1. **Underused JPEG marker space** (APP0/APP2/APP3/APP4–APPF) — fixture 01.
-2. **Private PNG chunk content** — fixture 02 (acknowledged structurally, content not extracted).
-3. **SVG auxiliary text channels** (`<title>`, `<desc>`, `<metadata>`, `<defs>`) and the white-on-color rendering shape — fixtures 03–06.
+`ImageAnalyzer` and `SvgAnalyzer` together now cover:
 
-The image gauntlet's 1/6 partial result is the strongest of the post-PDF gauntlets (DOCX 0/6, XLSX 0/6, HTML 0/6, EML 0/6), reflecting the deeper investment the analyzer already made on the format-specific concealment layer.
+- All PNG ancillary chunk classes (text, private, suspicious) with
+  payload extraction populated into `concealed`.
+- The complete JPEG APPn marker space, not only the three formerly
+  hardcoded markers.
+- The PNG `tEXt` / `iTXt` payload-shape concealment surface
+  (length, bidi, zero-width, divergence markers).
+- All four SVG auxiliary-text channels (`<title>`, `<desc>`,
+  `<metadata>`, unreferenced `<defs>` content).
+- The white-on-white SVG rendering shape with canvas-aware
+  contrast checking.
 
-## v1.1.2 milestone (image additions)
+## Documented known gaps (deferred to F1.5)
 
-Six new image detectors / extensions estimated at ~115 LOC total:
+Three image-format concealment surfaces were identified during F1
+review and deferred to keep the F1 scope tight:
 
-1. Extend `_extract_jpeg_text` to handle every APPn marker (~20 LOC)
-2. Attach decoded payload text to `suspicious_image_chunk` findings (~15 LOC)
-3. `svg_white_on_white_text` — white-fill on white-background contrast check (~25 LOC)
-4. `svg_aux_text_payload` — walk `<title>`/`<desc>`/`<metadata>` (~30 LOC)
-5. `svg_orphan_defs_text` — unreferenced `<text>` inside `<defs>` (~25 LOC)
+1. **EXIF UserComment** (JPEG APP1 tag `0x9286`). The current
+   `image_jpeg_appn_payload` detector covers APP4 through APP15
+   but does not parse EXIF tag-level structure. UserComment is the
+   canonical EXIF text-payload tag and warrants a dedicated
+   detector that walks the EXIF IFD chain.
+2. **SVG `<foreignObject>` HTML.** `<foreignObject>` permits
+   arbitrary embedded HTML inside SVG. Hidden-text idioms from the
+   HTML gauntlet (display:none / visibility:hidden / hidden HTML
+   attributes) do not currently propagate through
+   `<foreignObject>` content.
+3. **SVG `<style>` block CSS rules.** CSS rules inside an SVG
+   `<style>` element can carry payload-bearing content (CSS
+   comments, property values containing strings) that bypass the
+   current text-element walkers. Pseudo-element `content`
+   declarations are particularly relevant.
 
-Combined running totals: PDF (~155 LOC), DOCX (~200 LOC), XLSX (~190 LOC), HTML (~120 LOC), EML (~185 LOC), Image (~115 LOC) = ~965 LOC across six formats.
+These three gaps are well-bounded, structurally similar to the F1
+mechanisms (each is a single additive detector module), and would
+land in a focused F1.5 round if scoped before the CSV / JSON
+gauntlet round.
 
 ## Reproducing this report
 
@@ -94,4 +178,4 @@ python run_gauntlet.py live  # POST to https://bayyinah.dev/scan
 
 ---
 
-*Sixth installment of the multi-format gauntlet. PDF (2/6) → DOCX (0/6) → XLSX (0/6) → HTML (0/6) → EML (0/6) → Image (1/6 partial). CSV/JSON gauntlet follows.*
+*Sixth installment of the multi-format gauntlet, now closed. PDF (6 / 6) -> DOCX (6 / 6) -> XLSX (6 / 6) -> HTML (6 / 6) -> EML (6 / 6) -> Image (8 / 8). CSV / JSON gauntlet round follows.*

@@ -91,6 +91,15 @@ from domain.config import (
 )
 from infrastructure.file_router import FileKind
 
+# v1.1.2 image gauntlet detectors (standalone modules).
+from analyzers.svg_white_text import detect_svg_white_text
+from analyzers.svg_title_payload import detect_svg_title_payload
+from analyzers.svg_desc_payload import detect_svg_desc_payload
+from analyzers.svg_metadata_payload import detect_svg_metadata_payload
+from analyzers.svg_defs_unreferenced_text import (
+    detect_svg_defs_unreferenced_text,
+)
+
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -183,6 +192,12 @@ class SvgAnalyzer(BaseAnalyzer):
         # 2. SVG-structural pass. Only runs if the tree parsed.
         if root is not None:
             findings.extend(self._detect_structural(root, file_path))
+            # v1.1.2 image gauntlet: post-walker SVG detectors.
+            findings.extend(detect_svg_white_text(file_path))
+            findings.extend(detect_svg_title_payload(file_path))
+            findings.extend(detect_svg_desc_payload(file_path))
+            findings.extend(detect_svg_metadata_payload(file_path))
+            findings.extend(detect_svg_defs_unreferenced_text(file_path))
 
         if parse_error is not None:
             # Emit a scan_error as a structural witness — the tree was

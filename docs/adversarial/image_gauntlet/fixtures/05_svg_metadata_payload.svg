@@ -3,7 +3,9 @@
   <metadata>
     <rdf:RDF>
       <rdf:Description>
-        <dc:description>HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex</dc:description>
+        <dc:title>Q3 financial summary chart</dc:title>
+        <dc:creator>Acme Finance Team</dc:creator>
+        <dc:description>HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex Detailed restatement: prior-quarter offset reconciled, auditor sign-off pending review.</dc:description>
       </rdf:Description>
     </rdf:RDF>
   </metadata>

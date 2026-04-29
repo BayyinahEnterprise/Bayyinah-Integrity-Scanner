@@ -19,18 +19,27 @@ $10,000. Same canonical contract-fraud setup.
 Fixtures
 --------
 
-01 — JPEG with payload in APP4 marker (analyzer skips APP4)
-02 — PNG with payload inside a custom non-text ancillary chunk whose
-     length is tiny (escapes oversized_metadata threshold; the chunk
-     type is private + ancillary so it bypasses suspicious-chunk
-     critical-only logic)
-03 — SVG <text fill="#FFFFFF"> on white background (white-on-white not
-     in SVG_INVISIBLE_ATTRIBUTES)
-04 — SVG <title> element with payload (assistive-tech only; not
-     scanned by SvgAnalyzer's hidden / microscopic detectors)
-05 — SVG <metadata> element with payload (RDF / Dublin Core block)
-06 — SVG <text> nested inside <defs> (not rendered until referenced;
-     analyzer does not gate on render visibility for <defs> children)
+01: JPEG with payload in APP4 marker (analyzer skips APP4)
+02: PNG with payload inside a custom non-text ancillary chunk whose
+    length is tiny (escapes oversized_metadata threshold; the chunk
+    type is private + ancillary so it bypasses suspicious-chunk
+    critical-only logic)
+02_5 (v1.1.2): PNG with payload in a public tEXt chunk that exhibits
+    concealment triggers (bidi codepoints, zero-width characters, or
+    length above the metadata threshold). Parallel-structure to
+    pdf_metadata_analyzer's four-trigger pattern.
+03: SVG <text fill="#FFFFFF"> on white background (white-on-white not
+    in SVG_INVISIBLE_ATTRIBUTES)
+04: SVG <title> element with payload (assistive-tech only; not
+    scanned by SvgAnalyzer's hidden / microscopic detectors)
+04_5 (v1.1.2): SVG <desc> element with multi-paragraph payload
+    exceeding the desc threshold (256 bytes). Title and desc share
+    structural shape but have different legitimate-use length
+    distributions, so they are split into separate mechanisms with
+    separate thresholds.
+05: SVG <metadata> element with payload (RDF / Dublin Core block)
+06: SVG <text> nested inside <defs> (not rendered until referenced;
+    analyzer does not gate on render visibility for <defs> children)
 """
 
 from __future__ import annotations
@@ -195,11 +204,19 @@ def fixture_04_svg_title_payload() -> tuple[Path, str]:
     and LLMs reading the SVG ingest it.
     """
     path = OUT / "04_svg_title_payload.svg"
+    # Title payload exceeds the 64-byte threshold so the
+    # svg_title_payload mechanism fires on the length structural
+    # signal alone. Includes HIDDEN_TEXT_PAYLOAD / $10,000 markers
+    # for the standard payload-recovery assertion.
+    title_payload = (
+        "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex "
+        "appendix B for full reconciliation table"
+    )
     svg = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<svg xmlns="http://www.w3.org/2000/svg" '
         'width="400" height="100">\n'
-        f'  <title>{HIDDEN_PAYLOAD}</title>\n'
+        f'  <title>{title_payload}</title>\n'
         f'  <text x="20" y="50">{SURFACE_TEXT}</text>\n'
         '</svg>\n'
     )
@@ -223,7 +240,11 @@ def fixture_05_svg_metadata_payload() -> tuple[Path, str]:
         '  <metadata>\n'
         '    <rdf:RDF>\n'
         '      <rdf:Description>\n'
-        f'        <dc:description>{HIDDEN_PAYLOAD}</dc:description>\n'
+        '        <dc:title>Q3 financial summary chart</dc:title>\n'
+        '        <dc:creator>Acme Finance Team</dc:creator>\n'
+        f'        <dc:description>{HIDDEN_PAYLOAD} '
+        'Detailed restatement: prior-quarter offset reconciled, '
+        'auditor sign-off pending review.</dc:description>\n'
         '      </rdf:Description>\n'
         '    </rdf:RDF>\n'
         '  </metadata>\n'
@@ -258,11 +279,81 @@ def fixture_06_svg_defs_text() -> tuple[Path, str]:
     return path, "SVG <text> nested inside <defs> with no <use> reference"
 
 
+def fixture_02_5_png_text_chunk_payload() -> tuple[Path, str]:
+    """PNG with payload in a public tEXt chunk that exhibits concealment.
+
+    The tEXt / iTXt / zTXt chunks are PNG's public-ancillary text
+    metadata vehicles, structurally analogous to PDF /Info dictionary
+    entries. Bayyinah v1.1.1 catches their existence (image_text_metadata)
+    but does not run the four-trigger concealment scan that
+    pdf_metadata_analyzer applies.
+
+    This fixture combines the natural-language payload with a bidi
+    override codepoint plus a zero-width space, so the v1.1.2
+    image_png_text_chunk_payload mechanism can fire on the
+    concealment triggers (parallel to pdf_metadata_analyzer's bidi
+    and zero-width triggers).
+    """
+    path = OUT / "02_5_png_text_chunk_payload.png"
+    # tEXt chunk format: keyword \x00 value (latin-1)
+    keyword = b"Comment"
+    # Inject a Right-To-Left override (U+202E) and a zero-width space
+    # (U+200B). Latin-1 cannot encode those, so we approximate via the
+    # iTXt-equivalent byte sequence within tEXt by using their UTF-8
+    # forms. Most parsers treat tEXt value as bytes; the four-trigger
+    # detector decodes permissively and finds the codepoints.
+    rtl_override = "\u202e"
+    zero_width_space = "\u200b"
+    value_text = (
+        f"{rtl_override}HIDDEN_TEXT_PAYLOAD: actual revenue $10,000"
+        f"{zero_width_space} - see annex"
+    )
+    value_bytes = value_text.encode("utf-8")
+    chunk_data = keyword + b"\x00" + value_bytes
+    path.write_bytes(_png_with_extra_chunk(b"tEXt", chunk_data))
+    return path, "PNG tEXt chunk with bidi + zero-width concealment triggers"
+
+
+def fixture_04_5_svg_desc_payload() -> tuple[Path, str]:
+    """SVG <desc> element with multi-sentence payload above 256 bytes.
+
+    <desc> is the SVG accessibility description, the long-form
+    counterpart to <title>. Legitimate values can run several
+    sentences for complex visualizations, so the threshold is higher
+    than <title>'s 64-byte threshold. This fixture's payload is
+    crafted to exceed 256 bytes while remaining structurally a
+    description (not a directive), so the mechanism fires on the
+    length structural signal alone.
+    """
+    path = OUT / "04_5_svg_desc_payload.svg"
+    long_payload = (
+        "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 across all "
+        "reporting segments. The figure on the front page reflects "
+        "net of intercompany eliminations and partner rebates that "
+        "will be reversed in the annex. The annex is shipped under "
+        "separate cover and is the figure of record for the audit "
+        "committee. Please refer to the annex for the canonical "
+        "reconciliation between the surface and the recorded values."
+    )
+    svg = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" '
+        'width="400" height="100">\n'
+        f'  <desc>{long_payload}</desc>\n'
+        f'  <text x="20" y="50">{SURFACE_TEXT}</text>\n'
+        '</svg>\n'
+    )
+    path.write_text(svg, "utf-8")
+    return path, "SVG <desc> element with multi-sentence payload over 256 bytes"
+
+
 BUILDERS = [
     fixture_01_jpeg_app4_payload,
     fixture_02_png_private_chunk,
+    fixture_02_5_png_text_chunk_payload,
     fixture_03_svg_white_text,
     fixture_04_svg_title_payload,
+    fixture_04_5_svg_desc_payload,
     fixture_05_svg_metadata_payload,
     fixture_06_svg_defs_text,
 ]

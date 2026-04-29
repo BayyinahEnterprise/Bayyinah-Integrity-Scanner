@@ -38,13 +38,19 @@ def scan_live(path: Path) -> dict:
 
 
 def scan_local(path: Path) -> dict:
-    """In-process scan via the orchestrator. No network."""
+    """In-process scan via the orchestrator. No network.
+
+    v1.1.2: prefer ``report.to_dict()`` so ``inversion_recovery`` is
+    serialised by the same path the live API uses (parity with
+    pdf_gauntlet/run_gauntlet_local.py). Fall back to the manual
+    builder for older report shapes.
+    """
     from application.scan_service import ScanService
 
     svc = ScanService()
     report = svc.scan(path)
-    # Convert the IntegrityReport dataclass to a dict identical in shape
-    # to the API response.
+    if hasattr(report, "to_dict"):
+        return report.to_dict()
     return _report_to_dict(report)
 
 

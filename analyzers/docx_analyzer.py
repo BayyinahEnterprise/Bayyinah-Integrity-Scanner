@@ -53,6 +53,12 @@ from typing import ClassVar, Iterable
 from xml.etree import ElementTree as ET
 
 from analyzers.base import BaseAnalyzer
+from analyzers.docx_white_text import detect_docx_white_text
+from analyzers.docx_microscopic_font import detect_docx_microscopic_font
+from analyzers.docx_metadata_payload import detect_docx_metadata_payload
+from analyzers.docx_comment_payload import detect_docx_comment_payload
+from analyzers.docx_header_footer_payload import detect_docx_header_footer_payload
+from analyzers.docx_orphan_footnote import detect_docx_orphan_footnote
 from domain import (
     Finding,
     IntegrityReport,
@@ -173,6 +179,18 @@ class DocxAnalyzer(BaseAnalyzer):
         yield from self._detect_embedded_objects(names, file_path)
         yield from self._detect_alt_chunks(names, zf, file_path)
         yield from self._detect_external_relationships(names, zf, file_path)
+
+        # ---- v1.1.2 hidden-text payload detectors (zahir + batin) ----
+        # Each detector opens the file independently as a ZipFile so it
+        # can be reused outside the orchestrator (mirrors the PDF
+        # v1.1.2 pattern). Cheap relative to the parse work already
+        # done in this module; ZIP central-directory reads are O(1).
+        yield from detect_docx_white_text(file_path)
+        yield from detect_docx_microscopic_font(file_path)
+        yield from detect_docx_header_footer_payload(file_path)
+        yield from detect_docx_metadata_payload(file_path)
+        yield from detect_docx_comment_payload(file_path)
+        yield from detect_docx_orphan_footnote(file_path)
 
         # ---- Zahir (rendered text) + revision history (batin) ----
         # Both signals come from document.xml: we parse once and split

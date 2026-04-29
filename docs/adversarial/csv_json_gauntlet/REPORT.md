@@ -128,7 +128,7 @@ The framework's standing claim is that the version chain on its own gauntlets is
 
 - **1 conversion** (fixture 02 PARTIAL→FULL CATCH)
 - **3 new full catches** on fixtures 10, 11, 12 (the new gauntlet extension)
-- **5 fixtures with findings firing but harness-payload-recovery NO** (05, 07, 08, 09, plus the existing baseline gaps)
+- **4 fixtures with findings firing but harness-payload-recovery NO** (05, 07, 08, 09)
 - **8 v1.1.3 pre-registration items** with proposed thresholds, LOC, and report commitments
 - **12 new mechanisms landed** (6 CSV + 6 JSON), all registry-clean and severity-mapped
 - **+46 tests** (1,671 → 1,717), CI-clean modulo 2 preexisting homoglyph cached-fixture failures

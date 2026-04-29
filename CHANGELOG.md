@@ -10,6 +10,68 @@ reference implementation without touching it, the parity invariant
 (`bayyinah.scan_pdf == bayyinah_v0.scan_pdf` on every Phase 0 fixture) has
 held across every phase.
 
+## [1.1.2]: 2026-04-28
+
+Minor release. Six format-gauntlet rounds plus the Mughlaq Trap
+routing layer. Mechanism count grows from 108 (v1.1.1 baseline) to
+145 with the layer split 39 zahir + 105 batin + 1 routing. Every
+format gauntlet (PDF, DOCX, XLSX, HTML, EML, Image) now runs at
+full catch and full payload recovery on its fixture set. The CSV /
+JSON gauntlet remains open and is the next round.
+
+No behaviour change for existing v1.1.1 scans on legitimate files.
+Every added detector is a parallel pass that fires only on its
+targeted concealment surface, so clean-fixture scores are
+unchanged. The five-surface version coherence invariant
+(`/scan`, `/version`, `/healthz`, OpenAPI, `pyproject`) is
+preserved at the api.py layer; `TOOL_VERSION` stays frozen at
+`0.1.0` per the bayyinah_v0_1 byte-parity invariant.
+
+### Added
+
+- **Tier 0 routing layer**: `format_routing_divergence` mechanism
+  closes the Mughlaq Trap stress test (file-extension lying about
+  format).
+- **PDF gauntlet (4 mechanisms)**: `pdf_off_page_text`,
+  `pdf_metadata_analyzer`, `pdf_trailer_analyzer`,
+  `pdf_hidden_text_annotation`. Closes 6 / 6 PDF fixtures.
+- **DOCX gauntlet (6 mechanisms)**: `docx_white_text`,
+  `docx_microscopic_font`, `docx_metadata_payload`,
+  `docx_comment_payload`, `docx_header_footer_payload`,
+  `docx_orphan_footnote`. Closes 6 / 6 DOCX fixtures.
+- **XLSX gauntlet (6 mechanisms)**: `xlsx_white_text`,
+  `xlsx_microscopic_font`, `xlsx_csv_injection_formula`,
+  `xlsx_defined_name_payload`, `xlsx_comment_payload`,
+  `xlsx_metadata_payload`. Closes 6 / 6 XLSX fixtures.
+- **HTML gauntlet (6 mechanisms)**: `html_meta_payload`,
+  `html_title_text_divergence`, `html_comment_payload`,
+  `html_noscript_payload`, `html_template_payload`,
+  `html_style_content_payload`. Closes 6 / 6 HTML fixtures.
+- **EML gauntlet (6 mechanisms)**: `eml_xheader_payload`,
+  `eml_header_continuation_payload`, `eml_received_chain_anomaly`,
+  `eml_from_replyto_mismatch`, `eml_returnpath_from_mismatch`,
+  `eml_base64_text_part`. Closes 6 / 6 EML fixtures.
+- **Image gauntlet (8 mechanisms, F1)**:
+  `image_jpeg_appn_payload`, `image_png_private_chunk` (Tier 2
+  with per-trigger Tier 1 escalation),
+  `image_png_text_chunk_payload`, `svg_white_text` (zahir),
+  `svg_title_payload`, `svg_desc_payload`,
+  `svg_metadata_payload`, `svg_defs_unreferenced_text`. Closes
+  8 / 8 image fixtures with full payload recovery.
+
+### Changed
+
+- `MECHANISM_REGISTRY` count: 108 -> 145.
+- `bayyinah.__version__`: 1.1.1 -> 1.1.2.
+- `pyproject.toml [project] version`: 1.1.1 -> 1.1.2.
+
+### Documented gaps (deferred)
+
+- EXIF UserComment (JPEG APP1 tag 0x9286).
+- SVG `<foreignObject>` HTML.
+- SVG `<style>` block CSS rules.
+- CSV / JSON gauntlet (last open format surface).
+
 ## [1.1.1]: 2026-04-25
 
 Patch release. Phase 26 framework-applied-to-itself review. The

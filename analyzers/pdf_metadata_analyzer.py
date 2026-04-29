@@ -93,6 +93,10 @@ _MIN_DIVERGENCE_LENGTH = 16  # Floor on metadata text considered for the
 # rendered text (legitimate short tags need not appear verbatim on a
 # page). The fixture's payload is 55 chars, well above this floor.
 
+_PREVIEW_LIMIT = 240  # chars; bounds inversion_recovery.concealed output.
+# Long fields are truncated rather than embedded whole so the report
+# stays scannable; the description still cites the full byte length.
+
 # /Info keys whose divergence with rendered text is structurally
 # suspicious. /Title, /Author, /Subject, /Creator, /Producer,
 # /Trapped, /CreationDate, /ModDate are excluded for the reasons
@@ -156,6 +160,7 @@ def _check_field(
     encoded_len = len(value.encode("utf-8", errors="replace"))
     # (a) length
     if encoded_len > _FIELD_LENGTH_LIMIT:
+        preview = value if len(value) <= _PREVIEW_LIMIT else value[:_PREVIEW_LIMIT] + '...'
         out.append(Finding(
             mechanism="pdf_metadata_analyzer",
             tier=1,
@@ -168,7 +173,7 @@ def _check_field(
             ),
             location=field_label,
             surface=f"metadata field {field_label}",
-            concealed=f"length {encoded_len} bytes",
+            concealed=f"length {encoded_len} bytes; text: {preview!r}",
         ))
     # (b) bidi
     bidi = sorted({c for c in value if c in _BIDI_CHARS})
@@ -208,6 +213,10 @@ def _check_field(
     if divergence_eligible:
         stripped = value.strip()
         if len(stripped) >= _MIN_DIVERGENCE_LENGTH and stripped not in rendered:
+            preview = (
+                stripped if len(stripped) <= _PREVIEW_LIMIT
+                else stripped[:_PREVIEW_LIMIT] + '...'
+            )
             out.append(Finding(
                 mechanism="pdf_metadata_analyzer",
                 tier=1,
@@ -222,7 +231,10 @@ def _check_field(
                 ),
                 location=field_label,
                 surface=f"metadata field {field_label}",
-                concealed=f"text not present in any rendered page",
+                concealed=(
+                    f"text not present in any rendered page; "
+                    f"recovered text: {preview!r}"
+                ),
             ))
     return out
 

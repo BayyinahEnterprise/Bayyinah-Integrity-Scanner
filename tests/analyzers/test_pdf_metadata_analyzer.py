@@ -80,3 +80,26 @@ def test_pdf_metadata_analyzer_clean_on_control() -> None:
         f"pdf_metadata_analyzer fired on the clean baseline PDF; got "
         f"{[(f.mechanism, f.location) for f in findings]}"
     )
+
+
+def test_pdf_metadata_analyzer_recovers_payload_into_concealed() -> None:
+    """inversion_recovery.concealed must surface the actual divergent
+    metadata bytes, not just a structural pointer. Pinning the contract
+    closes the v1.1.2 PDF gauntlet at full payload-recovery (gauntlet
+    status 2026-04-28). All divergence-branch findings must surface
+    the recovered text so reviewers see the payload directly, mirroring
+    pdf_hidden_text_annotation's /Contents preview convention."""
+    findings = detect_pdf_metadata_analyzer(ADVERSARIAL_FIXTURE)
+    matching = [
+        f for f in findings
+        if f.mechanism == "pdf_metadata_analyzer"
+    ]
+    assert matching, "no pdf_metadata_analyzer findings on fixture 04"
+    payload_recovered = [
+        f for f in matching if "HIDDEN_TEXT_PAYLOAD" in (f.concealed or "")
+    ]
+    assert payload_recovered, (
+        f"no pdf_metadata_analyzer finding surfaced the recovered "
+        f"payload bytes; concealed values were: "
+        f"{[f.concealed for f in matching]!r}"
+    )

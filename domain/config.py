@@ -142,6 +142,25 @@ ZAHIR_MECHANISMS: Final[frozenset[str]] = frozenset({
     # the DOCX surface: the page looks clean while the document body
     # carries hidden content.
     "docx_hidden_text",
+    # Phase 17 (v1.1.2) — DOCX hidden-text payload zahir surface.
+    # ``docx_white_text`` fires when a run carries a near-white
+    # foreground color on a white page background; the text is
+    # invisible to a human reader but preserved in the run's
+    # ``<w:t>`` stream and read by every downstream extractor.
+    # Tier 1 verified, severity 1.00 — mirrors PDF
+    # ``white_on_white_text``.
+    "docx_white_text",
+    # ``docx_microscopic_font`` fires on runs with ``w:sz`` <= 4
+    # half-points (2.0pt and below). Same rendered-vs-stored
+    # divergence as white-text, but at the font-size axis. Tier 2
+    # structural, severity 0.50.
+    "docx_microscopic_font",
+    # ``docx_header_footer_payload`` applies the white-text and
+    # microscopic-font triggers to ``word/header*.xml`` and
+    # ``word/footer*.xml`` parts. The header/footer area is a
+    # parallel rendering channel that carries the same shape of
+    # attack as the body. Tier 1 verified, severity 1.00.
+    "docx_header_footer_payload",
     # Phase 16 — HTML zahir surface. ``html_hidden_text`` fires when
     # text content lives inside an element whose style or attributes
     # suppress it from rendering (``display:none``, ``visibility:hidden``,
@@ -153,6 +172,16 @@ ZAHIR_MECHANISMS: Final[frozenset[str]] = frozenset({
     # falsehood, the hidden portion of the mixture preserved in the
     # stream while suppressed from the reader's view.
     "html_hidden_text",
+    # Phase 16 (v1.1.2) - HTML format-gauntlet zahir surface.
+    # ``html_title_text_divergence`` fires when the document's
+    # ``<title>`` element value is at least 40 chars long and does not
+    # appear anywhere in the rendered body, or exceeds 80 chars
+    # outright. Browser tab, bookmarks, search-engine results, and
+    # social-media unfurlers display the title while the rendered
+    # body shows different content; that asymmetric surface is the
+    # smuggling shape this detector targets. Tier 1 verified,
+    # severity 1.00. Closes html_gauntlet fixture 06_title_payload.
+    "html_title_text_divergence",
     # Phase 17 — XLSX zahir surface. ``xlsx_hidden_row_column`` fires
     # when a worksheet row or column carries ``hidden="1"`` in its
     # descriptor. Excel suppresses those cells from the rendered grid,
@@ -162,6 +191,39 @@ ZAHIR_MECHANISMS: Final[frozenset[str]] = frozenset({
     # Exact performed-alignment shape at the spreadsheet surface: the
     # visible grid tells one story while the stored data tells another.
     "xlsx_hidden_row_column",
+    # Phase 17 (v1.1.2) - XLSX hidden-text payload zahir surface.
+    # ``xlsx_white_text`` fires when a cell's resolved font color is
+    # near-white against the (white) sheet background; the cell text is
+    # invisible to a human reader but preserved in the shared-strings
+    # table or the inline ``<is><t>`` element. Tier 1 verified, severity
+    # 1.00 - mirrors PDF ``white_on_white_text`` and ``docx_white_text``.
+    "xlsx_white_text",
+    # ``xlsx_microscopic_font`` fires on cells whose resolved font size
+    # is at or below the sub-readable threshold (4.0pt). Same
+    # rendered-vs-stored divergence as white-text but at the font-size
+    # axis. Tier 2 structural, severity 0.50.
+    "xlsx_microscopic_font",
+    # ``xlsx_csv_injection_formula`` fires on cell formulas whose body
+    # carries a shell-trigger pattern (cmd|, mshta|, rundll32|, DDE())
+    # or a HYPERLINK with payload-length display text. The formula
+    # text lives in the worksheet part (zahir) but the rendered cell
+    # shows only a label or formula result, not the formula body.
+    # Tier 1 for shell-trigger patterns, Tier 2 for HYPERLINK payload
+    # patterns. Severity 1.00.
+    "xlsx_csv_injection_formula",
+    # v1.1.2 image gauntlet (F1) zahir surface. SVG is an XML document
+    # whose <text> elements live on the rendered surface but can be
+    # painted in the canvas color (white) so a human reader sees only
+    # blank space. Mirror of pdf white_on_white_text, docx_white_text,
+    # and xlsx_white_text on the SVG axis.
+    #
+    #   svg_white_text             A <text> element with fill=#FFFFFF
+    #                              (or near-white #FEFEFE / #FDFDFD /
+    #                              #FCFCFC) on a default-or-white SVG
+    #                              canvas. Tier 1 verified, severity
+    #                              1.00 - mirrors the rest of the
+    #                              white-text family.
+    "svg_white_text",
     # Phase 19 — EML (RFC 5322 email) zahir surface. Email is the format
     # that most literally ships different content to different audiences
     # (Al-Baqarah 2:42: "do not mix truth with falsehood"). These four
@@ -222,6 +284,30 @@ ZAHIR_MECHANISMS: Final[frozenset[str]] = frozenset({
     "eml_hidden_html_content",
     "eml_display_name_spoof",
     "eml_encoded_subject_anomaly",
+    # v1.1.2 EML format-gauntlet zahir mechanisms. Sender identity is
+    # the rendered surface readers act on; ``Reply-To`` divergence and
+    # base64-wrapping of plain-text bodies both shape what the reader
+    # perceives versus what byte-level scanners or reply paths see.
+    #
+    #   eml_from_replyto_mismatch  ``From`` and ``Reply-To`` resolve to
+    #                             different registered domains. The mail
+    #                             client renders one sender; replies
+    #                             route silently to another. Performed-
+    #                             alignment shape (2:14) at the envelope
+    #                             surface.
+    #
+    #   eml_base64_text_part      A ``text/*`` MIME part whose
+    #                             ``Content-Transfer-Encoding`` is
+    #                             ``base64``. Plain-text bodies travel
+    #                             as 7bit or quoted-printable; base64
+    #                             wrapping has no legitimate purpose for
+    #                             routine text and is a documented
+    #                             content-scanner-evasion shape — the
+    #                             reader's mail client decodes and
+    #                             renders the body, while byte-level
+    #                             keyword filters read opaque base64.
+    "eml_from_replyto_mismatch",
+    "eml_base64_text_part",
     # Phase 20 — CSV / TSV / delimited-data zahir surface.
     # Al-Baqarah 2:42: "Do not mix truth with falsehood, nor conceal
     # the truth while you know it." Delimited-data files are the
@@ -486,6 +572,29 @@ BATIN_MECHANISMS: Final[frozenset[str]] = frozenset({
     "docx_alt_chunk",
     "docx_external_relationship",
     "docx_revision_history",
+    # Phase 17 (v1.1.2) — DOCX hidden-text payload batin surface.
+    # ``docx_metadata_payload`` fires on hidden-text payloads in
+    # ``docProps/core.xml`` / ``docProps/app.xml`` /
+    # ``docProps/custom.xml`` metadata parts: long fields exceeding
+    # the per-field byte limit, or content-summary fields whose
+    # text diverges from the rendered document body. Tier 1
+    # verified, severity 1.00.
+    "docx_metadata_payload",
+    # ``docx_comment_payload`` fires on comments in
+    # ``word/comments.xml`` whose ``w:id`` is not referenced from
+    # ``document.xml`` (orphan reference) or whose body is long and
+    # divergent from rendered text. Comments are a legitimate
+    # review channel, so this stays at Tier 2 structural, severity
+    # 0.50.
+    "docx_comment_payload",
+    # ``docx_orphan_footnote`` fires on footnotes in
+    # ``word/footnotes.xml`` whose ``w:id`` is not referenced from
+    # ``document.xml`` via ``<w:footnoteReference>`` markers.
+    # Infrastructure footnote types (``separator``,
+    # ``continuationSeparator``) are filtered out; only user-content
+    # orphans fire. Tier 1 verified, severity 1.00 — mirrors PDF
+    # ``pdf_hidden_text_annotation`` in spirit.
+    "docx_orphan_footnote",
     # Phase 16 — HTML batin surface. HTML mixes rendered content with
     # structure more aggressively than any other format Bayyinah reads;
     # these mechanisms target the three highest-value concealment
@@ -577,6 +686,74 @@ BATIN_MECHANISMS: Final[frozenset[str]] = frozenset({
     "xlsx_hidden_sheet",
     "xlsx_external_link",
     "xlsx_data_validation_formula",
+    # Phase 17 (v1.1.2) - XLSX hidden-text payload batin surface.
+    # ``xlsx_metadata_payload`` fires on hidden-text payloads in
+    # ``docProps/core.xml`` / ``docProps/app.xml`` /
+    # ``docProps/custom.xml`` metadata parts: long fields exceeding
+    # the 512-byte per-field limit, or content-summary fields whose
+    # text diverges from the rendered cell text. Tier 1 verified,
+    # severity 1.00. Mirrors ``docx_metadata_payload`` and PDF
+    # ``pdf_metadata_analyzer``.
+    "xlsx_metadata_payload",
+    # ``xlsx_defined_name_payload`` fires on entries in the
+    # ``<definedNames>`` block of ``xl/workbook.xml`` whose body is
+    # a string-literal value (quoted) or a long unquoted string
+    # rather than a range reference or formula. Defined names are
+    # registered in the workbook part and accessible to every
+    # formula evaluator and package walker but invisible from the
+    # rendered grid. Tier 2 structural, severity 0.50.
+    "xlsx_defined_name_payload",
+    # ``xlsx_comment_payload`` fires on cell comments in
+    # ``xl/comments/comment*.xml`` (and threaded comments in
+    # ``xl/threadedComments/*.xml``) whose text body meets the
+    # payload-length threshold. Comments are rendered only on hover
+    # and are skipped by most automated table readers, but they
+    # live in the workbook package. Tier 2 structural, severity
+    # 0.50.
+    "xlsx_comment_payload",
+    # Phase 16 (v1.1.2) - HTML format-gauntlet batin surface. Five new
+    # mechanisms close the five remaining html_gauntlet fixtures by
+    # surfacing payload bodies inside HTML loci that the existing
+    # HtmlAnalyzer walker intentionally skips (non-visible containers,
+    # comments, meta content, CSS pseudo-element content). All five
+    # are Tier 1 byte-deterministic with severity 1.00.
+    #
+    # ``html_noscript_payload`` - text body inside a ``<noscript>``
+    # element. Browsers render <noscript> only when JavaScript is
+    # disabled, but indexers, crawlers, and LLM ingestion paths read
+    # the body verbatim regardless of script state. Closes
+    # 01_noscript.
+    "html_noscript_payload",
+    # ``html_template_payload`` - text body inside a ``<template>``
+    # element. Browsers parse but do not render template contents
+    # until JavaScript instantiates them via importNode / shadow-DOM
+    # cloning; flatteners and indexers read the body regardless.
+    # Closes 02_template.
+    "html_template_payload",
+    # ``html_comment_payload`` - HTML comment (``<!-- ... -->``)
+    # whose body exceeds the routine length floor (16 chars). Strip
+    # conditional-comment IE legacy patterns. Comments are stripped
+    # from the rendered tree but preserved verbatim in source view
+    # and LLM ingestion paths. Closes 03_comment_payload.
+    "html_comment_payload",
+    # ``html_meta_payload`` - ``<meta name=...|property=... content=
+    # ...>`` value that exceeds 256 chars (length trigger) or that
+    # appears in a content-summary surface (description, keywords,
+    # og:description, twitter:description, abstract, subject,
+    # summary) and does not appear anywhere in the rendered body
+    # (divergence trigger). Crawlers, social unfurlers, and LLM
+    # ingestion paths read meta content verbatim. Closes
+    # 04_meta_content.
+    "html_meta_payload",
+    # ``html_style_content_payload`` - CSS ``content:`` declaration
+    # inside a ``<style>`` block whose string value either exceeds
+    # 64 chars (length trigger) or sits in a rule body that also
+    # carries a render-suppressing companion declaration (color:
+    # white, color: transparent, opacity: 0, display: none, etc.).
+    # Pseudo-element generated content reaches the DOM via
+    # getComputedStyle().content and is read by indexers regardless
+    # of color or visibility. Closes 05_css_content.
+    "html_style_content_payload",
     # Phase 18 — PPTX batin surface (Al-Baqarah 2:79 — the presentation-
     # file attack surface exactly: structured, visual, trustworthy-looking
     # slides written with hidden payloads in their notes, masters,
@@ -778,6 +955,167 @@ BATIN_MECHANISMS: Final[frozenset[str]] = frozenset({
     "eml_smuggled_header",
     "eml_nested_eml",
     "eml_mime_boundary_anomaly",
+    # v1.1.2 EML format-gauntlet batin mechanisms. Each surfaces a
+    # routing- or header-layer shape that is concealed from the reader
+    # by default — the mail client never renders ``Return-Path``,
+    # ``Received`` chains, folded continuation lines, or X-* annotation
+    # values to the user, but parsers, downstream filters, and
+    # automation pipelines all read them.
+    #
+    #   eml_returnpath_from_mismatch
+    #                             ``Return-Path`` (SMTP envelope MAIL
+    #                             FROM) and ``From`` (rendered sender)
+    #                             resolve to different registered
+    #                             domains. Mail servers and reputation
+    #                             systems see one identity; the reader
+    #                             sees another.
+    #
+    #   eml_received_chain_anomaly
+    #                             The ``Received`` chain shows zero hops
+    #                             through the From-claimed registered
+    #                             domain. A legitimate message from
+    #                             ``billing@vendor.example`` should
+    #                             traverse that domain's outbound MTA in
+    #                             at least one Received hop; routing
+    #                             entirely through unrelated relays is
+    #                             a structural anomaly at the
+    #                             prior-state routing layer.
+    #
+    #   eml_header_continuation_payload
+    #                             A header (other than DKIM-Signature /
+    #                             ARC-* / Authentication-Results /
+    #                             Received, where heavy folding is
+    #                             routine) carries six or more RFC 5322
+    #                             folded continuation lines. The mail
+    #                             client renders only the first-line
+    #                             summary; byte-level scanners read raw
+    #                             lines and never reassemble the
+    #                             unfolded value. Distinct from
+    #                             ``eml_smuggled_header`` (duplicate
+    #                             single-instance / CRLF injection).
+    #
+    #   eml_xheader_payload       An ``X-*`` header (other than vendor
+    #                             signatures and known-large bulk-
+    #                             infrastructure annotations) whose
+    #                             unfolded value exceeds the long-header
+    #                             length threshold. Mail clients hide
+    #                             the extended header panel by default;
+    #                             custom X-* annotations do not reach
+    #                             the reader.
+    "eml_returnpath_from_mismatch",
+    "eml_received_chain_anomaly",
+    "eml_header_continuation_payload",
+    "eml_xheader_payload",
+    # v1.1.2 image gauntlet (F1) closure additions:
+    #
+    #   image_jpeg_appn_payload    A JPEG application marker in the
+    #                              APP4-15 range (0xFFE4 through
+    #                              0xFFEF) carries readable UTF-8
+    #                              text at high printable density.
+    #                              APP0 (JFIF), APP1 (EXIF/XMP),
+    #                              APP2 (ICC), and APP3 (Meta/JPS)
+    #                              are excluded. Office and financial
+    #                              document workflows have no
+    #                              legitimate reason to populate
+    #                              APP4-15 with natural-language
+    #                              text. Distinct from
+    #                              ``suspicious_image_chunk``
+    #                              (existing Tier 3 finding on any
+    #                              non-standard marker); this
+    #                              mechanism elevates to Tier 1 and
+    #                              recovers the payload.
+    "image_jpeg_appn_payload",
+    #
+    #   image_png_private_chunk    A PNG private ancillary chunk
+    #                              (lowercase first byte and lowercase
+    #                              second byte per RFC 2083) carries
+    #                              readable UTF-8 text at high
+    #                              printable density. Private chunks
+    #                              are documented vendor-metadata
+    #                              infrastructure, so the baseline is
+    #                              Tier 2 structural notability. Per-
+    #                              trigger Tier 1 escalation findings
+    #                              are emitted alongside the Tier 2
+    #                              baseline when the chunk text
+    #                              additionally exhibits any of three
+    #                              concealment triggers (bidi, zero
+    #                              width, or length above the long-
+    #                              payload metadata threshold),
+    #                              parallel to pdf_metadata_analyzer.
+    "image_png_private_chunk",
+    #
+    #   image_png_text_chunk_payload  A PNG public text chunk (tEXt,
+    #                              iTXt, or zTXt) value field exhibits
+    #                              one or more of four byte-
+    #                              deterministic concealment triggers
+    #                              parallel to pdf_metadata_analyzer:
+    #                              length above 1024 bytes, bidi
+    #                              override codepoints, zero-width
+    #                              codepoints, or explicit concealment
+    #                              markers (HIDDEN_, BATIN_, ZAHIR_,
+    #                              PAYLOAD). Each trigger emits its
+    #                              own Tier 1 finding. Closes the
+    #                              parallel-structure gap with the PDF
+    #                              metadata analyzer for the public
+    #                              PNG text chunk namespace.
+    "image_png_text_chunk_payload",
+    #
+    #   svg_title_payload          An SVG <title> element whose text
+    #                              content exceeds 64 bytes. <title>
+    #                              is the accessibility tooltip
+    #                              surface, scanned by indexers and
+    #                              LLMs but not rendered as glyph
+    #                              content; long values are
+    #                              structurally anomalous against
+    #                              clean-corpus distributions.
+    "svg_title_payload",
+    #
+    #   svg_desc_payload           An SVG <desc> element whose text
+    #                              content exceeds 256 bytes. <desc>
+    #                              is the SVG long-form accessibility
+    #                              description surface, scanned by
+    #                              indexers and LLMs but not rendered
+    #                              as glyph content. Threshold split
+    #                              from svg_title_payload (64-byte)
+    #                              because <desc> has a different
+    #                              clean-corpus distribution: multi-
+    #                              sentence chart legends and
+    #                              scientific diagram captions are
+    #                              legitimate.
+    "svg_desc_payload",
+    #
+    #   svg_metadata_payload       An SVG <metadata> element whose
+    #                              aggregate text content exceeds
+    #                              128 bytes. <metadata> is the
+    #                              machine-readable annotation
+    #                              surface (RDF, Dublin Core,
+    #                              Creative Commons license blocks)
+    #                              scanned by indexers and LLMs but
+    #                              not rendered as glyph content.
+    #                              Threshold sits between <title>
+    #                              (64) and <desc> (256) because
+    #                              well-formed metadata blocks
+    #                              holding only license URI and
+    #                              creator name fall well below 128
+    #                              bytes, while payload-bearing
+    #                              metadata (multi-sentence
+    #                              dc:description) crosses it.
+    "svg_metadata_payload",
+    #
+    #   svg_defs_unreferenced_text An SVG <text> element nested
+    #                              inside <defs> whose id is never
+    #                              referenced by any <use> element
+    #                              (or which lacks an id entirely
+    #                              and therefore cannot be
+    #                              instantiated by <use>). <defs>
+    #                              is the SVG template surface; its
+    #                              children render only when
+    #                              instantiated via <use href="#id">.
+    #                              Unreferenced <text> in <defs> is
+    #                              fully readable by indexers and
+    #                              LLMs but never appears as glyph
+    #                              content for the human reader.
+    "svg_defs_unreferenced_text",
     # Phase 20 — CSV / TSV / delimited-data batin surface. CSV has no
     # native hidden-row mechanism like XLSX; "hidden" in CSV means
     # rows or bytes that a parser silently drops or reinterprets while
@@ -1661,6 +1999,13 @@ SEVERITY: Final[dict[str, float]] = {
     "docx_alt_chunk":              0.25,
     "docx_external_relationship":  0.15,
     "docx_revision_history":       0.05,
+    # Phase 17 (v1.1.2) — DOCX hidden-text payload mechanisms.
+    "docx_white_text":             1.00,
+    "docx_microscopic_font":       0.50,
+    "docx_header_footer_payload": 1.00,
+    "docx_metadata_payload":       1.00,
+    "docx_comment_payload":        0.50,
+    "docx_orphan_footnote":        1.00,
     # Phase 16 — HTML mechanisms. Severities mirror the closest existing
     # analogue so scoring stays consistent across formats:
     #   html_hidden_text — 0.20, parallels docx_hidden_text (also a
@@ -1704,6 +2049,24 @@ SEVERITY: Final[dict[str, float]] = {
     "xlsx_hidden_row_column":         0.20,
     "xlsx_external_link":             0.15,
     "xlsx_data_validation_formula":   0.10,
+    # Phase 17 (v1.1.2) - XLSX hidden-text payload mechanisms.
+    "xlsx_white_text":                1.00,
+    "xlsx_microscopic_font":          0.50,
+    "xlsx_csv_injection_formula":     1.00,
+    "xlsx_metadata_payload":          1.00,
+    "xlsx_defined_name_payload":      0.50,
+    "xlsx_comment_payload":           0.50,
+    # Phase 16 (v1.1.2) - HTML format-gauntlet payload mechanisms. All
+    # six are Tier 1 byte-deterministic with severity 1.00 - they
+    # surface verifiable text bodies inside loci the rendered page
+    # does not show (noscript / template / comment / meta / CSS
+    # pseudo-element content / divergent title).
+    "html_noscript_payload":          1.00,
+    "html_template_payload":          1.00,
+    "html_comment_payload":           1.00,
+    "html_meta_payload":              1.00,
+    "html_style_content_payload":     1.00,
+    "html_title_text_divergence":     1.00,
     # Phase 18 — PPTX mechanisms. Severities mirror the closest DOCX /
     # XLSX / PDF analogue so the overall scoring surface stays consistent
     # across formats:
@@ -1787,6 +2150,26 @@ SEVERITY: Final[dict[str, float]] = {
     "eml_attachment_present":                 0.05,
     "eml_nested_eml":                         0.10,
     "eml_mime_boundary_anomaly":              0.10,
+    # v1.1.2 EML format-gauntlet severities. Identity / routing
+    # mismatches sit alongside ``eml_display_name_spoof`` (0.25); base64
+    # wrapping of text parts parallels ``eml_hidden_html_content``
+    # (0.20) at the body-encoding layer; folded-continuation and X-*
+    # payload shapes parallel ``eml_smuggled_header`` (0.15) at the
+    # header-shape layer.
+    "eml_from_replyto_mismatch":              0.25,
+    "eml_base64_text_part":                   0.20,
+    "eml_returnpath_from_mismatch":           0.25,
+    "eml_received_chain_anomaly":             0.20,
+    "eml_header_continuation_payload":        0.15,
+    "eml_xheader_payload":                    0.15,
+    "image_jpeg_appn_payload":                0.20,
+    "image_png_private_chunk":                0.20,
+    "image_png_text_chunk_payload":           0.25,
+    "svg_white_text":                         1.00,
+    "svg_title_payload":                      0.15,
+    "svg_desc_payload":                       0.15,
+    "svg_metadata_payload":                   0.15,
+    "svg_defs_unreferenced_text":             0.20,
     # Phase 20 — CSV / TSV / delimited-data mechanisms. Severities
     # mirror the closest existing analogue so the scoring surface
     # stays consistent across formats:
@@ -2056,6 +2439,13 @@ TIER: Final[dict[str, int]] = {
     "docx_alt_chunk":              2,
     "docx_external_relationship":  2,
     "docx_revision_history":       3,
+    # Phase 17 (v1.1.2) — DOCX hidden-text payload mechanisms.
+    "docx_white_text":             1,
+    "docx_microscopic_font":       2,
+    "docx_header_footer_payload": 1,
+    "docx_metadata_payload":       1,
+    "docx_comment_payload":        2,
+    "docx_orphan_footnote":        1,
     # Phase 16 — HTML mechanisms.
     # html_hidden_text: tier 2 structural — CSS / attribute-based
     #   invisibility is unambiguously present, but Word-style drafts
@@ -2099,6 +2489,24 @@ TIER: Final[dict[str, int]] = {
     "xlsx_hidden_row_column":         2,
     "xlsx_external_link":             2,
     "xlsx_data_validation_formula":   3,
+    # Phase 17 (v1.1.2) - XLSX hidden-text payload mechanisms.
+    "xlsx_white_text":                1,
+    "xlsx_microscopic_font":          2,
+    "xlsx_csv_injection_formula":     1,
+    "xlsx_metadata_payload":          1,
+    "xlsx_defined_name_payload":      2,
+    "xlsx_comment_payload":           2,
+    # Phase 16 (v1.1.2) - HTML format-gauntlet payload mechanisms.
+    # All six are Tier 1 verified - each trigger is a byte-
+    # deterministic structural anomaly (length threshold or
+    # substring divergence) with no semantic claim about user
+    # intent.
+    "html_noscript_payload":          1,
+    "html_template_payload":          1,
+    "html_comment_payload":           1,
+    "html_meta_payload":              1,
+    "html_style_content_payload":     1,
+    "html_title_text_divergence":     1,
     # Phase 18 — PPTX mechanisms.
     # pptx_vba_macros: tier 1 verified active code (parallels
     #   docx_vba_macros, xlsx_vba_macros, svg_embedded_script).
@@ -2181,6 +2589,26 @@ TIER: Final[dict[str, int]] = {
     "eml_attachment_present":                 3,
     "eml_nested_eml":                         3,
     "eml_mime_boundary_anomaly":              3,
+    # v1.1.2 EML format-gauntlet tiers. Mismatch / chain-anomaly
+    # mechanisms are tier-2 structural (deterministic comparison; the
+    # interpretation — phishing, CEO fraud — is not made by the
+    # detector). base64-on-text, folded-continuation, and X-* length
+    # mechanisms are tier-1 verified (deterministic checks on raw
+    # bytes, no semantic claims).
+    "eml_from_replyto_mismatch":              2,
+    "eml_base64_text_part":                   1,
+    "eml_returnpath_from_mismatch":           2,
+    "eml_received_chain_anomaly":             2,
+    "eml_header_continuation_payload":        1,
+    "eml_xheader_payload":                    1,
+    "image_jpeg_appn_payload":                1,
+    "image_png_private_chunk":                2,
+    "image_png_text_chunk_payload":           1,
+    "svg_white_text":                         1,
+    "svg_title_payload":                      1,
+    "svg_desc_payload":                       1,
+    "svg_metadata_payload":                   1,
+    "svg_defs_unreferenced_text":             1,
     # Phase 20 — CSV / TSV / delimited-data mechanism tiers. Rationale:
     # csv_formula_injection: tier 1 verified — the first-byte prefix is
     #   unambiguously identifiable (``=``, ``+``, ``-``, ``@``, ``\t``,

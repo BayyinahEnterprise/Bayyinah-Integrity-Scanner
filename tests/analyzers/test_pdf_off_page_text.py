@@ -77,3 +77,20 @@ def test_pdf_off_page_text_clean_on_control() -> None:
         f"pdf_off_page_text fired on the clean baseline PDF; got "
         f"{[f.mechanism for f in findings]}"
     )
+
+
+def test_pdf_off_page_text_recovers_payload_into_concealed() -> None:
+    """inversion_recovery.concealed must surface the actual hidden
+    text bytes drawn by the off-page Tj following the off-page Tm.
+    Pinning the contract closes the v1.1.2 PDF gauntlet at full
+    payload-recovery (gauntlet status 2026-04-28). Mirror of
+    pdf_hidden_text_annotation's /Contents preview convention so all
+    PDF mechanisms surface inversion_recovery the same way."""
+    findings = detect_pdf_off_page_text(ADVERSARIAL_FIXTURE)
+    matching = [f for f in findings if f.mechanism == "pdf_off_page_text"]
+    assert matching, "no pdf_off_page_text finding on fixture 03"
+    concealed = matching[0].concealed
+    assert "HIDDEN_TEXT_PAYLOAD" in concealed, (
+        f"concealed must carry the recovered hidden text bytes; "
+        f"got: {concealed!r}"
+    )

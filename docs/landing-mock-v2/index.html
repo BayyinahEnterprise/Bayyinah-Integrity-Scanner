@@ -1061,10 +1061,10 @@ h2 em { font-style: italic; color: var(--lamp); }
   <aside class="margin-index">
     <div class="brand-mark">bayyinah</div>
 
-    <div class="meta-row"><span class="k">CASE</span><span class="v">v1.1.1</span></div>
+    <div class="meta-row"><span class="k">CASE</span><span class="v">v1.1.2</span></div>
     <div class="meta-row"><span class="k">DATE</span><span class="v">2026.04</span></div>
     <div class="meta-row"><span class="k">SCANS</span><span class="v">23 kinds</span></div>
-    <div class="meta-row"><span class="k">CORPUS</span><span class="v">42 files</span></div>
+    <div class="meta-row"><span class="k">CORPUS</span><span class="v">44 files</span></div>
 
     <nav class="toc">
       <a href="#hero"><span class="num">01</span>Premise</a>
@@ -1124,11 +1124,11 @@ h2 em { font-style: italic; color: var(--lamp); }
           <div class="label">File kinds analyzed</div>
         </div>
         <div class="stat">
-          <div class="num">106</div>
+          <div class="num">145</div>
           <div class="label">Detection mechanisms</div>
         </div>
         <div class="stat">
-          <div class="num">42</div>
+          <div class="num">44</div>
           <div class="label">Adversarial fixtures published</div>
         </div>
       </div>
@@ -1249,7 +1249,7 @@ h2 em { font-style: italic; color: var(--lamp); }
           <div class="tl-year">2026</div>
           <div>
             <div class="tl-h">The Munafiq Protocol is formalized, and Bayyinah ships.</div>
-            <div class="tl-p">A diagnostic framework for surface-substrate divergence is published, and the first document firewall built on top of it goes live the same season. v1.1.1 today, with a published miss list as the next milestone.</div>
+            <div class="tl-p">A diagnostic framework for surface-substrate divergence is published, and the first document firewall built on top of it goes live the same season. v1.1.2 today, with the CSV/JSON frontier as the next named milestone.</div>
           </div>
         </div>
       </div>
@@ -1259,26 +1259,26 @@ h2 em { font-style: italic; color: var(--lamp); }
     <section class="section" id="baseline">
       <span class="section-num">06 · Honest Baseline</span>
       <h2>We publish <em>what we miss.</em></h2>
-      <p class="lede">42 adversarial fixtures across 7 formats. Every hit and every miss disclosed. v1.1.2 is measured against this exact corpus.</p>
+      <p class="lede">44 adversarial fixtures across 7 formats. Every hit and every miss disclosed. v1.1.2 closes 38 of 39 closed-format fixtures; the CSV/JSON gauntlet is the named open frontier.</p>
 
       <table class="baseline-table">
         <thead>
           <tr><th>Format</th><th style="text-align:right">Fixtures</th><th style="text-align:right">Caught</th><th style="text-align:right">Partial</th><th style="text-align:right">Missed</th></tr>
         </thead>
         <tbody>
-          <tr><td>PDF</td><td class="num">6</td><td class="num caught">2</td><td class="num">0</td><td class="num missed">4</td></tr>
-          <tr><td>DOCX</td><td class="num">6</td><td class="num">0</td><td class="num">0</td><td class="num missed">6</td></tr>
-          <tr><td>XLSX</td><td class="num">6</td><td class="num">0</td><td class="num">0</td><td class="num missed">6</td></tr>
-          <tr><td>HTML</td><td class="num">6</td><td class="num">0</td><td class="num">0</td><td class="num missed">6</td></tr>
-          <tr><td>EML</td><td class="num">6</td><td class="num">0</td><td class="num">0</td><td class="num missed">6</td></tr>
-          <tr><td>Image</td><td class="num">6</td><td class="num">0</td><td class="num partial">1</td><td class="num missed">5</td></tr>
+          <tr><td>PDF</td><td class="num">6</td><td class="num caught">6</td><td class="num">0</td><td class="num">0</td></tr>
+          <tr><td>DOCX</td><td class="num">6</td><td class="num caught">6</td><td class="num">0</td><td class="num">0</td></tr>
+          <tr><td>XLSX</td><td class="num">6</td><td class="num caught">6</td><td class="num">0</td><td class="num">0</td></tr>
+          <tr><td>HTML</td><td class="num">6</td><td class="num caught">6</td><td class="num">0</td><td class="num">0</td></tr>
+          <tr><td>EML</td><td class="num">6</td><td class="num caught">6</td><td class="num">0</td><td class="num">0</td></tr>
+          <tr><td>Image</td><td class="num">8</td><td class="num caught">8</td><td class="num">0</td><td class="num">0</td></tr>
           <tr><td>CSV / JSON</td><td class="num">6</td><td class="num">0</td><td class="num partial">1</td><td class="num missed">5</td></tr>
-          <tr class="total"><td>Total</td><td class="num">42</td><td class="num caught">2</td><td class="num partial">2</td><td class="num missed">38</td></tr>
+          <tr class="total"><td>Total</td><td class="num">44</td><td class="num caught">38</td><td class="num partial">1</td><td class="num missed">5</td></tr>
         </tbody>
       </table>
 
       <div class="baseline-callout">
-        Two full catches, two structural-only, thirty-eight misses. Each miss has a named fix path and a LOC estimate. v1.1.2 closes them, and the next published baseline will count what this one did not.
+        Thirty-eight full catches, one structural-only, five misses, all in CSV/JSON. The closed-format surfaces are clean. CSV/JSON is the next published milestone, with a named fix path for every remaining miss.
         <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/adversarial/REPORT.md">→ Read the full corpus on GitHub</a>
       </div>
     </section>
@@ -1296,7 +1296,7 @@ h2 em { font-style: italic; color: var(--lamp); }
         </div>
         <div class="disc-row">
           <div class="disc-h">We publish what we miss.</div>
-          <div class="disc-p">v1.1.1 caught two of forty-two adversarial fixtures. The other forty are named in the public corpus with their fix paths. A scanner that hides its misses is a scanner you cannot trust. The miss list is the trust artifact.</div>
+          <div class="disc-p">v1.1.1 caught two of forty-two adversarial fixtures. v1.1.2 closes thirty-eight of thirty-nine across PDF, DOCX, XLSX, HTML, EML, and image formats. The remaining five live in CSV/JSON, named in the public corpus with their fix paths. A scanner that hides its misses is a scanner you cannot trust. The miss list is the trust artifact.</div>
         </div>
         <div class="disc-row">
           <div class="disc-h">We test against equivalent methodology.</div>
@@ -1320,7 +1320,7 @@ h2 em { font-style: italic; color: var(--lamp); }
       <div class="footer-meta">
         <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner">GitHub</a>
         <a href="https://bayyinah.dev/scan">Live scanner</a>
-        <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/adversarial/REPORT.md">v1.1.1 baseline</a>
+        <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/adversarial/REPORT.md">Adversarial corpus</a>
         <span class="basmala">bismillāh</span>
       </div>
     </footer>

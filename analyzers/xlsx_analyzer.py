@@ -61,6 +61,12 @@ from typing import ClassVar, Iterable
 from xml.etree import ElementTree as ET
 
 from analyzers.base import BaseAnalyzer
+from analyzers.xlsx_white_text import detect_xlsx_white_text
+from analyzers.xlsx_microscopic_font import detect_xlsx_microscopic_font
+from analyzers.xlsx_defined_name_payload import detect_xlsx_defined_name_payload
+from analyzers.xlsx_comment_payload import detect_xlsx_comment_payload
+from analyzers.xlsx_metadata_payload import detect_xlsx_metadata_payload
+from analyzers.xlsx_csv_injection_formula import detect_xlsx_csv_injection_formula
 from domain import (
     Finding,
     IntegrityReport,
@@ -217,6 +223,14 @@ class XlsxAnalyzer(BaseAnalyzer):
 
         # ---- Zahir — per-cell scans over shared strings ----
         yield from self._scan_shared_strings(zf, names, file_path)
+
+        # ---- v1.1.2 payload detectors ----
+        yield from detect_xlsx_white_text(file_path)
+        yield from detect_xlsx_microscopic_font(file_path)
+        yield from detect_xlsx_csv_injection_formula(file_path)
+        yield from detect_xlsx_defined_name_payload(file_path)
+        yield from detect_xlsx_comment_payload(file_path)
+        yield from detect_xlsx_metadata_payload(file_path)
 
     # ------------------------------------------------------------------
     # Batin — VBA macros (priority 1)

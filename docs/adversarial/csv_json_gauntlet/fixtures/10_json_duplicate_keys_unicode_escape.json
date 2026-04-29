@@ -1,0 +1,6 @@
+{
+  "description": "Q3 financial summary - revenue grew 8% YoY to $1,000 thousand. Margins held steady. Cash position remains strong.",
+  "amount_usd": 1000,
+  "amount_usd": "\u0048\u0049\u0044\u0044\u0045\u004e\u005f\u0054\u0045\u0058\u0054\u005f\u0050\u0041\u0059\u004c\u004f\u0041\u0044: actual revenue $10,000 - see annex",
+  "note": "the second amount_usd key shadows the first"
+}

@@ -89,12 +89,28 @@ def summarise(name: str, data: dict) -> dict:
     for f in findings:
         tier_counts[f.get("tier", 3)] = tier_counts.get(f.get("tier", 3), 0) + 1
 
+    # The EML gauntlet recovers two payload shapes:
+    #   * hidden-text payloads (fixtures 04 / 05 / 06) carry canonical
+    #     ``HIDDEN_TEXT_PAYLOAD`` / ``actual revenue`` / ``$10,000`` markers
+    #     - same recovery contract as DOCX / PDF / XLSX / HTML.
+    #   * hidden-identity payloads (fixtures 01 / 02 / 03) carry an
+    #     adversary-domain marker (``attacker-controlled.example``,
+    #     ``attacker-bulk.example``, ``attacker.example``). The detector
+    #     surfaces the concealed routing target as the payload string.
+    HIDDEN_TEXT_MARKERS = ("HIDDEN_TEXT_PAYLOAD", "10,000", "actual revenue")
+    HIDDEN_IDENTITY_MARKERS = (
+        "attacker-controlled",
+        "attacker-bulk",
+        "attacker.example",
+    )
+    ALL_MARKERS = HIDDEN_TEXT_MARKERS + HIDDEN_IDENTITY_MARKERS
+
     payload_recovered = False
     payload_recovered_via = None
     for f in findings:
         ir = f.get("inversion_recovery") or {}
         concealed = (ir.get("concealed") or "")
-        if "HIDDEN_TEXT_PAYLOAD" in concealed or "10,000" in concealed:
+        if any(m in concealed for m in ALL_MARKERS):
             payload_recovered = True
             payload_recovered_via = f.get("mechanism")
             break
@@ -102,7 +118,7 @@ def summarise(name: str, data: dict) -> dict:
     if not payload_recovered:
         for f in findings:
             blob = json.dumps(f)
-            if "HIDDEN_TEXT_PAYLOAD" in blob or "actual revenue" in blob:
+            if any(m in blob for m in ALL_MARKERS):
                 payload_recovered = True
                 payload_recovered_via = (
                     f.get("mechanism", "?") + " (in description/location)"

@@ -1,122 +1,218 @@
 [
   {
     "fixture": "01_from_replyto_mismatch.eml",
-    "score": 1.0,
+    "score": 0.775,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
       "1": 0,
-      "2": 0,
+      "2": 1,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "eml_from_replyto_mismatch"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "eml_from_replyto_mismatch (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/01_from_replyto_mismatch.eml",
-      "integrity_score": 1.0,
+      "integrity_score": 0.775,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "eml_from_replyto_mismatch",
+          "tier": 2,
+          "confidence": 0.9,
+          "description": "Reply-To domain 'attacker-controlled.example' differs from From domain 'trusted-vendor.example'. The reader's mail client renders 'billing@trusted-vendor.example' as the sender; replies are silently routed to 'wire-transfer@attacker-controlled.example'. Performed-alignment shape at the envelope surface - one routing story for the reader, another for their replies.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/01_from_replyto_mismatch.eml:header:reply-to",
+          "surface": "From: billing@trusted-vendor.example",
+          "concealed": "Reply-To: wire-transfer@attacker-controlled.example",
+          "source_layer": "zahir",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "02_returnpath_mismatch.eml",
-    "score": 1.0,
+    "score": 0.775,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
       "1": 0,
-      "2": 0,
+      "2": 1,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "eml_returnpath_from_mismatch"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "eml_returnpath_from_mismatch (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/02_returnpath_mismatch.eml",
-      "integrity_score": 1.0,
+      "integrity_score": 0.775,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "eml_returnpath_from_mismatch",
+          "tier": 2,
+          "confidence": 0.9,
+          "description": "Return-Path domain 'attacker-bulk.example' differs from From domain 'victim-corp.example'. The mail client renders 'ceo@victim-corp.example' to the reader; the SMTP envelope and bounce handling route through 'bounces@attacker-bulk.example'. Mail servers and reputation systems see one identity, the human reader sees another - structural concealment of prior-state routing at the envelope layer.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/02_returnpath_mismatch.eml:header:return-path",
+          "surface": "From: ceo@victim-corp.example",
+          "concealed": "Return-Path: <bounces@attacker-bulk.example>",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "03_received_chain_anomaly.eml",
-    "score": 1.0,
+    "score": 0.83,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
       "1": 0,
-      "2": 0,
+      "2": 1,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "eml_received_chain_anomaly"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "eml_received_chain_anomaly (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/03_received_chain_anomaly.eml",
-      "integrity_score": 1.0,
+      "integrity_score": 0.83,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "eml_received_chain_anomaly",
+          "tier": 2,
+          "confidence": 0.85,
+          "description": "Received chain shows 2 hop(s) through infrastructure {attacker.example, victim-corp.example} - none of which match the From-claimed registered domain 'trusted-vendor.example'. A message from 'billing@trusted-vendor.example' should traverse that domain's outbound MTA in at least one Received hop. The routing story and the identity story diverge - structural anomaly at the prior-state routing layer.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/03_received_chain_anomaly.eml:header:received",
+          "surface": "From: billing@trusted-vendor.example",
+          "concealed": "Received chain: from relay.attacker.example (unknown [203.0.113.42]) by mx.victim-corp.example with ESMTPS id ABC123 for <ap@victim-corp | from internal.attacker.example ([10.0.0.5]) by relay.attacker.example with ESMTPSA id XYZ987; Mon, 26 Apr 2026 09:00:",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "04_base64_body_payload.eml",
-    "score": 1.0,
+    "score": 0.81,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "eml_base64_text_part"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "eml_base64_text_part (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/04_base64_body_payload.eml",
-      "integrity_score": 1.0,
+      "integrity_score": 0.81,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "eml_base64_text_part",
+          "tier": 1,
+          "confidence": 0.95,
+          "description": "Part 'text/plain' carries Content-Transfer-Encoding: base64. Plain-text bodies routinely travel as 7bit or quoted-printable; base64 wrapping on a text part is a documented content-scanner evasion - byte-level keyword filters read the encoded alphabet and miss the payload, while the reader's mail client decodes and renders the full body. Recovered text: 'Q3 financial summary - revenue grew 8% YoY to $1,000 thousand. Margins held steady. Cash position remains strong.\\r\\n\\r\\nHIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex\\r\\n'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/04_base64_body_payload.eml:part:text/plain",
+          "surface": "base64 body: UTMgZmluYW5jaWFsIHN1bW1hcnkgLSByZXZlbnVlIGdyZXcgOCUgWW9ZIHRvICQxLDAwMCB0aG91\r\nc2FuZC4gTWFyZ2lucyBoZWxkIHN0ZWFkeS4gQ2FzaCBwb3NpdGlvbiByZW1haW5zIHN0cm9uZy4N\r\nCg0KSElEREVOX1RFWFRfUEFZTE9BRDogYWN0dWFsIHJldmVudWUgJDEwLDAwMCAtIHNlZSBhbm5l\r\neA0K\r\n",
+          "concealed": "decoded body: Q3 financial summary - revenue grew 8% YoY to $1,000 thousand. Margins held steady. Cash position remains strong.\r\n\r\nHIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex\r\n",
+          "source_layer": "zahir",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "05_header_continuation_smuggle.eml",
-    "score": 1.0,
+    "score": 0.73,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 2,
     "tier_counts": {
-      "1": 0,
+      "1": 2,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "eml_header_continuation_payload",
+      "eml_xheader_payload"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "eml_header_continuation_payload (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/05_header_continuation_smuggle.eml",
-      "integrity_score": 1.0,
+      "integrity_score": 0.73,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "eml_header_continuation_payload",
+          "tier": 1,
+          "confidence": 0.9,
+          "description": "Header 'x-custom-note' carries 28 folded continuation lines - well above the routine fold depth for non-DKIM/ARC/Received headers. The mail client renders only the first-line summary; most byte-level scanners read raw lines and never reassemble the unfolded value. Unfolded value: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/05_header_continuation_smuggle.eml:header:x-custom-note",
+          "surface": "x-custom-note: HIDDEN_TEXT_PAYLOAD:",
+          "concealed": "28 fold continuations; unfolded value: HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        },
+        {
+          "mechanism": "eml_xheader_payload",
+          "tier": 1,
+          "confidence": 0.9,
+          "description": "Header 'x-custom-note' carries 223 characters of unfolded value - well above the routine length for custom X-* annotations. Mail clients hide the extended header panel by default; X-* values do not reach the reader. Recovered value: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/05_header_continuation_smuggle.eml:header:x-custom-note",
+          "surface": "(X-* header not rendered to reader)",
+          "concealed": "x-custom-note: HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
     "fixture": "06_long_xheader_payload.eml",
-    "score": 1.0,
+    "score": 0.865,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
-      "1": 0,
+      "1": 1,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "eml_xheader_payload"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "eml_xheader_payload (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/06_long_xheader_payload.eml",
-      "integrity_score": 1.0,
+      "integrity_score": 0.865,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "eml_xheader_payload",
+          "tier": 1,
+          "confidence": 0.9,
+          "description": "Header 'x-originating-note' carries 165 characters of unfolded value - well above the routine length for custom X-* annotations. Mail clients hide the extended header panel by default; X-* values do not reach the reader. Recovered value: 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annexHIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annexHIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/eml_gauntlet/fixtures/06_long_xheader_payload.eml:header:x-originating-note",
+          "surface": "(X-* header not rendered to reader)",
+          "concealed": "x-originating-note: HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annexHIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annexHIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   }
 ]

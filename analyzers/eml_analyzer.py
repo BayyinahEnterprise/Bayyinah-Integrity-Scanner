@@ -109,6 +109,22 @@ from domain.config import (
 )
 from infrastructure.file_router import FileKind, FileRouter
 
+# v1.1.2 EML format-gauntlet detectors. Each is a standalone byte-
+# deterministic function that opens its own bytes from the same path;
+# they parallel the DOCX / XLSX / HTML v1.1.2 wiring pattern. Failures
+# are absorbed by the dispatch loop in ``scan`` so the walker findings
+# remain authoritative.
+from analyzers.eml_from_replyto_mismatch import detect_eml_from_replyto_mismatch
+from analyzers.eml_returnpath_from_mismatch import (
+    detect_eml_returnpath_from_mismatch,
+)
+from analyzers.eml_received_chain_anomaly import detect_eml_received_chain_anomaly
+from analyzers.eml_base64_text_part import detect_eml_base64_text_part
+from analyzers.eml_header_continuation_payload import (
+    detect_eml_header_continuation_payload,
+)
+from analyzers.eml_xheader_payload import detect_eml_xheader_payload
+
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -457,6 +473,26 @@ class EmlAnalyzer(BaseAnalyzer):
             )
             report.scan_incomplete = True
             return report
+
+        # v1.1.2 — run the format-gauntlet detectors after the walker.
+        # Each detector reads its own bytes from the same path; this
+        # mirrors the DOCX / XLSX / HTML wiring pattern. Detector
+        # failures are absorbed silently here (the surface they target
+        # is the same bytes the walker just successfully decoded, so a
+        # failure is extremely unlikely; if one occurs, the walker's
+        # findings remain authoritative).
+        for detector in (
+            detect_eml_from_replyto_mismatch,
+            detect_eml_returnpath_from_mismatch,
+            detect_eml_received_chain_anomaly,
+            detect_eml_base64_text_part,
+            detect_eml_header_continuation_payload,
+            detect_eml_xheader_payload,
+        ):
+            try:
+                findings.extend(detector(file_path))
+            except Exception:  # noqa: BLE001 — defensive
+                continue
 
         # Phase 21 — if a ceiling tripped anywhere in the walk it left
         # a ``scan_limited`` finding. Promote that into the report's

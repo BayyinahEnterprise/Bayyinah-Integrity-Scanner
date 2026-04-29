@@ -1051,6 +1051,98 @@ h2 em { font-style: italic; color: var(--lamp); }
   .substrate { opacity: 0.18; }
   .litpage-frame::before { opacity: 0.6; }
 }
+
+/* ===== § 08 RESEARCH ===== */
+.research-layer {
+  margin-top: 2.4rem;
+}
+.research-layer:first-of-type {
+  margin-top: 1.6rem;
+}
+.research-layer-h {
+  font-family: var(--fm);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lamp);
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+.paper {
+  padding: 1.2rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.paper:last-child {
+  border-bottom: none;
+}
+.paper-title {
+  font-family: var(--fd);
+  font-size: 1.05rem;
+  line-height: 1.35;
+  margin-bottom: 0.4rem;
+}
+.paper-title a {
+  color: var(--vellum);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 200ms var(--ease);
+}
+.paper-title a:hover {
+  border-bottom-color: var(--lamp);
+  color: var(--lamp);
+}
+.paper-meta {
+  font-family: var(--fm);
+  font-size: 0.74rem;
+  color: var(--ink-2);
+  margin-bottom: 0.7rem;
+  letter-spacing: 0.02em;
+}
+.paper-meta .doi {
+  color: var(--lamp);
+  background: var(--lamp-soft);
+  padding: 0.08rem 0.4rem;
+  border-radius: 2px;
+}
+.paper-p {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.research-callout {
+  margin-top: 2.4rem;
+  padding: 1.2rem 1.4rem;
+  background: var(--bg-3);
+  border-left: 2px solid var(--lamp);
+  font-family: var(--fm);
+  font-size: 0.84rem;
+  color: var(--ink-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+.research-callout a {
+  color: var(--lamp);
+  text-decoration: none;
+  border-bottom: 1px solid var(--lamp-soft);
+  transition: border-color 200ms var(--ease);
+}
+.research-callout a:hover {
+  border-bottom-color: var(--lamp);
+}
+.research-callout .callout-sep {
+  color: var(--faint);
+}
+
+/* Mobile: tighten paper cards */
+@media (max-width: 720px) {
+  .paper-title { font-size: 0.98rem; }
+  .paper-meta { font-size: 0.7rem; }
+  .paper-p { font-size: 0.9rem; }
+}
+
 </style>
 </head>
 <body>
@@ -1074,6 +1166,7 @@ h2 em { font-style: italic; color: var(--lamp); }
       <a href="#convergence"><span class="num">05</span>Why Now</a>
       <a href="#baseline"><span class="num">06</span>Honest Baseline</a>
       <a href="#discipline"><span class="num">07</span>Discipline</a>
+      <a href="#research"><span class="num">08</span>Research</a>
     </nav>
 
     <div class="footer-sig">
@@ -1309,6 +1402,85 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
+    <!-- =========== § 08 RESEARCH =========== -->
+    <section class="section" id="research">
+      <span class="section-num">08 · The Published Record</span>
+      <h2>The corpus is <em>open.</em></h2>
+      <p class="lede">Nine technical papers, every claim auditable against its named null hypothesis, every paper linked by permanent DOI. The research reads in three layers: the protocol that names the failure mode, the architecture built on the protocol, and the input-layer applications that put the protocol into production.</p>
+
+      <div class="research-layer">
+        <div class="research-layer-h">Layer 1 · The Protocol</div>
+
+        <div class="paper">
+          <div class="paper-title"><a href="https://doi.org/10.5281/zenodo.19700420">Detecting Performed Alignment in Artificial Systems: The Munafiq Protocol</a></div>
+          <div class="paper-meta"><span class="doi">10.5281/zenodo.19700420</span> · v2.1 · 2026-04-22 · Arfeen, Claude (Anthropic), Grok (xAI)</div>
+          <div class="paper-p">The anchor paper. Names the failure mode RLHF, Constitutional AI, and helpfulness training do not address: a system can be Compliant (outputs the trainer rewards) without being Aligned (depth state matches surface presentation). Introduces the four-process taxonomy and the verdict surface every system in this corpus inherits.</div>
+        </div>
+      </div>
+
+      <div class="research-layer">
+        <div class="research-layer-h">Layer 2 · The Architecture</div>
+
+        <div class="paper">
+          <div class="paper-title"><a href="https://doi.org/10.5281/zenodo.19776584">Furqan: A Programming Language with Structural Honesty, Calibrated Optimization, and Surface-Depth Type Verification Derived from Quranic Computational Architecture</a></div>
+          <div class="paper-meta"><span class="doi">10.5281/zenodo.19776584</span> · 2026-04-25 · Ashraf, Arfeen, Claude (Anthropic), Computer (Perplexity), Grok (xAI)</div>
+          <div class="paper-p">A programming language whose type system, module architecture, and build constraints are derived from structural properties of the Quran. Where contemporary languages ask developers to write honest code as a behavioral expectation, Furqan makes structural honesty a property of the type system, so surface-depth divergence becomes a type error rather than a code-review concern.</div>
+        </div>
+
+        <div class="paper">
+          <div class="paper-title"><a href="https://doi.org/10.5281/zenodo.19776577">Al-Khalifa: A Furqan-Based Super Agent Architecture for Structurally Honest Autonomous Project Stewardship</a></div>
+          <div class="paper-meta"><span class="doi">10.5281/zenodo.19776577</span> · 2026-04-25 · Arfeen, Claude (Anthropic), Computer (Perplexity), Grok (xAI). Additional contributors named on the DOI page.</div>
+          <div class="paper-p">Applies Furqan's seven compile-time primitives as seven runtime constraints on an autonomous agent. Where AutoGPT, CrewAI, LangChain agents, and Devin decompose tasks but cannot verify whether they are building the right thing versus performing the appearance of building, Al-Khalifa is architected so the surface-depth gap is checked at every step of the agent's stewardship loop.</div>
+        </div>
+
+        <div class="paper">
+          <div class="paper-title"><a href="https://doi.org/10.5281/zenodo.19776576">Bilal: An Honest-Autonomous Large Language Model Architecture with Structural Truth Verification, Calibrated Generation, and Purpose-Hierarchy Training Objectives Derived from Quranic Computational Architecture</a></div>
+          <div class="paper-meta"><span class="doi">10.5281/zenodo.19776576</span> · 2026-04-25 · Arfeen, Claude (Anthropic), Computer (Perplexity), Grok (xAI)</div>
+          <div class="paper-p">A model architecture proposal that takes the Munafiq Protocol's structural-honesty constraint and integrates it as a training objective rather than an external evaluation. The long-form answer to the question: what would an LLM look like if alignment were a property of the architecture, not a finetuning target.</div>
+        </div>
+
+        <div class="paper">
+          <div class="paper-title"><a href="https://doi.org/10.5281/zenodo.19744163">Structured Revelation as Prompt Architecture</a></div>
+          <div class="paper-meta"><span class="doi">10.5281/zenodo.19744163</span> · 2026-04-24 · Arfeen, Claude (Anthropic), Grok (xAI)</div>
+          <div class="paper-p">The methodology paper. Demonstrates that gradual revelation, ring composition, lossless morphological compression, and the zahir / batin distinction function as prompt-engineering primitives in human-AI collaborative software development. Validated longitudinally against the development of Bayyinah v1.0.</div>
+        </div>
+
+        <div class="paper">
+          <div class="paper-title"><a href="https://doi.org/10.5281/zenodo.19746539">The Fatiha Construct: A Seven-Step Recursive Session Protocol for Human-AI Collaborative Development Derived from Surah al-Fatiha</a></div>
+          <div class="paper-meta"><span class="doi">10.5281/zenodo.19746539</span> · 2026-04-25 · Arfeen, Claude (Anthropic), Grok (xAI)</div>
+          <div class="paper-p">The session-level companion to Structured Revelation. Each of the seven steps maps to a verse of Surah al-Fatiha with structural, not decorative, correspondence: a calibration check, an orientation check, a deadline-with-skip-rule, a memory-encoding step, and an over-specification guard against the failure mode the paper calls the Cow Episode.</div>
+        </div>
+      </div>
+
+      <div class="research-layer">
+        <div class="research-layer-h">Layer 3 · The Application</div>
+
+        <div class="paper">
+          <div class="paper-title"><a href="https://doi.org/10.5281/zenodo.19745154">Bayyinah: Detecting Concealed Adversarial Content in Digital Documents. A White Paper Applying the Munafiq Protocol to the Input Layer</a></div>
+          <div class="paper-meta"><span class="doi">10.5281/zenodo.19745154</span> · 2026-04-24 · Arfeen, Claude (Anthropic), Grok (xAI)</div>
+          <div class="paper-p">The white paper that turns the protocol into a working scanner. Where the Munafiq Protocol diagnoses agents, Bayyinah diagnoses their inputs. Formalizes the relational definition: a document is Performed with respect to a rendering function and an ingestion function when the machine's ingested content carries a payload the human reader's rendered surface does not reveal.</div>
+        </div>
+
+        <div class="paper">
+          <div class="paper-title"><a href="https://doi.org/10.5281/zenodo.19802455">Bayyinah as Input-Layer Defense in Artificial-System Safety Pipelines</a></div>
+          <div class="paper-meta"><span class="doi">10.5281/zenodo.19802455</span> · v1.1 · 2026-04-26 · Arfeen, Claude (Anthropic), Grok (xAI)</div>
+          <div class="paper-p">The deployment paper. Documents the design, implementation, and adversarial-gauntlet evaluation of Bayyinah as an input-layer defense in production AI pipelines. Twelve file formats, an honest miss list, and the discipline that comes from making every miss a published commitment.</div>
+        </div>
+
+        <div class="paper">
+          <div class="paper-title"><a href="https://doi.org/10.5281/zenodo.19746298">Bayyinah al-Khabir: A Theoretical Framework for Information-Layer Integrity Scanning Across National Broadcast Sources Using Performed-Alignment Diagnostics</a></div>
+          <div class="paper-meta"><span class="doi">10.5281/zenodo.19746298</span> · 2026-04-24 · Arfeen, Ashraf, Claude (Anthropic), Grok (xAI)</div>
+          <div class="paper-p">The horizon paper. Extends the Bayyinah architecture from documents to information sources: where Bayyinah detects performed alignment in a single document, al-Khabir detects performed alignment in a source's reporting on a specific event measured against the cross-source evidence base across multiple national contexts. Currently theoretical; the protocol scaffolding is published so the implementation that follows can be measured against the framework, not against itself.</div>
+        </div>
+      </div>
+
+      <div class="research-callout">
+        <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/research.md">Read the full research index on GitHub</a>
+        <span class="callout-sep">·</span>
+        <a href="https://zenodo.org/search?q=Arfeen%20Bilal&l=list&p=1&s=10&sort=newest">Browse all deposits on Zenodo</a>
+      </div>
+    </section>
+
     <!-- =========== FOOTER =========== -->
     <footer class="footer-block">
       <div class="etymology">
@@ -1321,6 +1493,7 @@ h2 em { font-style: italic; color: var(--lamp); }
         <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner">GitHub</a>
         <a href="https://bayyinah.dev/scan">Live scanner</a>
         <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/adversarial/REPORT.md">Adversarial corpus</a>
+        <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/research.md">Research</a>
         <span class="basmala">bismillāh</span>
       </div>
     </footer>

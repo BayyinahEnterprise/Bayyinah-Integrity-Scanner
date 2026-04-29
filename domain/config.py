@@ -340,6 +340,24 @@ ZAHIR_MECHANISMS: Final[frozenset[str]] = frozenset({
     # a ``coordinated_concealment`` finding. Parallels the per-cell
     # zahir scans XlsxAnalyzer runs.
     "csv_formula_injection",
+    # v1.1.2 F2 mechanism 4: bidi-override codepoint detector. The
+    # spreadsheet renderer (Excel, LibreOffice Calc, Google Sheets)
+    # honours the Unicode bidi algorithm: a cell carrying U+202A..
+    # U+202E or U+2066..U+2069 can render with reversed or reordered
+    # glyphs while the byte stream carries the original. The surface
+    # diverges from the bytes by definition. Tier 1 zahir, severity
+    # 0.25. See analyzers/csv_bidi_payload.py.
+    "csv_bidi_payload",
+    # v1.1.2 F2 mechanism 5: zero-width codepoint payload. A cell
+    # carrying U+200B / U+200C / U+200D, or U+FEFF mid-stream
+    # (file-start BOM exempt), is observable from a single
+    # deterministic walk of the rendered text content: the
+    # codepoint IS in the cell text stream, the spreadsheet
+    # renderer simply renders zero pixels for it. Same surface-
+    # readable shape as v1.1.1 zero_width_chars (also zahir).
+    # Tier 1 zahir, severity 0.20. See
+    # analyzers/csv_zero_width_payload.py.
+    "csv_zero_width_payload",
     # -----------------------------------------------------------------
     # Phase 24 — video (MP4 / MOV / WEBM / MKV) — Al-Baqarah 2:19-20
     # -----------------------------------------------------------------
@@ -1217,6 +1235,71 @@ BATIN_MECHANISMS: Final[frozenset[str]] = frozenset({
     "csv_mixed_delimiter",
     "csv_quoting_anomaly",
     "csv_oversized_field",
+    # v1.1.2 F2 mechanism 1: per-column type-drift detector. The
+    # header declares the column's type signature; a row that
+    # violates it with a long free-text payload is the canonical
+    # column-hijack shape. Tier 2 batin, severity 0.15. See
+    # analyzers/csv_column_type_drift.py.
+    "csv_column_type_drift",
+    # v1.1.2 F2 mechanism 3: RFC 4180 quoted multi-line payload.
+    # A quoted cell with two or more embedded newlines AND length
+    # above 128 chars is multi-paragraph payload smuggled into a
+    # single tabular cell. Tier 1 batin, severity 0.20. See
+    # analyzers/csv_quoted_newline_payload.py.
+    "csv_quoted_newline_payload",
+    # v1.1.2 F2 mechanism 6: encoding-divergence detector. The
+    # same bytes decode to different cell text under UTF-8 vs
+    # latin-1 in any (row, column) position. The fork is invisible
+    # from any single decoded surface; only a two-decode walk
+    # surfaces it. Tier 1 batin, severity 0.20. See
+    # analyzers/csv_encoding_divergence.py.
+    "csv_encoding_divergence",
+    # v1.1.2 F2 mechanism 8 (JSON Step 9): unicode-escape-payload
+    # detector. JSON permits \uXXXX escapes that strict parsers
+    # silently decode. An escape whose codepoint falls in the bidi
+    # override range (U+202A-U+202E, U+2066-U+2069) or zero-width
+    # range (U+200B, U+200C, U+200D, U+FEFF) bypasses the v1.1.1
+    # post-parse string walk because the raw bytes are ASCII; only
+    # a pre-parse byte-stream scan surfaces it. Tier 1 batin,
+    # severity 0.20. See analyzers/json_unicode_escape_payload.py.
+    "json_unicode_escape_payload",
+    # v1.1.2 F2 mechanism 10 (JSON Step 10): comment-anomaly detector.
+    # RFC 8259 (strict JSON) does not permit comments. Lenient parsers
+    # (JSON5, jsonc, hjson, VS Code settings parser) silently accept
+    # both ``//`` line comments and ``/* ... */`` block comments. The
+    # comment text is invisible to any post-parse tree walk because
+    # the parser strips it; the byte stream carries the payload.
+    # Tier 2 batin (structural shape with legitimate-toolchain false-
+    # positive surface), severity 0.15. See
+    # analyzers/json_comment_anomaly.py.
+    "json_comment_anomaly",
+    # v1.1.2 F2 mechanism 11 (JSON Step 11): prototype-pollution-key
+    # detector. A JSON object key matching ``__proto__``,
+    # ``constructor``, or ``prototype`` is the canonical JS
+    # prototype-pollution shape; recursive-merge consumers (Lodash
+    # _.merge, jQuery $.extend, minimist, etc.) treat the key as a
+    # prototype-chain mutation primitive rather than data. Tier 1
+    # batin (high precision, severe downstream consequence),
+    # severity 0.20. See analyzers/json_prototype_pollution_key.py.
+    "json_prototype_pollution_key",
+    # v1.1.2 F2 mechanism 12 (JSON Step 12): deep-nesting payload
+    # detector. A leaf string at nesting depth >= 32 AND length > 256
+    # chars is the canonical deep-nesting smuggle shape: shallow
+    # walkers (recursive merge, sanitizers, schema validators that
+    # bail at depth N) skip the payload entirely. Higher precision
+    # than the v1.1 excessive_nesting structural detector because the
+    # conjunction excludes deep-but-empty data-shaped trees. Tier 2
+    # batin, severity 0.15. See analyzers/json_nested_payload.py.
+    "json_nested_payload",
+    # v1.1.2 F2 mechanism 13 (JSON Step 13): trailing-payload
+    # detector. Non-whitespace content past the root value's
+    # closing token is a strict-JSON violation that lenient
+    # consumers (raw_decode, jq, streaming JSON, naive
+    # ``JSON.parse`` after a slice) silently discard. The trailing
+    # bytes are invisible to any tool that walks the parsed value
+    # alone. Tier 1 batin (high precision, parser-invisible),
+    # severity 0.20. See analyzers/json_trailing_payload.py.
+    "json_trailing_payload",
     # Phase 21 — production-hardening meta-mechanisms. Both live in the
     # batin layer because they describe the *scanner's* inner state
     # (what was not inspected, what could not be identified) rather
@@ -2206,9 +2289,19 @@ SEVERITY: Final[dict[str, float]] = {
     #     field in a legitimate export is rare, but legitimate
     #     log-message fields can reach megabytes.
     "csv_formula_injection":          0.30,
+    "csv_bidi_payload":               0.25,
+    "json_unicode_escape_payload":    0.20,
+    "json_comment_anomaly":           0.15,
+    "json_prototype_pollution_key":   0.20,
+    "json_nested_payload":            0.15,
+    "json_trailing_payload":          0.20,
     "csv_null_byte":                  0.30,
     "csv_comment_row":                0.15,
     "csv_inconsistent_columns":       0.15,
+    "csv_column_type_drift":          0.15,
+    "csv_quoted_newline_payload":     0.20,
+    "csv_zero_width_payload":         0.20,
+    "csv_encoding_divergence":        0.20,
     "csv_mixed_encoding":             0.15,
     "csv_mixed_delimiter":            0.15,
     "csv_bom_anomaly":                0.10,
@@ -2641,9 +2734,19 @@ TIER: Final[dict[str, int]] = {
     # csv_oversized_field: tier 3 interpretive — a megabyte-scale cell
     #   is suspicious but legitimate log exports hit this threshold.
     "csv_formula_injection":          1,
+    "csv_bidi_payload":               1,
+    "json_unicode_escape_payload":    1,
+    "json_comment_anomaly":           2,
+    "json_prototype_pollution_key":   1,
+    "json_nested_payload":            2,
+    "json_trailing_payload":          1,
     "csv_null_byte":                  1,
     "csv_comment_row":                2,
     "csv_inconsistent_columns":       2,
+    "csv_column_type_drift":          2,
+    "csv_quoted_newline_payload":     1,
+    "csv_zero_width_payload":         1,
+    "csv_encoding_divergence":        1,
     "csv_bom_anomaly":                2,
     "csv_mixed_encoding":             2,
     "csv_mixed_delimiter":            2,

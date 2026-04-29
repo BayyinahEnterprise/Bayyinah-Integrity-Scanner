@@ -79,6 +79,13 @@ from pathlib import Path
 from typing import ClassVar, Iterable
 
 from analyzers.base import BaseAnalyzer
+from analyzers.csv_column_type_drift import detect_column_type_drift
+from analyzers.csv_bidi_payload import detect_bidi_payload
+from analyzers.csv_zero_width_payload import detect_zero_width_payload
+from analyzers.csv_quoted_newline_payload import (
+    detect_quoted_newline_payload,
+)
+from analyzers.csv_encoding_divergence import detect_encoding_divergence
 from domain import (
     Finding,
     IntegrityReport,
@@ -320,7 +327,48 @@ class CsvAnalyzer(BaseAnalyzer):
             findings.extend(
                 self._walk_rows(text, delimiter, file_path),
             )
-        except Exception as exc:  # noqa: BLE001 — deliberately broad
+            # F2 mechanism 1: per-column type-drift detector. Runs
+            # after the row walk so it sees the same delimiter the
+            # base walker used.
+            findings.extend(
+                detect_column_type_drift(text, delimiter, file_path),
+            )
+            # F2 mechanism 3: RFC 4180 quoted multi-line payload
+            # detector. Pairs an embedded-newline count with an
+            # unquoted-cell length threshold; both must trip.
+            findings.extend(
+                detect_quoted_newline_payload(
+                    text, delimiter, file_path,
+                ),
+            )
+            # F2 mechanism 4: bidi-override codepoint detector
+            # (zahir). Any cell carrying U+202A..U+202E or
+            # U+2066..U+2069 fires; spreadsheet renderers reorder
+            # the visible glyphs while the bytes carry the original.
+            findings.extend(
+                detect_bidi_payload(text, delimiter, file_path),
+            )
+            # F2 mechanism 5: zero-width codepoint detector (zahir).
+            # Any cell carrying U+200B / U+200C / U+200D, or
+            # U+FEFF mid-stream (file-start BOM is stripped before
+            # this point) fires. The codepoint IS in the cell-text
+            # stream, the spreadsheet renderer simply renders zero
+            # pixels for it - same surface-readable shape as v1.1.1
+            # zero_width_chars (also zahir).
+            findings.extend(
+                detect_zero_width_payload(text, delimiter, file_path),
+            )
+            # F2 mechanism 6: encoding-divergence detector (batin).
+            # Re-reads the file bytes and decodes them twice (UTF-8
+            # and latin-1); per-cell value divergence between the
+            # two decoded surfaces is surfaced as one finding per
+            # divergent cell. Capped at 16 MB; above that the
+            # detector yields nothing (the orchestrator's existing
+            # scan_limited path already records the truncation).
+            findings.extend(
+                detect_encoding_divergence(delimiter, file_path),
+            )
+        except Exception as exc:  # noqa: BLE001 -- deliberately broad
             # An unexpected parser failure becomes a scan_error that
             # composes with the findings already accumulated.
             partial = self._scan_error_report(
@@ -725,12 +773,35 @@ class CsvAnalyzer(BaseAnalyzer):
             if expected_columns is None:
                 expected_columns = len(row)
             elif len(row) != expected_columns:
+                # Surplus-cell payload extraction (F2 extension).
+                # When the row has MORE cells than the header, the
+                # extra cells are content the header schema did not
+                # name. Some parsers drop them silently, others carry
+                # them through unnamed. Either way, the bytes are in
+                # the row; the concealed surface should expose them.
+                surplus_text = ""
+                surplus_count = 0
+                if len(row) > expected_columns:
+                    surplus_cells = row[expected_columns:]
+                    surplus_count = len(surplus_cells)
+                    surplus_text = " | ".join(surplus_cells)[:500]
+                if surplus_count:
+                    concealed_text = (
+                        f"expected {expected_columns}, got {len(row)}: "
+                        f"parser disagreement. Surplus cell content "
+                        f"({surplus_count} extra cell(s)): {surplus_text!r}"
+                    )
+                else:
+                    concealed_text = (
+                        f"expected {expected_columns}, got {len(row)}: "
+                        "parser disagreement"
+                    )
                 yield Finding(
                     mechanism="csv_inconsistent_columns",
                     tier=TIER["csv_inconsistent_columns"],
                     confidence=0.9,
                     description=(
-                        f"Row {row_index} has {len(row)} column(s) — the "
+                        f"Row {row_index} has {len(row)} column(s); the "
                         f"header row and earlier data rows have "
                         f"{expected_columns}. Different parsers resolve "
                         "the mismatch differently: pandas pads with NaN, "
@@ -741,10 +812,7 @@ class CsvAnalyzer(BaseAnalyzer):
                     ),
                     location=f"{file_path}:row={row_index}",
                     surface=f"(row has {len(row)} cell(s) visibly)",
-                    concealed=(
-                        f"expected {expected_columns}, got {len(row)} — "
-                        "parser disagreement"
-                    ),
+                    concealed=concealed_text,
                     source_layer="batin",
                 )
 

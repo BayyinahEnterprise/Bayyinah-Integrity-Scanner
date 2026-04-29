@@ -43,6 +43,21 @@ from pathlib import Path
 from typing import Any, ClassVar, Iterable
 
 from analyzers.base import BaseAnalyzer
+from analyzers.json_comment_anomaly import (
+    detect_comment_anomaly,
+)
+from analyzers.json_nested_payload import (
+    detect_nested_payload,
+)
+from analyzers.json_prototype_pollution_key import (
+    detect_prototype_pollution_keys,
+)
+from analyzers.json_trailing_payload import (
+    detect_trailing_payload,
+)
+from analyzers.json_unicode_escape_payload import (
+    detect_unicode_escape_payload,
+)
 from domain import (
     Finding,
     IntegrityReport,
@@ -141,32 +156,86 @@ class JsonAnalyzer(BaseAnalyzer):
                 f"invalid UTF-8 in JSON file: {exc}",
             )
 
+        # ---- v1.1.2 F2 Step 10: pre-parse comment scan ----
+        # Strict-JSON parsers reject comments outright with a
+        # JSONDecodeError. We scan for comments BEFORE attempting
+        # the parse so the finding survives a parse failure caused
+        # by the comments themselves; on a successful parse the
+        # findings are appended below alongside the structural
+        # detectors. The state-machine scanner does not raise.
+        comment_findings: list[Finding] = list(
+            detect_comment_anomaly(text, file_path)
+        )
+
+        # ---- v1.1.2 F2 Step 13: pre-parse trailing-payload scan ----
+        # Strict-JSON parsers raise ``Extra data`` on any non-
+        # whitespace content past the root value. The detector uses
+        # ``raw_decode`` internally so it surfaces the trailing
+        # bytes even when the strict parse below fails for that
+        # exact reason. On a successful strict parse there are no
+        # trailing bytes by definition.
+        trailing_findings: list[Finding] = list(
+            detect_trailing_payload(text, file_path)
+        )
+
         # Parse with the duplicate-key-capturing hook.
-        captured_duplicates: list[tuple[tuple[Any, ...], str]] = []
+        # v1.1.2 F2 Step 8 (json_duplicate_key_divergence): the hook now
+        # records both the first and last occurrence values for every
+        # duplicate so the downstream finding's concealed field can
+        # surface the actual divergence (full payload recovery), not
+        # just the structural fact of duplication.
+        captured_duplicates: list[
+            tuple[tuple[Any, ...], str, Any, Any]
+        ] = []
 
         def _pairs_hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-            seen: dict[str, int] = {}
-            for key, _ in pairs:
-                seen[key] = seen.get(key, 0) + 1
-            for key, count in seen.items():
+            seen_count: dict[str, int] = {}
+            first_value: dict[str, Any] = {}
+            last_value: dict[str, Any] = {}
+            for key, value in pairs:
+                seen_count[key] = seen_count.get(key, 0) + 1
+                if key not in first_value:
+                    first_value[key] = value
+                last_value[key] = value
+            for key, count in seen_count.items():
                 if count > 1:
                     # Path is recovered post-hoc; we only know the local
                     # object shape here. The walker annotates path context
-                    # during the recursive walk — hook just reports the
-                    # key and duplicate count.
-                    captured_duplicates.append(((key,), f"count={count}"))
-            # Later occurrence wins by convention — this matches Python
+                    # during the recursive walk; the hook just reports
+                    # the key, the duplicate count, and the first/last
+                    # occurrence values so the finding can surface the
+                    # silent divergence the parser hid.
+                    captured_duplicates.append((
+                        (key,),
+                        f"count={count}",
+                        first_value[key],
+                        last_value[key],
+                    ))
+            # Later occurrence wins by convention. This matches Python
             # dict semantics and the majority of JSON parsers.
             return dict(pairs)
 
         try:
             tree = json.loads(text, object_pairs_hook=_pairs_hook)
         except json.JSONDecodeError as exc:
-            return self._scan_error_report(
+            # Surface any pre-parse byte-stream findings alongside
+            # the parse error so the reader sees the structural
+            # signals (comments, trailing bytes) that may have
+            # caused the strict-JSON parse to fail.
+            error_report = self._scan_error_report(
                 file_path,
                 f"could not parse JSON: {exc.msg} at line {exc.lineno} "
                 f"column {exc.colno}",
             )
+            extra = comment_findings + trailing_findings
+            if extra:
+                merged = list(error_report.findings) + extra
+                return IntegrityReport(
+                    file_path=str(file_path),
+                    integrity_score=compute_muwazana_score(merged),
+                    findings=merged,
+                )
+            return error_report
 
         findings: list[Finding] = []
 
@@ -175,6 +244,45 @@ class JsonAnalyzer(BaseAnalyzer):
             captured_duplicates, file_path,
         ))
         findings.extend(self._detect_excessive_nesting(tree, file_path))
+
+        # ---- v1.1.2 F2 Step 9: pre-parse byte-stream scan ----
+        # Scan the raw text for unicode escape sequences whose decoded
+        # codepoint is a bidi or zero-width concealment character. The
+        # post-parse string walk below would not see these because the
+        # parser silently decodes the escape into a literal codepoint.
+        findings.extend(
+            detect_unicode_escape_payload(text, file_path)
+        )
+
+        # ---- v1.1.2 F2 Step 10: append pre-parse comment findings ----
+        findings.extend(comment_findings)
+
+        # ---- v1.1.2 F2 Step 11: prototype-pollution key walk ----
+        # Recursive walk of every dict key. A key matching
+        # ``__proto__``, ``constructor``, or ``prototype`` is the
+        # canonical JS prototype-pollution shape; invisible to a
+        # data-only Python walk, hazardous to a JS recursive-merge
+        # consumer.
+        findings.extend(
+            detect_prototype_pollution_keys(tree, file_path)
+        )
+
+        # ---- v1.1.2 F2 Step 12: deep-nesting + payload conjunction ----
+        # A leaf string at depth >= 32 with length > 256 chars is the
+        # canonical deep-nesting smuggle shape. Higher precision than
+        # the v1.1 excessive_nesting structural detector because the
+        # conjunction excludes deep-but-empty data-shaped trees.
+        findings.extend(
+            detect_nested_payload(tree, file_path)
+        )
+
+        # ---- v1.1.2 F2 Step 13: append pre-parse trailing findings ----
+        # On a successful strict parse trailing_findings is empty
+        # (json.loads rejects trailing bytes), but the extension
+        # path above keeps the symmetry: any pre-parse byte-stream
+        # finding survives both the parse-success and parse-failure
+        # arms.
+        findings.extend(trailing_findings)
 
         # ---- Embedded string-value zahir scans ----
         for path, value in _walk_strings(tree):
@@ -196,29 +304,37 @@ class JsonAnalyzer(BaseAnalyzer):
 
     def _emit_duplicate_keys(
         self,
-        captured: list[tuple[tuple[Any, ...], str]],
+        captured: list[tuple[tuple[Any, ...], str, Any, Any]],
         file_path: Path,
     ) -> Iterable[Finding]:
         """One finding per duplicate-key occurrence captured at parse time.
 
         The hook fired at the *local* object scope so the key is known
-        but the full JSON pointer is not. We report the key and count;
-        the reader can grep the document to locate the occurrences.
+        but the full JSON pointer is not. We report the key, the count,
+        and the first / last occurrence values so the reader sees the
+        actual divergence (v1.1.2 F2 Step 8: json_duplicate_key_divergence,
+        full payload recovery extension on the existing detector).
         """
-        for (key, *_), detail in captured:
+        for (key, *_), detail, first_value, last_value in captured:
+            first_preview = repr(first_value)[:240]
+            last_preview = repr(last_value)[:240]
             yield Finding(
                 mechanism="duplicate_keys",
                 tier=TIER["duplicate_keys"],
                 confidence=1.0,
                 description=(
                     f"Duplicate key {key!r} in a JSON object ({detail}). "
-                    "Different parsers may resolve duplicates differently "
-                    "— the document presents different meanings to "
-                    "different readers."
+                    "Different parsers may resolve duplicates differently. "
+                    "The document presents different meanings to "
+                    "different readers; the first and last occurrence "
+                    "values are surfaced below."
                 ),
                 location=f"{file_path}:{key}",
                 surface=f"key {key!r} (later value wins in most parsers)",
-                concealed="earlier occurrence(s) silently shadowed",
+                concealed=(
+                    f"first occurrence: {first_preview}; "
+                    f"last occurrence (parser wins): {last_preview}"
+                ),
                 source_layer="batin",
             )
 

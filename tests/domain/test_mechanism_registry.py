@@ -36,7 +36,7 @@ def test_registry_is_frozenset() -> None:
     assert isinstance(MECHANISM_REGISTRY, frozenset)
 
 
-def test_registry_count_is_exact_145() -> None:
+def test_registry_count_is_exact_155() -> None:
     """Pin the count. Adding a mechanism must update this number;
     that is itself a structural reminder to update SEVERITY + TIER +
     the source-layer set in the same commit.
@@ -117,17 +117,98 @@ def test_registry_count_is_exact_145() -> None:
     via <use href="#id">. Unreferenced text in <defs> is fully
     readable by indexers and LLMs but never appears as glyph
     content for the human reader. 144 -> 145.
+
+    v1.1.2 F2 step 2 adds csv_column_type_drift (batin), the
+    per-column type-drift detector. The header declares the
+    column's type signature; a row that violates it with a
+    long free-text payload is the canonical column-hijack
+    shape. 145 -> 146.
+
+    v1.1.2 F2 step 3 adds csv_quoted_newline_payload (batin),
+    the RFC 4180 multi-line quoted-cell detector. A quoted cell
+    with two or more embedded newlines AND length above 128
+    chars is multi-paragraph payload smuggled into a single
+    tabular cell. 146 -> 147.
+
+    v1.1.2 F2 step 4 adds csv_bidi_payload (zahir), the
+    bidi-override codepoint detector. A cell carrying any
+    codepoint in U+202A..U+202E or U+2066..U+2069 fires; the
+    spreadsheet renderer honours the bidi algorithm and reorders
+    visible glyphs while the byte stream carries the original.
+    147 -> 148.
+
+    v1.1.2 F2 step 5 adds csv_zero_width_payload (zahir), the
+    zero-width codepoint detector. A cell carrying U+200B /
+    U+200C / U+200D, or U+FEFF mid-stream (file-start BOM is
+    exempt) is observable from a single deterministic walk of
+    the rendered cell-text content - the codepoint IS in the
+    text stream, the spreadsheet renderer simply renders zero
+    pixels for it. Same surface-readable shape as v1.1.1
+    zero_width_chars (also zahir). 148 -> 149.
+
+    v1.1.2 F2 step 6 adds csv_encoding_divergence (batin), the
+    UTF-8-vs-latin-1 fork detector. The same bytes decode to
+    different cell text under the two codecs in any (row,
+    column) position; the fork is invisible from any single
+    decoded surface and only emerges from a two-decode walk.
+    149 -> 150.
+
+    With v1.1.2 F2 Step 9 the count rises by 1 for the new JSON
+    mechanism json_unicode_escape_payload (batin, Tier 1). The
+    detector scans the pre-parse byte stream for \\uXXXX and
+    \\UXXXXXXXX escape sequences whose decoded codepoint is a
+    bidi-override or zero-width concealment character. Strict-JSON
+    parsers silently decode these escapes; the post-parse string
+    walk in v1.1.1 does not see the escape form. The escape form
+    is the concealment vector. 150 -> 151.
+
+    v1.1.2 F2 Step 10 adds json_comment_anomaly (batin, Tier 2).
+    RFC 8259 disallows comments outright; lenient parsers (JSON5,
+    jsonc, hjson, the VS Code settings parser) silently accept
+    ``//`` line comments and ``/* ... */`` block comments. The
+    comment text is invisible to any post-parse tree walk because
+    the parser strips it. Pre-parse state-machine scan with even-
+    backslash accounting on string boundaries surfaces the
+    payload. 151 -> 152.
+
+    v1.1.2 F2 Step 11 adds json_prototype_pollution_key (batin,
+    Tier 1). A JSON object key matching ``__proto__``,
+    ``constructor``, or ``prototype`` is the canonical JS
+    prototype-pollution shape; recursive-merge consumers (Lodash
+    _.merge, jQuery $.extend, minimist) treat it as a prototype-
+    chain mutation primitive, while a Python data walk treats it
+    as opaque data. The hazard is the cross-language interpretation
+    gap. 152 -> 153.
+
+    v1.1.2 F2 Step 12 adds json_nested_payload (batin, Tier 2). A
+    leaf string at nesting depth >= 32 AND length > 256 chars is
+    the canonical deep-nesting smuggle shape: shallow walkers
+    (recursive merge, sanitizers, schema validators that bail at
+    depth N) skip the payload entirely. The conjunction is the
+    signal. Higher precision than the v1.1 excessive_nesting
+    structural detector because the AND excludes deep-but-empty
+    data-shaped trees. 153 -> 154.
+
+    v1.1.2 F2 Step 13 adds json_trailing_payload (batin, Tier 1).
+    Non-whitespace content past the root value's closing token is
+    a strict-JSON violation that lenient consumers (raw_decode,
+    jq, streaming JSON, naive ``JSON.parse`` after a slice)
+    silently discard. The trailing bytes inhabit the post-root-EOF
+    channel; any tool walking the parsed value alone never sees
+    them. Closes the JSON sub-gauntlet at 12 mechanisms across
+    the byte-stream / parsed-tree / cross-language / structural
+    axes. 154 -> 155.
     """
-    assert len(MECHANISM_REGISTRY) == 145, (
-        f"Mechanism count drift: expected 145 "
-        f"(39 zahir + 105 batin + 1 routing), "
+    assert len(MECHANISM_REGISTRY) == 155, (
+        f"Mechanism count drift: expected 155 "
+        f"(41 zahir + 113 batin + 1 routing), "
         f"got {len(MECHANISM_REGISTRY)} "
         f"(zahir={len(ZAHIR_MECHANISMS)}, batin={len(BATIN_MECHANISMS)}, "
         f"routing={len(ROUTING_MECHANISMS)})"
     )
 
 
-def test_zahir_count_is_exact_39() -> None:
+def test_zahir_count_is_exact_40() -> None:
     """v1.1.2 Day 2 mechanisms 03 (pdf_off_page_text) and 06
     (pdf_hidden_text_annotation) both classify as zahir; the count
     moves from 27 (v1.0 baseline) through 28 (after mechanism 03)
@@ -165,11 +246,21 @@ def test_zahir_count_is_exact_39() -> None:
     surface; painting it in the canvas color (white on default white
     canvas) hides it from a human reader while the bytes remain in
     the document tree. Mirrors pdf white_on_white_text,
-    docx_white_text, and xlsx_white_text on the SVG axis. 38 -> 39."""
-    assert len(ZAHIR_MECHANISMS) == 39
+    docx_white_text, and xlsx_white_text on the SVG axis. 38 -> 39.
+
+    v1.1.2 F2 step 4 adds csv_bidi_payload, the bidi-override
+    codepoint detector. 39 -> 40.
+
+    v1.1.2 F2 step 5 adds csv_zero_width_payload (zahir), the
+    zero-width codepoint detector. Classified zahir for
+    consistency with v1.1.1 zero_width_chars on the same
+    codepoint class: the codepoint is observable from a single
+    deterministic walk of the rendered text content; the
+    renderer simply paints zero pixels for it. 40 -> 41."""
+    assert len(ZAHIR_MECHANISMS) == 41
 
 
-def test_batin_count_is_exact_105() -> None:
+def test_batin_count_is_exact_113() -> None:
     """v1.1.2 Day 2 mechanisms 04 (pdf_metadata_analyzer) and 05
     (pdf_trailer_analyzer) both classify as batin; the count moves
     from 81 (v1.0 baseline) through 82 (after mechanism 04) to 83
@@ -237,8 +328,40 @@ def test_batin_count_is_exact_105() -> None:
     is the SVG long-form accessibility description surface; the
     256-byte threshold is split from svg_title_payload's 64-byte
     threshold because <desc> has a different legitimate-use
-    distribution. 102 -> 103."""
-    assert len(BATIN_MECHANISMS) == 105
+    distribution. 102 -> 103.
+
+    v1.1.2 F2 step 2 adds csv_column_type_drift, the per-column
+    type-drift detector. 105 -> 106.
+
+    v1.1.2 F2 step 3 adds csv_quoted_newline_payload, the RFC
+    4180 multi-line quoted-cell detector. 106 -> 107.
+
+    (v1.1.2 F2 step 5 adds csv_zero_width_payload as ZAHIR, not
+    batin - reclassified for consistency with v1.1.1
+    zero_width_chars on the same codepoint class. The batin
+    count therefore stays at 107 across step 5.)
+
+    v1.1.2 F2 step 6 adds csv_encoding_divergence, the
+    UTF-8-vs-latin-1 fork detector. The same bytes decode to
+    different cell text under the two codecs at any (row,
+    column); the fork is invisible from any single decoded
+    surface and only emerges from a two-decode walk. 107 -> 108.
+
+    v1.1.2 F2 Step 9 adds json_unicode_escape_payload (batin,
+    Tier 1). 108 -> 109.
+
+    v1.1.2 F2 Step 10 adds json_comment_anomaly (batin, Tier 2).
+    109 -> 110.
+
+    v1.1.2 F2 Step 11 adds json_prototype_pollution_key (batin,
+    Tier 1). 110 -> 111.
+
+    v1.1.2 F2 Step 12 adds json_nested_payload (batin, Tier 2).
+    111 -> 112.
+
+    v1.1.2 F2 Step 13 adds json_trailing_payload (batin, Tier 1).
+    112 -> 113."""
+    assert len(BATIN_MECHANISMS) == 113
 
 
 def test_registry_is_union_of_zahir_batin_and_routing() -> None:

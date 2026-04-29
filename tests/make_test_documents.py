@@ -332,7 +332,13 @@ def build_text_bidi_control(out_path: Path) -> None:
 @register(
     name="text.homoglyph",
     out_path=FIXTURES_DIR / "text" / "homoglyph.pdf",
-    expected_mechanisms=["homoglyph"],
+    # Mixed-script Unicode in a PDF text run also trips the
+    # ToUnicode CMap consistency check (the font CMap maps the
+    # Cyrillic glyph to the Latin codepoint to render it). Both
+    # mechanisms firing on this fixture is correct: homoglyph
+    # surfaces the script-mixing surface, tounicode_anomaly
+    # surfaces the underlying CMap divergence.
+    expected_mechanisms=["homoglyph", "tounicode_anomaly"],
     quran_anchor="al-Baqarah 2:8-10",
     description=(
         "Mixed-script text: a word where Latin letters are substituted "

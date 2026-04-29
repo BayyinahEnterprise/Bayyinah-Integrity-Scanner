@@ -59,7 +59,7 @@ app = FastAPI(
         "adversarial content across 23 file kinds. Input-layer application "
         "of the Munafiq Protocol."
     ),
-    version=getattr(bayyinah, "__version__", "1.1.1"),
+    version=getattr(bayyinah, "__version__", "1.1.2"),
 )
 
 
@@ -73,14 +73,14 @@ def healthz() -> dict:
     return {
         "status": "ok",
         "service": "bayyinah",
-        "version": getattr(bayyinah, "__version__", "1.1.1"),
+        "version": getattr(bayyinah, "__version__", "1.1.2"),
     }
 
 
 @app.get("/version")
 def version() -> dict:
     """Returns the installed Bayyinah version."""
-    return {"version": getattr(bayyinah, "__version__", "1.1.1")}
+    return {"version": getattr(bayyinah, "__version__", "1.1.2")}
 
 
 # ---------------------------------------------------------------------------
@@ -412,7 +412,7 @@ _INDEX_HTML = """<!doctype html>
 
   <h2>Status</h2>
   <dl class="meta-grid">
-    <dt>Version</dt><dd>1.1.1 (production-stable)</dd>
+    <dt>Version</dt><dd>1.1.2 (production-stable)</dd>
     <dt>License</dt><dd>Apache 2.0</dd>
     <dt>Source</dt><dd><a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner">github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner</a></dd>
     <dt>DOI</dt><dd><a href="https://doi.org/10.5281/zenodo.19677111">10.5281/zenodo.19677111</a></dd>
@@ -616,7 +616,7 @@ def index() -> HTMLResponse:
         except OSError:
             pass
     html = _INDEX_HTML.replace(
-        "__VERSION__", getattr(bayyinah, "__version__", "1.1.1")
+        "__VERSION__", getattr(bayyinah, "__version__", "1.1.2")
     )
     return HTMLResponse(content=html)
 
@@ -631,7 +631,7 @@ def scan_form_legacy() -> HTMLResponse:
     classic inline form here for continuity.
     """
     html = _INDEX_HTML.replace(
-        "__VERSION__", getattr(bayyinah, "__version__", "1.1.1")
+        "__VERSION__", getattr(bayyinah, "__version__", "1.1.2")
     )
     return HTMLResponse(content=html)
 

@@ -155,6 +155,12 @@ _INDEX_HTML = """<!doctype html>
   <title>Bayyinah — Pre-LLM File Integrity Verification</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Bayyinah scans a file's surface and substrate, reports the gap. Pre-LLM file integrity verification across 23 file kinds.">
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-ClSZoh4Kr5gNs1FgN1cWv.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
   <style>
     :root { color-scheme: light dark; --accent: #4a90e2; --muted: #888; }
     * { box-sizing: border-box; }

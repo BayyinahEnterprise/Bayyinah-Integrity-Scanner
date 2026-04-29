@@ -32,8 +32,8 @@
     "mechanisms": [
       "csv_inconsistent_columns"
     ],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "payload_recovered": true,
+    "payload_recovered_via": "csv_inconsistent_columns (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/02_csv_trailing_extra.csv",
       "integrity_score": 0.865,
@@ -43,10 +43,10 @@
           "mechanism": "csv_inconsistent_columns",
           "tier": 2,
           "confidence": 0.9,
-          "description": "Row 3 has 3 column(s) \u2014 the header row and earlier data rows have 2. Different parsers resolve the mismatch differently: pandas pads with NaN, awk truncates, Excel carries the mismatch through as a ragged row, and Python's csv module returns the row verbatim. The divergence is the concealment surface.",
+          "description": "Row 3 has 3 column(s); the header row and earlier data rows have 2. Different parsers resolve the mismatch differently: pandas pads with NaN, awk truncates, Excel carries the mismatch through as a ragged row, and Python's csv module returns the row verbatim. The divergence is the concealment surface.",
           "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/02_csv_trailing_extra.csv:row=3",
           "surface": "(row has 3 cell(s) visibly)",
-          "concealed": "expected 2, got 3 \u2014 parser disagreement",
+          "concealed": "expected 2, got 3: parser disagreement. Surplus cell content (1 extra cell(s)): 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'",
           "source_layer": "batin",
           "inversion_recovery": {}
         }

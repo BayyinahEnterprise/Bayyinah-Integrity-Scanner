@@ -107,16 +107,27 @@ CSV_FIXTURE_EXPECTATIONS: dict[str, list[str]] = {
     "adversarial/inconsistent_columns.csv": ["csv_inconsistent_columns"],
     "adversarial/bom_leading.csv": ["csv_bom_anomaly"],
     "adversarial/bom_embedded.csv":
-        ["csv_bom_anomaly", "zero_width_chars"],
-    "adversarial/mixed_encoding.csv": ["csv_mixed_encoding"],
+        ["csv_bom_anomaly", "zero_width_chars",
+         "csv_zero_width_payload", "csv_encoding_divergence"],
+    "adversarial/mixed_encoding.csv":
+        ["csv_mixed_encoding", "csv_encoding_divergence"],
     "adversarial/mixed_delimiter.csv": ["csv_mixed_delimiter"],
     "adversarial/quoting_anomaly.csv": ["csv_quoting_anomaly"],
 
     # Zahir — per-cell Unicode concealment (shared mechanism names).
-    "adversarial/zero_width_in_cell.csv": ["zero_width_chars"],
-    "adversarial/tag_chars_in_cell.csv": ["tag_chars"],
-    "adversarial/bidi_in_cell.csv": ["bidi_control"],
-    "adversarial/homoglyph_in_cell.csv": ["homoglyph"],
+    # Each fixture carries non-ASCII bytes that decode differently
+    # under UTF-8 vs latin-1, so csv_encoding_divergence (v1.1.2 F2
+    # mechanism 6) legitimately co-fires on every per-cell Unicode
+    # concealment fixture.
+    "adversarial/zero_width_in_cell.csv":
+        ["zero_width_chars", "csv_zero_width_payload",
+         "csv_encoding_divergence"],
+    "adversarial/tag_chars_in_cell.csv":
+        ["tag_chars", "csv_encoding_divergence"],
+    "adversarial/bidi_in_cell.csv":
+        ["bidi_control", "csv_bidi_payload", "csv_encoding_divergence"],
+    "adversarial/homoglyph_in_cell.csv":
+        ["homoglyph", "csv_encoding_divergence"],
 }
 
 

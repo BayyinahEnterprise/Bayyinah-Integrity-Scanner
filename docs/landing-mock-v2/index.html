@@ -931,6 +931,149 @@ h2 em { font-style: italic; color: var(--lamp); }
 }
 
 /* ===========================================================
+   HERO HOOK (massive-market positioning above existing H1)
+   =========================================================== */
+
+.hero-hook {
+  font-family: var(--fd);
+  font-size: clamp(1.85rem, 4.6vw, 3.0rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--vellum);
+  margin-bottom: 0.6rem;
+  font-weight: 500;
+}
+.hero-hook em {
+  color: var(--lamp);
+  font-style: italic;
+}
+.hero-subhead {
+  font-family: var(--fs);
+  font-size: clamp(0.95rem, 1.3vw, 1.05rem);
+  line-height: 1.5;
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
+  margin-bottom: 1.6rem;
+  max-width: 640px;
+}
+
+/* ===========================================================
+   WAITLIST SECTION
+   =========================================================== */
+
+.waitlist-card {
+  margin-top: 1.4rem;
+  padding: 1.6rem 1.4rem;
+  background: var(--bg-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  max-width: 540px;
+}
+.waitlist-card .waitlist-label {
+  font-family: var(--fm);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lamp);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+.waitlist-card .waitlist-help {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.7rem;
+  line-height: 1.5;
+}
+.waitlist-form {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.waitlist-form input[type="email"] {
+  flex: 1 1 240px;
+  min-width: 0;
+  padding: 0.7rem 0.9rem;
+  background: var(--bg);
+  border: 1px solid var(--rule-2);
+  color: var(--ink);
+  font-family: var(--fs);
+  font-size: 0.92rem;
+  border-radius: 3px;
+  outline: none;
+  transition: border-color 0.2s var(--ease);
+}
+.waitlist-form input[type="email"]::placeholder {
+  color: var(--muted);
+}
+.waitlist-form input[type="email"]:focus {
+  border-color: var(--lamp);
+}
+.waitlist-form button {
+  padding: 0.7rem 1.2rem;
+  background: var(--lamp);
+  color: var(--bg);
+  border: 1px solid var(--lamp);
+  font-family: var(--fs);
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.waitlist-form button:hover {
+  background: var(--vellum);
+  border-color: var(--vellum);
+}
+.waitlist-buttondown-link {
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-2);
+}
+.waitlist-buttondown-link:hover { color: var(--lamp); }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===========================================================
+   AUTHORSHIP NOTE (AI co-authors attribution, footer area)
+   =========================================================== */
+
+.authorship-note {
+  margin-top: 1.6rem;
+  padding-top: 1.4rem;
+  border-top: 1px dashed var(--rule);
+  font-family: var(--fd);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 640px;
+  font-style: italic;
+}
+.authorship-note .auth-label {
+  font-family: var(--fm);
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-style: normal;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.authorship-note strong {
+  color: var(--vellum);
+  font-weight: 500;
+  font-style: normal;
+}
+
+/* ===========================================================
    FOOTER - etymology, not Bismillah
    =========================================================== */
 
@@ -1162,7 +1305,7 @@ h2 em { font-style: italic; color: var(--lamp); }
     <div class="meta-row"><span class="k">CASE</span><span class="v">v1.1.2</span></div>
     <div class="meta-row"><span class="k">DATE</span><span class="v">2026.04</span></div>
     <div class="meta-row"><span class="k">SCANS</span><span class="v">23 kinds</span></div>
-    <div class="meta-row"><span class="k">CORPUS</span><span class="v">44 files</span></div>
+    <div class="meta-row"><span class="k">CORPUS</span><span class="v">56 files</span></div>
 
     <nav class="toc">
       <a href="#hero"><span class="num">01</span>Premise</a>
@@ -1173,6 +1316,7 @@ h2 em { font-style: italic; color: var(--lamp); }
       <a href="#baseline"><span class="num">06</span>Honest Baseline</a>
       <a href="#discipline"><span class="num">07</span>Discipline</a>
       <a href="#research"><span class="num">08</span>Research</a>
+      <a href="#waitlist"><span class="num">09</span>Waitlist</a>
     </nav>
 
     <div class="footer-sig">
@@ -1188,8 +1332,9 @@ h2 em { font-style: italic; color: var(--lamp); }
     <!-- =========== § 01 PREMISE =========== -->
     <section class="section" id="hero">
       <span class="section-num">01 · Premise</span>
-      <h1>What your LLM reads is not <em>what was in the file.</em></h1>
-      <p class="lede">Bayyinah holds the page up to the light. The surface is what the document presents. The substrate is what it actually contains. We report the gap.</p>
+      <h1 class="hero-hook">Every AI processes documents. <em>None of them check what's inside.</em> We do.</h1>
+      <p class="hero-subhead">Pre-LLM file integrity for the trillion-dollar AI document economy.</p>
+      <p class="lede">What your LLM reads is not what was in the file. Bayyinah holds the page up to the light. The surface is what the document presents. The substrate is what it actually contains. We report the gap.</p>
 
       <!-- THE LIT PAGE -->
       <div class="litpage-frame">
@@ -1223,11 +1368,11 @@ h2 em { font-style: italic; color: var(--lamp); }
           <div class="label">File kinds analyzed</div>
         </div>
         <div class="stat">
-          <div class="num">145</div>
+          <div class="num">155</div>
           <div class="label">Detection mechanisms</div>
         </div>
         <div class="stat">
-          <div class="num">44</div>
+          <div class="num">56</div>
           <div class="label">Adversarial fixtures published</div>
         </div>
       </div>
@@ -1487,6 +1632,23 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
+    <!-- =========== § 09 WAITLIST =========== -->
+    <section class="section" id="waitlist">
+      <span class="section-num">09 · Waitlist</span>
+      <h2>Get the next <em>release report.</em></h2>
+      <p class="lede">v1.1.3 closes the four open recovery cases from our 12-fixture gauntlet. The thresholds and lines-of-code commitments are pre-registered. Subscribe for the release report when it ships, plus the periodic Munafiq Protocol notes that document what we miss.</p>
+
+      <div class="waitlist-card">
+        <span class="waitlist-label">Subscribe</span>
+        <form class="waitlist-form embeddable-buttondown-form" action="https://buttondown.com/api/emails/embed-subscribe/bayyinah-enterprises" method="post" target="popupwindow" onsubmit="window.open('https://buttondown.com/bayyinah-enterprises', 'popupwindow')">
+          <label for="bd-email" class="sr-only">Email address</label>
+          <input type="email" name="email" id="bd-email" placeholder="you@domain.com" required>
+          <button type="submit">Subscribe</button>
+        </form>
+        <p class="waitlist-help">No spam. Release reports and research notes only. Powered by <a class="waitlist-buttondown-link" href="https://buttondown.com/refer/bayyinah-enterprises" target="_blank" rel="noopener">Buttondown</a>. Unsubscribe in one click.</p>
+      </div>
+    </section>
+
     <!-- =========== FOOTER =========== -->
     <footer class="footer-block">
       <div class="etymology">
@@ -1495,6 +1657,12 @@ h2 em { font-style: italic; color: var(--lamp); }
         <span class="principle">A scanner is only as honest as the misses it publishes.</span>
         <span class="principle">The survivors of our own audit are what we ship.</span>
       </div>
+
+      <div class="authorship-note">
+        <span class="auth-label">Authorship</span>
+        Bayyinah Integrity Scanner is built by <strong>Bilal Syed Arfeen</strong> and <strong>Fraz Ashraf</strong>, with substantive co-authorship credit to <strong>Claude</strong> (Anthropic), <strong>Computer</strong> (Perplexity), and <strong>Grok</strong> (xAI). The framework, the falsifiability discipline, and the gauntlet methodology emerged through extended human-AI collaboration; mechanism design, code review, and adversarial probing were performed jointly. Where AI tools made substantive contributions, they are credited by name in the relevant Zenodo deposit. The scanner itself contains zero LLM in the detection path; all 155 mechanisms are deterministic.
+      </div>
+
       <div class="footer-meta">
         <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner">GitHub</a>
         <a href="https://bayyinah.dev/scan">Live scanner</a>

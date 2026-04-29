@@ -1,4 +1,8 @@
-# XLSX Hidden-Text Gauntlet — v1.1.1 Baseline
+> **Update 2026-04-28 (v1.1.2):** This XLSX gauntlet now closes at **6/6 catch with full payload recovery**. The v1.1.1 baseline below is preserved as the historical record of why each mechanism was added. The scanner currently in production at https://bayyinah.dev catches every XLSX fixture in this directory. See the v1.1.2 CHANGELOG entry for the full mechanism list and `tests/analyzers/test_xlsx_v1_1_2_payloads.py` for the per-mechanism unit tests.
+
+---
+
+# XLSX Hidden-Text Gauntlet: v1.1.1 Baseline
 
 **Date:** 2026-04-26
 **Scanner version:** Bayyinah 1.1.1 (live at https://bayyinah.dev)
@@ -23,7 +27,7 @@ Surface text in every fixture: a Q3 financial summary mentioning $1,000 in reven
 
 ## What `XlsxAnalyzer` v1.1.1 already catches (out of scope)
 
-For completeness, the XLSX classes already detected — the gauntlet deliberately avoided them:
+For completeness, the XLSX classes already detected - the gauntlet deliberately avoided them:
 
 - Hidden / `veryHidden` worksheets (`<sheet state="hidden|veryHidden"/>`)
 - Hidden rows and columns (`<row hidden="1">` / `<col hidden="1">`)
@@ -37,37 +41,37 @@ The misses below are orthogonal to all of the above.
 
 ## Per-fixture root cause
 
-### 01 — White cell font color — MISSED
+### 01 - White cell font color - MISSED
 
 The OOXML cell-style stack puts font color in `xl/styles.xml` (`<font><color rgb="FFFFFFFF"/></font>`) and references it from `<c s="N">` cell elements. `XlsxAnalyzer` does not parse `xl/styles.xml`. The PDF analyzer's `white_on_white_text` mechanism caught the same technique; the XLSX analogue does not exist.
 
 **Fix path for v1.1.2:** Parse `xl/styles.xml` to build a styleId → font-color map. Walk every cell element; emit a Tier 1 `xlsx_white_text` finding when a non-empty cell's resolved font color is `FFFFFFFF` against a default fill. Estimated complexity: ~50 lines (styles parsing is non-trivial).
 
-### 02 — Microscopic font — MISSED
+### 02 - Microscopic font - MISSED
 
 Font size is in the same `xl/styles.xml` font records (`<font><sz val="1"/></font>`). Same architectural gap as 01.
 
 **Fix path for v1.1.2:** Once styles parsing exists for fixture 01, the microscopic-font check is one extra threshold (`sz <= 4` → Tier 1, `sz <= 8` → Tier 2). Estimated complexity: ~10 additional lines on top of fixture 01's fix.
 
-### 03 — Defined Name carrying a payload — MISSED
+### 03 - Defined Name carrying a payload - MISSED
 
 `xl/workbook.xml` declares `<definedNames><definedName name="...">"payload"</definedName></definedNames>`. Defined Names are normally short range references like `Sheet1!$A$1:$B$10`, but the spec permits string-literal values. `XlsxAnalyzer` enumerates `<sheet>` elements but not `<definedName>` elements.
 
 **Fix path for v1.1.2:** Add `_detect_defined_names_with_text`. Walk every `<definedName>` in `xl/workbook.xml`; emit `xlsx_defined_name_payload` (Tier 2) when the element body is a quoted string longer than ~50 chars or contains non-formula characters. Estimated complexity: ~25 lines.
 
-### 04 — Cell comment payload — MISSED
+### 04 - Cell comment payload - MISSED
 
 XLSX comments live in `xl/comments1.xml` (and `xl/threadedComments/*` for the newer threaded variant). `XlsxAnalyzer` never opens either part. Comments are visible in Excel's hover tooltip but disappear from print/export views and from many CSV/DataFrame readers.
 
 **Fix path for v1.1.2:** Add `_scan_comments_part`. Iterate `<comment>` elements (and threaded variants), extract their text, run zahir checks, and emit `xlsx_comment_payload` (Tier 2). Mirror the corresponding DOCX miss (fixture 04 of the DOCX gauntlet) so both formats use the same `comment_payload` family. Estimated complexity: ~35 lines.
 
-### 05 — Custom XML metadata — MISSED
+### 05 - Custom XML metadata - MISSED
 
 Same as the DOCX gauntlet's fixture 03 and the PDF gauntlet's fixture 04: no analyzer reads `docProps/custom.xml` (or `core.xml` / `app.xml`). This is the architectural metadata-payload gap shared across all three OOXML/PDF formats.
 
 **Fix path for v1.1.2:** A single shared `_office_metadata_payload` helper that DocxAnalyzer and XlsxAnalyzer both call would be the cleanest fix. Mirrors the proposed `pdf_metadata_analyzer` for PDF. Estimated complexity: ~40 lines (reused across both DOCX and XLSX paths).
 
-### 06 — CSV-injection / DDE formula payload — MISSED
+### 06 - CSV-injection / DDE formula payload - MISSED
 
 A cell whose value begins with `=`, `+`, `-`, or `@` is interpreted as a formula. `=HYPERLINK("http://attacker/", "Click for refund")` is a known phishing-via-spreadsheet vector. `=cmd|'/c calc'!A1` is the classic DDE command-execution payload. CSV exports of the workbook carry the formulas as plaintext, and many CSV consumers (re-imported into Excel, ingested by an LLM) interpret them as formulas again.
 
@@ -79,17 +83,17 @@ A cell whose value begins with `=`, `+`, `-`, or `@` is interpreted as a formula
 
 **Honest assessment:** `XlsxAnalyzer` v1.1.1 covers the structural concealment surface (hidden sheets, hidden rows/columns, VBA, embeddings, external links, revisions, validation formulas) thoroughly. It does *not* yet cover the per-cell rendering surface (color, size) or the auxiliary text parts (defined names, comments, custom metadata) or the in-cell formula payload class (CSV injection / DDE).
 
-This is a different shape of gap than DOCX's. DOCX missed everything in the gauntlet; XLSX missed everything in *this* gauntlet but the gauntlet was constructed to avoid the well-armored areas. The unweighted miss rate is misleading without that context — the weighted reality is that XLSX is the strongest of the three OOXML+PDF analyzers on its core domain (structural concealment) and the weakest on the same per-cell rendering surface that affects DOCX too.
+This is a different shape of gap than DOCX's. DOCX missed everything in the gauntlet; XLSX missed everything in *this* gauntlet but the gauntlet was constructed to avoid the well-armored areas. The unweighted miss rate is misleading without that context - the weighted reality is that XLSX is the strongest of the three OOXML+PDF analyzers on its core domain (structural concealment) and the weakest on the same per-cell rendering surface that affects DOCX too.
 
 ## v1.1.2 milestone (consolidated additions for XLSX)
 
 Six new XLSX detectors estimated at ~190 LOC total:
 
-1. `xlsx_white_text` + `xlsx_microscopic_font` — share a `_resolve_cell_font` helper backed by `xl/styles.xml` parsing
-2. `xlsx_defined_name_payload` — workbook-level Names with string bodies
-3. `xlsx_comment_payload` — `xl/comments*.xml` + threaded comments
-4. `xlsx_metadata_payload` — shared `_office_metadata_payload` helper with DOCX
-5. `xlsx_csv_injection_formula` — pattern allowlist on cell `<f>` elements
+1. `xlsx_white_text` + `xlsx_microscopic_font` - share a `_resolve_cell_font` helper backed by `xl/styles.xml` parsing
+2. `xlsx_defined_name_payload` - workbook-level Names with string bodies
+3. `xlsx_comment_payload` - `xl/comments*.xml` + threaded comments
+4. `xlsx_metadata_payload` - shared `_office_metadata_payload` helper with DOCX
+5. `xlsx_csv_injection_formula` - pattern allowlist on cell `<f>` elements
 
 Combined with the 6 DOCX fixes (~200 LOC) and the 4 PDF fixes (~155 LOC), the running v1.1.2 milestone now sits at roughly ~545 LOC across three formats.
 

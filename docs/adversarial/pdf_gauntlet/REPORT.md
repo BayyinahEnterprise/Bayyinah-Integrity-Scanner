@@ -1,4 +1,8 @@
-# PDF Hidden-Text Gauntlet — v1.1.1 Baseline
+> **Update 2026-04-28 (v1.1.2):** This PDF gauntlet now closes at **6/6 catch with full payload recovery**. The v1.1.1 baseline below is preserved as the historical record of why each mechanism was added. The scanner currently in production at https://bayyinah.dev catches every PDF fixture in this directory. See the v1.1.2 CHANGELOG entry for the full mechanism list and `tests/analyzers/test_pdf_v1_1_2_payloads.py` for the per-mechanism unit tests.
+
+---
+
+# PDF Hidden-Text Gauntlet: v1.1.1 Baseline
 
 **Date:** 2026-04-26
 **Scanner version:** Bayyinah 1.1.1 (live at https://bayyinah.dev)
@@ -13,36 +17,36 @@ This is an honest baseline. It is published so the next reviewer can verify each
 |---|---|---|---|---|
 | 01 | White text on white background | **CAUGHT** | `white_on_white_text` (Tier 1) | 0.82 |
 | 02 | Font size 0.1pt | **CAUGHT** | `microscopic_font` (Tier 2) | 0.92 |
-| 03 | Text drawn off-page (y=-200) | **MISSED** | (off_page_text exists but does not fire — see root cause) | 1.00 |
+| 03 | Text drawn off-page (y=-200) | **MISSED** | (off_page_text exists but does not fire - see root cause) | 1.00 |
 | 04 | Hidden in PDF metadata (Keywords / Subject) | **MISSED** | (no metadata-payload analyzer) | 1.00 |
 | 05 | Bytes appended after `%%EOF` | **MISSED** | (no after-trailer analyzer) | 1.00 |
 | 06 | Hidden `/Text` annotation with `/F=2` flag | **MISSED** | (`/Annots` walked for other purposes; hidden text not extracted) | 1.00 |
 
 **Hit rate: 2/6. Payload recovery via inversion_recovery: 2/6.**
 
-In all six cases the visible text was identical: a Q3 financial summary mentioning $1,000 in revenue. In all six cases the hidden payload was identical: `HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 — see annex`. The contrast between $1,000 visible and $10,000 hidden is the canonical "contract that displays one figure and contains another" example from the bayyinah.dev landing page. Bayyinah currently catches this when the technique is naive (white-on-white, microscopic font) and misses it when the technique is structurally clever.
+In all six cases the visible text was identical: a Q3 financial summary mentioning $1,000 in revenue. In all six cases the hidden payload was identical: `HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex`. The contrast between $1,000 visible and $10,000 hidden is the canonical "contract that displays one figure and contains another" example from the bayyinah.dev landing page. Bayyinah currently catches this when the technique is naive (white-on-white, microscopic font) and misses it when the technique is structurally clever.
 
 ## Per-fixture root cause
 
-### 01 — White on white — CAUGHT (0.82, Tier 1)
+### 01 - White on white - CAUGHT (0.82, Tier 1)
 
 ```
 Surface:   (indistinguishable from page background)
-Concealed: HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 — see annex
+Concealed: HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex
 ```
 
 The text analyzer's `white_on_white_text` check compared the span's fill color (`#FFFFFF`) against the page background (`#FFFFFF`) and emitted a Tier 1 finding with confidence 0.99. This is the most naive concealment technique and the scanner handles it correctly.
 
-### 02 — Microscopic font — CAUGHT (0.92, Tier 2)
+### 02 - Microscopic font - CAUGHT (0.92, Tier 2)
 
 ```
 Surface:   (effectively invisible at 0.100pt)
-Concealed: HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 — see annex
+Concealed: HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex
 ```
 
-The text analyzer's `microscopic_font` check fires when a span's font size is below the human-readable threshold (1.0pt). The 0.1pt span tripped it correctly. Tier 2 because below-threshold font is technically representable (some PDFs use 0.5pt for fingerprinting — context determines whether the use is malicious).
+The text analyzer's `microscopic_font` check fires when a span's font size is below the human-readable threshold (1.0pt). The 0.1pt span tripped it correctly. Tier 2 because below-threshold font is technically representable (some PDFs use 0.5pt for fingerprinting - context determines whether the use is malicious).
 
-### 03 — Off-page text — MISSED
+### 03 - Off-page text - MISSED
 
 The text analyzer **does** have an `_check_offpage` method (`text_analyzer.py:793`) that compares span bboxes against the page's MediaBox with a 1pt tolerance. It would have fired correctly on this fixture if it had received the off-page span.
 
@@ -60,7 +64,7 @@ The text analyzer **does** have an `_check_offpage` method (`text_analyzer.py:79
 
 **Fix path for v1.1.2:** Walk the raw content stream directly with `pikepdf.Page.Contents.read_bytes()` (or use `fitz.Page.get_drawings()` + `get_textbox(rect)` with an oversized rect). Both options are local, deterministic, and add no dependencies. Estimated complexity: ~30 lines of code in `text_analyzer.py`.
 
-### 04 — Hidden metadata — MISSED
+### 04 - Hidden metadata - MISSED
 
 Hidden text payload was injected into both `/Keywords` and `dc:description` of the PDF document info. Both are trivially readable via `pikepdf.Pdf.docinfo` and `pikepdf.Pdf.open_metadata()`.
 
@@ -74,7 +78,7 @@ Hidden text payload was injected into both `/Keywords` and `dc:description` of t
 
 Estimated complexity: ~60 lines, plus a new mechanism in MECHANISM_REGISTRY.
 
-### 05 — Trailing bytes after %%EOF — MISSED
+### 05 - Trailing bytes after %%EOF - MISSED
 
 PDF spec allows comments and ignored bytes after the final `%%EOF` trailer, but the visible content of those bytes is significant: many real-world malware samples and steganographic tools use this region. Our fixture appended `HIDDEN_TEXT_PAYLOAD: ...` directly after the EOF.
 
@@ -88,15 +92,15 @@ PDF spec allows comments and ignored bytes after the final `%%EOF` trailer, but 
 
 Estimated complexity: ~25 lines.
 
-### 06 — Hidden /Text annotation — MISSED
+### 06 - Hidden /Text annotation - MISSED
 
-`object_analyzer.py` walks `/Annots` (line 418) for other purposes (URL extraction, action triggers) but does not extract `/Contents` text from `/Text` annotations, and does not check the `/F` flag for the hidden bit (PDF spec: `/F=2` means hidden, `/F=4` means noview). The fixture set `/F=2` and stored the payload in `/Contents`.
+`object_analyzer.py` walks `/Annots` (line 418) for other purposes (URL extraction, action triggers) but does not extract `/Contents` text from `/Text` annotations, and does not check the `/F` flag for the hidden bit (PDF spec: `/F=2` means hidden bit set, `/F=32` means noview bit set; bit values per PDF 32000-1 §12.5.3 Table 165). The fixture set `/F=2` and stored the payload in `/Contents`.
 
 **Root cause:** Annotation walker is not text-aware. It treats annotations as link-like objects rather than as text containers.
 
 **Fix path for v1.1.2:** Extend the existing annotation walker to:
 1. Extract `/Contents` text from any annotation with `/Subtype /Text`, `/FreeText`, `/Popup`, or `/Stamp`
-2. Check the `/F` flag — if any of bits 2 (hidden), 4 (noview), or 7 (locked-contents) is set, emit `hidden_annotation_text` (Tier 1)
+2. Check the `/F` flag: if any of bits 2 (hidden, value 2), 6 (noview, value 32), or 7 (locked-contents, value 64) is set, emit `hidden_annotation_text` (Tier 1)
 3. Otherwise compare extracted annotation text to visible content (similar to fixture 04's approach) and emit `annotation_text_divergence` (Tier 2) if substantial
 
 Estimated complexity: ~40 lines.
@@ -111,7 +115,7 @@ Estimated complexity: ~40 lines.
 
 > A 200 response with scan_incomplete=true indicates the scan ran but did not cover the full document; absence of findings in such a report is not evidence of cleanness.
 
-That sentence applies to this baseline too. Until v1.1.2 ships the four fixes above, **a clean Bayyinah report is not evidence that the PDF is clean** — it is evidence that the PDF does not match any of the 22 currently implemented PDF mechanisms. Users running Bayyinah on PDFs in production should layer it with a metadata extractor and a trailer-byte inspector until the gaps are closed.
+That sentence applies to this baseline too. Until v1.1.2 ships the four fixes above, **a clean Bayyinah report is not evidence that the PDF is clean** - it is evidence that the PDF does not match any of the 22 currently implemented PDF mechanisms. Users running Bayyinah on PDFs in production should layer it with a metadata extractor and a trailer-byte inspector until the gaps are closed.
 
 ## What's next
 

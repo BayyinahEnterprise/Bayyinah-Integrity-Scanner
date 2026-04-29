@@ -1,4 +1,8 @@
-# DOCX Hidden-Text Gauntlet — v1.1.1 Baseline
+> **Update 2026-04-28 (v1.1.2):** This DOCX gauntlet now closes at **6/6 catch with full payload recovery**. The v1.1.1 baseline below is preserved as the historical record of why each mechanism was added. The scanner currently in production at https://bayyinah.dev catches every DOCX fixture in this directory. See the v1.1.2 CHANGELOG entry for the full mechanism list and `tests/analyzers/test_docx_v1_1_2_payloads.py` for the per-mechanism unit tests.
+
+---
+
+# DOCX Hidden-Text Gauntlet: v1.1.1 Baseline
 
 **Date:** 2026-04-26
 **Scanner version:** Bayyinah 1.1.1 (live at https://bayyinah.dev)
@@ -28,43 +32,43 @@ In all six cases the visible text was identical: a Q3 financial summary mentioni
 
 ## What `DocxAnalyzer` v1.1.1 already catches (out of scope for this gauntlet)
 
-For completeness, the following DOCX concealment classes are caught — these fixtures were deliberately *not* tested here because the PDF gauntlet's purpose was finding misses, not re-proving hits:
+For completeness, the following DOCX concealment classes are caught - these fixtures were deliberately *not* tested here because the PDF gauntlet's purpose was finding misses, not re-proving hits:
 
 - `<w:vanish/>` hidden runs in `word/document.xml` (rendered zero-width, full text in stream)
 - Tracked changes (`<w:ins>` / `<w:del>` revision history)
 - VBA macro projects (`word/vbaProject.bin`)
 - Embedded OLE objects under `word/embeddings/`
 - altChunk relationships (foreign-content injection at render time)
-- External relationships (`TargetMode="External"` — remote images/templates/beacons)
+- External relationships (`TargetMode="External"` - remote images/templates/beacons)
 - Per-run zero-width characters, TAG block, bidi-control codepoints, and Latin homoglyphs
 
 The misses below are orthogonal to all of the above.
 
 ## Per-fixture root cause
 
-### 01 — White font color — MISSED
+### 01 - White font color - MISSED
 
 ```
 Surface:   (text rendered in #FFFFFF on default white page)
 Concealed: HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex
 ```
 
-The OOXML idiom for invisible text via color is `<w:rPr><w:color w:val="FFFFFF"/></w:rPr>`. `DocxAnalyzer._scan_text_runs` walks every `<w:t>` element but does not consult its parent run's `<w:rPr>` for color; the per-run pipeline checks zero-width / TAG / bidi / homoglyph and stops. The PDF analyzer's `white_on_white_text` mechanism caught the same technique in fixture 01 of the PDF gauntlet — the DOCX analogue does not exist.
+The OOXML idiom for invisible text via color is `<w:rPr><w:color w:val="FFFFFF"/></w:rPr>`. `DocxAnalyzer._scan_text_runs` walks every `<w:t>` element but does not consult its parent run's `<w:rPr>` for color; the per-run pipeline checks zero-width / TAG / bidi / homoglyph and stops. The PDF analyzer's `white_on_white_text` mechanism caught the same technique in fixture 01 of the PDF gauntlet - the DOCX analogue does not exist.
 
 **Fix path for v1.1.2:** Add `_detect_white_text` parallel to `_detect_hidden_text`. Walk every run; read `<w:color w:val="...">`; emit a Tier 1 finding when the color is `FFFFFF` or close (or `auto` when the page background is white via `<w:background>`). Estimated complexity: ~25 lines.
 
-### 02 — Microscopic font — MISSED
+### 02 - Microscopic font - MISSED
 
 ```
 Surface:   (rendered at 1.0pt - far below readable threshold)
 Concealed: HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex
 ```
 
-OOXML font size lives in `<w:rPr><w:sz w:val="N"/></w:rPr>`, where `N` is half-points (so `w:val="2"` = 1.0pt). `DocxAnalyzer` does not inspect `<w:sz>`. The PDF analyzer's `microscopic_font` mechanism caught fixture 02 of the PDF gauntlet — the DOCX analogue does not exist.
+OOXML font size lives in `<w:rPr><w:sz w:val="N"/></w:rPr>`, where `N` is half-points (so `w:val="2"` = 1.0pt). `DocxAnalyzer` does not inspect `<w:sz>`. The PDF analyzer's `microscopic_font` mechanism caught fixture 02 of the PDF gauntlet - the DOCX analogue does not exist.
 
 **Fix path for v1.1.2:** Add `_detect_microscopic_font`. Threshold at `w:sz <= 16` (8.0pt) for Tier 2, `w:sz <= 4` (2.0pt) for Tier 1. Mirror the PDF analyzer's threshold logic. Estimated complexity: ~20 lines.
 
-### 03 — Custom XML metadata — MISSED
+### 03 - Custom XML metadata - MISSED
 
 ```
 Surface:   (no document.xml indication)
@@ -77,7 +81,7 @@ This mirrors the PDF gauntlet's fixture 04 (Keywords / dc:description) and is th
 
 **Fix path for v1.1.2:** New `_detect_metadata_payload` method that reads `docProps/core.xml`, `docProps/app.xml`, and `docProps/custom.xml`. Compare each text value against the document.xml extracted-text corpus. Emit `docx_metadata_text_divergence` (Tier 2) when metadata text contains substrings absent from visible content. Emit `docx_metadata_payload` (Tier 1) when metadata text is long enough to be a payload (>200 chars or matches entropy heuristics). Estimated complexity: ~50 lines.
 
-### 04 — Comment payload — MISSED
+### 04 - Comment payload - MISSED
 
 ```
 Surface:   (review pane shows nothing in print/export view)
@@ -88,7 +92,7 @@ Concealed: payload inside word/comments.xml
 
 **Fix path for v1.1.2:** Add `_scan_comments_part`. Iterate `<w:comment>` elements, extract their text, run the same per-run zahir checks (zero-width, TAG, bidi, homoglyph) plus a divergence check against document.xml text. Emit `docx_comment_payload` (Tier 2) for any comment whose text exceeds a threshold and is not referenced from document.xml. Estimated complexity: ~35 lines.
 
-### 05 — Header payload (white text) — MISSED
+### 05 - Header payload (white text) - MISSED
 
 ```
 Surface:   (header text rendered white; even header-aware reader misses it)
@@ -99,7 +103,7 @@ Headers and footers are separate XML parts (`word/header*.xml`, `word/footer*.xm
 
 **Fix path for v1.1.2:** Add `_scan_headers_footers`. Enumerate parts whose names match `word/header*.xml` or `word/footer*.xml`. Run the same zahir checks and color/size detectors there. This is one of the highest-leverage v1.1.2 additions because headers are a common concealment location in real-world phishing documents (legal disclaimer, company letterhead). Estimated complexity: ~30 lines.
 
-### 06 — Footnote payload — MISSED
+### 06 - Footnote payload - MISSED
 
 ```
 Surface:   (no footnote reference in the body; reader sees no indicator)
@@ -114,19 +118,19 @@ Footnotes live in `word/footnotes.xml`, with `<w:footnoteReference>` markers in 
 
 **Honest assessment:** `DocxAnalyzer` v1.1.1 is well-armored against *batin*-layer (structural) concealment but largely unarmored against the OOXML-specific *zahir*-layer techniques that mirror the naive PDF concealment vectors. A real attacker building a phishing or contract-fraud DOCX would reach for white text or a comment payload before reaching for VBA macros.
 
-**The pattern matches the PDF gauntlet result.** Bayyinah catches what was lifted directly from the PDF analyzer (zero-width, TAG, bidi, homoglyph — those are universal text-layer detectors the DOCX path inherits) and misses the format-specific vectors that need their own DOCX-aware code paths (color, size, metadata, comments, headers, footnotes).
+**The pattern matches the PDF gauntlet result.** Bayyinah catches what was lifted directly from the PDF analyzer (zero-width, TAG, bidi, homoglyph - those are universal text-layer detectors the DOCX path inherits) and misses the format-specific vectors that need their own DOCX-aware code paths (color, size, metadata, comments, headers, footnotes).
 
 **This is also consistent with the protocol's discipline.** Bayyinah's documentation says: a clean report is not evidence of cleanness; it is evidence that no implemented mechanism fired. The DOCX gauntlet now puts six concrete misses next to that statement.
 
 ## v1.1.2 milestone (consolidated with PDF gauntlet)
 
 Six new DOCX detectors estimated at ~200 LOC total:
-1. `docx_white_text` — color check on every run
-2. `docx_microscopic_font` — size check on every run
-3. `docx_metadata_payload` — corpus comparison of docProps/* vs document.xml
-4. `docx_comment_payload` — scan word/comments.xml + cross-reference
-5. `docx_header_footer_payload` — scan word/header*.xml and word/footer*.xml
-6. `docx_footnote_payload` / `docx_orphan_footnote` — scan word/footnotes.xml
+1. `docx_white_text` - color check on every run
+2. `docx_microscopic_font` - size check on every run
+3. `docx_metadata_payload` - corpus comparison of docProps/* vs document.xml
+4. `docx_comment_payload` - scan word/comments.xml + cross-reference
+5. `docx_header_footer_payload` - scan word/header*.xml and word/footer*.xml
+6. `docx_footnote_payload` / `docx_orphan_footnote` - scan word/footnotes.xml
 
 Combined with the four PDF fixes (~155 LOC), the v1.1.2 milestone sits at roughly ~355 LOC across two file kinds.
 

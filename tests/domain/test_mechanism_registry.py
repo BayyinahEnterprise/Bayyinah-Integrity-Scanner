@@ -36,7 +36,7 @@ def test_registry_is_frozenset() -> None:
     assert isinstance(MECHANISM_REGISTRY, frozenset)
 
 
-def test_registry_count_is_exact_119() -> None:
+def test_registry_count_is_exact_145() -> None:
     """Pin the count. Adding a mechanism must update this number;
     that is itself a structural reminder to update SEVERITY + TIER +
     the source-layer set in the same commit.
@@ -127,7 +127,7 @@ def test_registry_count_is_exact_119() -> None:
     )
 
 
-def test_zahir_count_is_exact_32() -> None:
+def test_zahir_count_is_exact_39() -> None:
     """v1.1.2 Day 2 mechanisms 03 (pdf_off_page_text) and 06
     (pdf_hidden_text_annotation) both classify as zahir; the count
     moves from 27 (v1.0 baseline) through 28 (after mechanism 03)
@@ -169,7 +169,7 @@ def test_zahir_count_is_exact_32() -> None:
     assert len(ZAHIR_MECHANISMS) == 39
 
 
-def test_batin_count_is_exact_86() -> None:
+def test_batin_count_is_exact_105() -> None:
     """v1.1.2 Day 2 mechanisms 04 (pdf_metadata_analyzer) and 05
     (pdf_trailer_analyzer) both classify as batin; the count moves
     from 81 (v1.0 baseline) through 82 (after mechanism 04) to 83

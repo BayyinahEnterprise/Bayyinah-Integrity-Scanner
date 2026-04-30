@@ -442,7 +442,7 @@ class ScanService:
         # concurrent scans with different limits isolated.
         # ------------------------------------------------------------------
         with limits_context(self.limits):
-            report = self._scan_inner(file_path)
+            report = self._scan_inner(file_path, mode=mode)
 
         # ------------------------------------------------------------------
         # v1.1.2 - Tier 0 routing transparency.
@@ -496,12 +496,22 @@ class ScanService:
 
         return report
 
-    def _scan_inner(self, file_path: Path) -> IntegrityReport:
+    def _scan_inner(
+        self,
+        file_path: Path,
+        *,
+        mode: str = "forensic",
+    ) -> IntegrityReport:
         """Body of ``scan``, invoked inside the limits context.
 
         Factored out so ``scan`` can own the limits wrapper without
         nesting the entire control flow under an extra indentation
         level. All the original ``scan`` semantics live here.
+
+        v1.1.6: ``mode`` is threaded through to every
+        ``self.registry.scan_all(...)`` call so the registry-level
+        production-mode short-circuit takes effect on the live API
+        path (POST /scan?mode=production).
         """
         # ------------------------------------------------------------------
         # 1. Missing file — short-circuit identically to v0.1.
@@ -636,7 +646,9 @@ class ScanService:
                     return report
 
         if detected_kind is not FileKind.PDF:
-            merged = self.registry.scan_all(file_path, kind=detected_kind)
+            merged = self.registry.scan_all(
+                file_path, kind=detected_kind, mode=mode
+            )
             # Surface the router's extension_mismatch signal. A polyglot
             # file (e.g. a .json whose bytes are a PNG) is adversarial
             # before a single analyzer runs; we record it as a tier-2
@@ -783,7 +795,9 @@ class ScanService:
         # on different threads do not see each other's indexes.
         # ------------------------------------------------------------------
         with content_index_context(content_index):
-            merged = self.registry.scan_all(file_path, kind=FileKind.PDF)
+            merged = self.registry.scan_all(
+                file_path, kind=FileKind.PDF, mode=mode
+            )
 
         # Defence-in-depth: re-assert the invariants. If an older
         # registry in a custom setup forgets the clamp, we enforce it

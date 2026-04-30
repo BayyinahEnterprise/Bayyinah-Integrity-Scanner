@@ -46,6 +46,9 @@ later phase migrates the default pipeline onto the registry.
 
 from __future__ import annotations
 
+import ast
+import inspect
+from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -56,7 +59,149 @@ from domain import (
     apply_scan_incomplete_clamp,
     compute_muwazana_score,
 )
+from domain.cost_classes import MECHANISM_COST_CLASS, CostClass
 from infrastructure.file_router import FileKind
+
+
+# ---------------------------------------------------------------------------
+# v1.1.6 - Cost-class-aware production-mode ordering.
+# ---------------------------------------------------------------------------
+#
+# Each registered analyzer has a "primary cost class" derived from the
+# mechanisms its module (and one-hop sibling helpers it imports) emits.
+# The primary class is the MAX over all emitted mechanisms because that
+# is the worst-case cost we pay if we run the analyzer to completion.
+# Production mode dispatches analyzers in (A, B, C, D) order, preserving
+# registration order within each class. After each analyzer completes,
+# if the merged report contains any Tier 1 finding at confidence >= 0.9,
+# the loop exits without invoking later analyzers.
+#
+# Forensic mode (the default) is unchanged: every analyzer runs in
+# registration order, regardless of earlier findings. Byte-parity with
+# the pre-v1.1.6 test suite depends on this default.
+
+_COST_CLASS_ORDER: dict[CostClass, int] = {
+    CostClass.A: 0,
+    CostClass.B: 1,
+    CostClass.C: 2,
+    CostClass.D: 3,
+}
+
+
+def _mechanisms_in_module(module_path: Path) -> set[str]:
+    """Extract every mechanism string literal from a module via AST.
+
+    Catches both ``Finding(mechanism="x")`` keyword arguments and
+    ``{"mechanism": "x"}`` dict-style construction.
+    """
+    src = module_path.read_text()
+    tree = ast.parse(src)
+    found: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            for kw in node.keywords:
+                if (
+                    kw.arg == "mechanism"
+                    and isinstance(kw.value, ast.Constant)
+                    and isinstance(kw.value.value, str)
+                ):
+                    found.add(kw.value.value)
+        elif isinstance(node, ast.Dict):
+            for k, v in zip(node.keys, node.values):
+                if (
+                    isinstance(k, ast.Constant)
+                    and k.value == "mechanism"
+                    and isinstance(v, ast.Constant)
+                    and isinstance(v.value, str)
+                ):
+                    found.add(v.value)
+    return found
+
+
+def _transitive_analyzer_imports(module_path: Path) -> set[Path]:
+    """Return module_path plus every analyzers/*.py module it imports.
+
+    One hop is sufficient: the dispatch pattern is that a top-level
+    analyzer module imports detector helpers from sibling modules in
+    analyzers/, and those helpers do not chain further (verified by
+    spot-check at v1.1.6 design time).
+    """
+    result = {module_path}
+    src = module_path.read_text()
+    tree = ast.parse(src)
+    analyzers_dir = module_path.parent
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            if node.module.startswith("analyzers."):
+                stem = node.module.split(".", 1)[1]
+                cand = analyzers_dir / f"{stem}.py"
+                if cand.exists():
+                    result.add(cand)
+    return result
+
+
+@lru_cache(maxsize=None)
+def _analyzer_primary_cost_class(
+    analyzer_cls: type[BaseAnalyzer],
+) -> CostClass:
+    """Return the primary (worst-case) cost class for an analyzer class.
+
+    Resolution order:
+
+    1. If the class declares a ``primary_cost_class`` ClassVar, that
+       value is used directly. Tests and analyzers whose source
+       module cannot be reliably introspected (e.g. those defined
+       inside a test module that registers many analyzers) use this
+       opt-in path. Production analyzers inherit the AST-walked
+       default and do not need the override.
+
+    2. Otherwise the class is resolved by walking the AST of its
+       source module plus any one-hop ``analyzers.*`` imports. The
+       primary class is the MAX over the cost classes of every
+       emitted mechanism, because that is the worst-case cost we
+       pay if we run the analyzer to completion.
+
+    3. Fallback: ``CostClass.D``. Pessimistic by design so an
+       unrecognized analyzer runs LAST in production mode, never
+       first; an unmapped analyzer cannot accidentally short-circuit
+       ahead of a known cheap one.
+
+    Cached because the result is purely a function of the class
+    object, which is constant across a process lifetime.
+    """
+    declared = getattr(analyzer_cls, "primary_cost_class", None)
+    if isinstance(declared, CostClass):
+        return declared
+
+    try:
+        path = Path(inspect.getfile(analyzer_cls))
+    except (TypeError, OSError):
+        return CostClass.D
+
+    modules = _transitive_analyzer_imports(path)
+    mechs: set[str] = set()
+    for m in modules:
+        mechs |= _mechanisms_in_module(m)
+    classes = [
+        MECHANISM_COST_CLASS[m] for m in mechs if m in MECHANISM_COST_CLASS
+    ]
+    if not classes:
+        return CostClass.D
+    return max(classes, key=lambda c: _COST_CLASS_ORDER[c])
+
+
+def _is_terminal_finding(finding) -> bool:  # type: ignore[no-untyped-def]
+    """Return True if ``finding`` is a Tier 1 finding at confidence >= 0.9.
+
+    A Tier 1 finding at high confidence is "verified concealment" per
+    the tier legend. Once one is in the merged report, no later
+    analyzer can change the verdict; production mode is permitted to
+    skip them. Bookkeeping findings (scan_error, scan_limited) are
+    Tier 3 and never satisfy this predicate.
+    """
+    return getattr(finding, "tier", None) == 1 and (
+        float(getattr(finding, "confidence", 0.0)) >= 0.9
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -194,10 +339,31 @@ class AnalyzerRegistry:
         """
         return [cls() for cls in self._registry.values()]
 
+    def _sorted_for_production(self) -> list[type[BaseAnalyzer]]:
+        """Return registered classes ordered by primary cost class.
+
+        Order: Class A first, then B, then C, then D. Within each
+        class the original registration order is preserved (Python's
+        ``sorted`` is stable). The intent is that production mode
+        runs cheap analyzers first so an early Tier 1 finding can
+        skip the expensive ones.
+
+        v1.1.6: this method is read-only and pure; calling it does
+        not mutate the registry. Forensic mode never calls it.
+        """
+        # Stable sort over the registration-order list.
+        return sorted(
+            self._registry.values(),
+            key=lambda cls: _COST_CLASS_ORDER[
+                _analyzer_primary_cost_class(cls)
+            ],
+        )
+
     def scan_all(
         self,
         file_path: Path,
         kind: FileKind | None = None,
+        mode: str = "forensic",
     ) -> IntegrityReport:
         """Compose every registered analyzer's report into one.
 
@@ -224,7 +390,30 @@ class AnalyzerRegistry:
                per-analyzer scan_incomplete, scan_error finding in the
                merged list) is true. Apply the
                ``SCAN_INCOMPLETE_CLAMP`` (0.5) when so.
+
+        v1.1.6 - mode parameter
+        -----------------------
+        ``mode="forensic"`` (the default) runs every applicable
+        analyzer in registration order, regardless of earlier
+        findings. Byte-parity with the existing test suite depends
+        on this default.
+
+        ``mode="production"`` runs analyzers in cost-class order
+        (A first, then B, C, D) and exits the loop after the first
+        analyzer whose findings include a Tier 1 finding at
+        confidence >= 0.9. Determinism: the same input produces the
+        same merged Tier 1 verdict regardless of class ordering,
+        because each cost class entry in ``MECHANISM_COST_CLASS`` is
+        an independent contract: no class-D mechanism is structurally
+        required to confirm a class-A verdict. See
+        ``docs/adr/ADR-003-v1_1_6-registry-shortcircuit.md``.
         """
+        if mode not in ("production", "forensic"):
+            raise ValueError(
+                f"AnalyzerRegistry.scan_all() mode must be 'production' "
+                f"or 'forensic'; got {mode!r}."
+            )
+
         merged = IntegrityReport(file_path=str(file_path), integrity_score=1.0)
 
         if not file_path.exists():
@@ -236,7 +425,17 @@ class AnalyzerRegistry:
         errors: list[str] = []
         any_incomplete = False
 
-        for analyzer in self.instantiate_all():
+        # v1.1.6 - dispatch order.
+        # Forensic mode: registration order (legacy behaviour).
+        # Production mode: cost-class-A-first, stable within each class.
+        if mode == "production":
+            classes_in_order = self._sorted_for_production()
+            analyzers = [cls() for cls in classes_in_order]
+        else:
+            analyzers = self.instantiate_all()
+
+        terminated_early = False
+        for analyzer in analyzers:
             # Phase 9 — kind-based routing. An analyzer that does not
             # declare support for this file's kind is skipped entirely
             # (no findings, no error). Without a kind argument the
@@ -262,6 +461,26 @@ class AnalyzerRegistry:
                 errors.append(sub.error)
             if sub.scan_incomplete:
                 any_incomplete = True
+
+            # v1.1.6 - production-mode short-circuit.
+            # After this analyzer's findings have been merged, check
+            # whether any Tier 1 finding at confidence >= 0.9 is now
+            # present. If so, no later analyzer can change the
+            # verdict; exit the dispatch loop and let the merge,
+            # error-join, and clamp logic below run normally.
+            if mode == "production" and any(
+                _is_terminal_finding(f) for f in merged.findings
+            ):
+                terminated_early = True
+                break
+
+        # ``terminated_early`` is intentionally local: the report shape
+        # is unchanged across modes so forensic-mode callers see no
+        # difference. The signal is observable to tests by counting
+        # findings or by comparing analyzers-run, not by reading a
+        # report attribute. The local variable is retained for
+        # readability; it is not surfaced on the merged report.
+        del terminated_early
 
         merged.error = "; ".join(errors) if errors else None
         merged.integrity_score = compute_muwazana_score(merged.findings)

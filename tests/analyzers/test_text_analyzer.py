@@ -410,3 +410,110 @@ def test_scan_closes_pdfclient_on_error(tmp_path: Path) -> None:
     for _ in range(3):
         report = analyzer.scan(tmp_path / "ghost.pdf")
         assert report.scan_incomplete
+
+
+# ---------------------------------------------------------------------------
+# v1.1.5 spatial pre-filter for overlapping_text
+# ---------------------------------------------------------------------------
+
+def _naive_iou_pairs(spans, threshold):
+    """Reference: enumerate every pair the v1.1.4 O(n^2) loop would
+    have surfaced at IoU >= threshold, regardless of text equality."""
+    from analyzers.text_analyzer import ZahirTextAnalyzer
+    pairs = set()
+    for i in range(len(spans)):
+        for j in range(i + 1, len(spans)):
+            iou = ZahirTextAnalyzer._bbox_iou(spans[i][0], spans[j][0])
+            if iou >= threshold:
+                pairs.add((i, j))
+    return pairs
+
+
+def test_overlapping_pair_candidates_handles_empty() -> None:
+    from analyzers.text_analyzer import _overlapping_pair_candidates
+    assert list(_overlapping_pair_candidates([])) == []
+
+
+def test_overlapping_pair_candidates_handles_single_span() -> None:
+    from analyzers.text_analyzer import _overlapping_pair_candidates
+    spans = [((10.0, 10.0, 50.0, 30.0), "hello")]
+    assert list(_overlapping_pair_candidates(spans)) == []
+
+
+def test_overlapping_pair_candidates_yields_overlapping_pair() -> None:
+    """A pair of bboxes at identical coordinates must appear among the
+    candidates so the IoU check downstream can confirm them."""
+    from analyzers.text_analyzer import _overlapping_pair_candidates
+    spans = [
+        ((100.0, 100.0, 200.0, 120.0), "first"),
+        ((100.0, 100.0, 200.0, 120.0), "second"),
+    ]
+    candidates = list(_overlapping_pair_candidates(spans))
+    assert (0, 1) in candidates
+
+
+def test_overlapping_pair_candidates_skips_distant_pairs() -> None:
+    """Bboxes nowhere near each other should not be enumerated as a
+    candidate. Correctness does not require this (the IoU predicate
+    would filter them anyway), but this is the speedup path."""
+    from analyzers.text_analyzer import _overlapping_pair_candidates
+    spans = [
+        ((10.0, 10.0, 30.0, 20.0), "left"),
+        ((500.0, 500.0, 520.0, 510.0), "far"),
+    ]
+    # The two boxes share no grid cell at any reasonable cell size,
+    # so the candidate generator should yield no pairs.
+    assert list(_overlapping_pair_candidates(spans)) == []
+
+
+def test_overlapping_pair_candidates_is_superset_of_naive() -> None:
+    """The candidate generator must return at least every pair the
+    naive O(n^2) IoU scan would have surfaced. Any pair the naive
+    scan finds at IoU >= threshold must appear among the candidates,
+    or the speedup would silently drop true positives."""
+    import random
+    from analyzers.text_analyzer import _overlapping_pair_candidates
+    from domain.config import SPAN_OVERLAP_THRESHOLD
+
+    rng = random.Random(20260430)
+    # 30 randomized layouts of 40 spans each across a synthetic page.
+    for trial in range(30):
+        spans = []
+        for _ in range(40):
+            x0 = rng.uniform(0, 500)
+            y0 = rng.uniform(0, 700)
+            w = rng.uniform(8, 60)
+            h = rng.uniform(8, 16)
+            spans.append(((x0, y0, x0 + w, y0 + h), f"t{trial}_{_}"))
+        # Force a few guaranteed overlaps so the test exercises the
+        # positive path on every trial.
+        for k in range(3):
+            base_bbox = spans[k][0]
+            spans.append((base_bbox, f"clone_{trial}_{k}"))
+
+        candidates = set(_overlapping_pair_candidates(spans))
+        naive = _naive_iou_pairs(spans, SPAN_OVERLAP_THRESHOLD)
+        # Every naive pair must appear in the candidate set.
+        missing = naive - candidates
+        assert not missing, (
+            f"trial {trial}: candidate generator missed "
+            f"{len(missing)} pair(s) the naive scan would surface: "
+            f"{list(missing)[:5]}"
+        )
+
+
+def test_overlapping_pair_candidates_finds_the_positive_fixture() -> None:
+    """End-to-end: the canonical overlapping-text fixture must still
+    produce its one finding under the v1.1.5 path."""
+    fixture = Path(__file__).resolve().parents[1] / "fixtures" / "text" / "overlapping.pdf"
+    if not fixture.exists():
+        import pytest
+        pytest.skip(f"fixture not generated: {fixture}")
+    analyzer = ZahirTextAnalyzer()
+    report = analyzer.scan(fixture)
+    overlapping = [f for f in report.findings if f.mechanism == "overlapping_text"]
+    assert len(overlapping) >= 1, (
+        f"v1.1.5 spatial pre-filter must still surface the canonical "
+        f"overlapping_text fixture; got findings: "
+        f"{[(f.mechanism, f.surface) for f in report.findings]}"
+    )

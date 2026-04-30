@@ -10,6 +10,85 @@ reference implementation without touching it, the parity invariant
 (`bayyinah.scan_pdf == bayyinah_v0.scan_pdf` on every Phase 0 fixture) has
 held across every phase.
 
+## [1.1.6]: 2026-04-30
+
+Minor release. Registry-level cost-class-ordered short-circuit. Closes
+the second of the items the v1.1.4 CHANGELOG named under deferred work
+and the cost-class-ordered short-circuit deferred from v1.1.5. ADR-003
+records the design.
+
+### Headline
+
+20% end-to-end reduction on `tests/fixtures/positive_combined.pdf`,
+the multi-mechanism adversarial fixture (11.16 ms to 8.98 ms P50, 5
+measured runs). Production-mode finding count drops from 16 to 8
+on the same fixture because the dispatch loop exits the first time
+a Tier-1 finding at confidence >= 0.9 lands in the merged report. The
+Tier-1 verdict itself is preserved across modes. Single-mechanism
+adversarial fixtures get smaller gains in the 3 to 14 percent range
+(sub-millisecond on most fixtures). Clean files are unaffected;
+production and forensic mode invoke the same analyzer set when no
+Tier-1 finding ever fires. Forensic mode is the default and is
+byte-identical to v1.1.5 across every fixture in the corpus.
+
+### Added
+
+- `analyzers.registry._analyzer_primary_cost_class`: AST-walk-based
+  resolver that derives an analyzer class's primary (worst-case)
+  cost class from the mechanism string literals it (and its one-hop
+  sibling helpers) emits. Cached with `lru_cache`. Analyzers may
+  override the AST-derived value with a `primary_cost_class:
+  ClassVar[CostClass]` declaration.
+- `analyzers.registry.AnalyzerRegistry._sorted_for_production`:
+  read-only helper that returns registered classes ordered by
+  primary cost class (A, B, C, D), with stable within-class
+  registration order.
+- `analyzers.registry.AnalyzerRegistry.scan_all`: gains a `mode`
+  parameter. `mode="forensic"` (default) preserves v1.1.5
+  registration-order dispatch. `mode="production"` dispatches in
+  cost-class order and exits the loop after the first Tier-1,
+  confidence >= 0.9 finding is merged.
+- `application.scan_service.ScanService._scan_inner`: threads the
+  mode parameter through to every `registry.scan_all(...)` call so
+  the live `POST /scan?mode=production` path gets the
+  registry-level short-circuit, not just the in-PDF-analyzer one
+  shipped in v1.1.4.
+- `docs/adr/ADR-003-v1_1_6-registry-shortcircuit.md`: decision
+  record covering the design, the determinism argument, the
+  pessimistic-fallback rationale, and three rejected alternatives.
+- `docs/benchmarks/v1_1_6_production_mode.py` and the accompanying
+  Markdown report: reproduction harness for the v1.1.6 numbers.
+
+### Tests
+
+- 9 new tests in `tests/test_registry_production_mode.py` covering:
+  cost-class total-order invariant, every-analyzer-classified
+  invariant, mechanism-cost-class totality, class-monotone
+  production-mode order, stable within-class order, forensic-mode
+  default equality, Tier-1 verdict preservation across modes for
+  every fixture in the corpus, invalid-mode rejection at the
+  registry boundary, and clean-file forensic-vs-production
+  identity.
+- 1,734 of 1,734 tests pass on this branch (1,725 pre-v1.1.6 plus
+  the 9 new production-mode tests). Zero skipped, zero failed.
+
+### Report shape
+
+The merged `IntegrityReport` shape is unchanged across modes. There
+is no new `terminated_early` field. An observer can detect early
+termination only by counting findings or analyzer invocations, not
+by reading a report attribute. Forensic-mode callers see no
+difference at all.
+
+### Deferred to v1.1.7+
+
+- BatinObjectAnalyzer migration to the content index (originally
+  scoped for v1.1.6 alongside the short-circuit; defers because the
+  short-circuit work landed independently and the migration is a
+  larger, separable patch).
+- F2 calibration plan (originally scoped for v1.1.3; remains the
+  named open frontier on the CSV/JSON gauntlet).
+
 ## [1.1.5]: 2026-04-30
 
 Patch release. Spatial pre-filter for `overlapping_text`. Closes the

@@ -59,7 +59,7 @@ app = FastAPI(
         "adversarial content across 23 file kinds. Input-layer application "
         "of the Munafiq Protocol."
     ),
-    version=getattr(bayyinah, "__version__", "1.1.2"),
+    version=getattr(bayyinah, "__version__", "1.1.4"),
 )
 
 
@@ -73,14 +73,14 @@ def healthz() -> dict:
     return {
         "status": "ok",
         "service": "bayyinah",
-        "version": getattr(bayyinah, "__version__", "1.1.2"),
+        "version": getattr(bayyinah, "__version__", "1.1.4"),
     }
 
 
 @app.get("/version")
 def version() -> dict:
     """Returns the installed Bayyinah version."""
-    return {"version": getattr(bayyinah, "__version__", "1.1.2")}
+    return {"version": getattr(bayyinah, "__version__", "1.1.4")}
 
 
 # ---------------------------------------------------------------------------
@@ -638,7 +638,7 @@ def index() -> HTMLResponse:
         except OSError:
             pass
     html = _INDEX_HTML.replace(
-        "__VERSION__", getattr(bayyinah, "__version__", "1.1.2")
+        "__VERSION__", getattr(bayyinah, "__version__", "1.1.4")
     )
     return HTMLResponse(content=html)
 
@@ -653,7 +653,7 @@ def scan_form_legacy() -> HTMLResponse:
     classic inline form here for continuity.
     """
     html = _INDEX_HTML.replace(
-        "__VERSION__", getattr(bayyinah, "__version__", "1.1.2")
+        "__VERSION__", getattr(bayyinah, "__version__", "1.1.4")
     )
     return HTMLResponse(content=html)
 

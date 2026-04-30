@@ -10,17 +10,28 @@ reference implementation without touching it, the parity invariant
 (`bayyinah.scan_pdf == bayyinah_v0.scan_pdf` on every Phase 0 fixture) has
 held across every phase.
 
-## [Unreleased] v1.1.4 (in progress on branch `v1.1.4/content-index`)
+## [1.1.4]: 2026-04-30
 
-The v1.1.4 release follows the cost-taxonomy and content-index design
-in `docs/v1.1.4/SCALE_PLAN.md`. The principle: walk the document once,
+Minor release. Content-index port and production mode. The release
+follows the cost-taxonomy and content-index design in
+`docs/v1.1.4/SCALE_PLAN.md`. The principle: walk the document once,
 build the structural-address index, run mechanisms against the index
 instead of against the content. Cost drops from O(mechanisms x content)
 to O(content) + O(mechanisms x addresses).
 
-Phase 0, Phases 1+2, and Phases 3+4 of the migration are landed on
-the branch. Phase 5 (version bump to 1.1.4, final benchmark closure,
-push to main) is the next step.
+### Headline
+
+32% scan time reduction on 48-page native-text PDF (3,605ms to 2,448ms).
+18% reduction on 19-page synthesized PDF (277ms to 226ms). Production
+mode returns early on Tier 1 severity-1.0 findings. 1,719 / 1,719 tests
+passing. Byte-parity preserved against the bayyinah_v0_1 reference
+implementation across every Phase 0 fixture and across all four PDF
+gauntlet fixtures (`04_metadata.pdf`, `05_after_eof.pdf`,
+`06_optional_content_group.pdf`, `03_off_page.pdf`).
+
+Version gap note: v1.1.3 was planned for the F2 calibration work and
+has not shipped. Calibration items fold into v1.1.5 or v1.2. The 1.1.2
+to 1.1.4 jump is honest about that.
 
 ### Added (Phase 0)
 
@@ -157,16 +168,16 @@ largest remaining win on the native-text class.
   v1.1.4 architecture earns; full closure measurement is the
   Phase 5 step.
 
-### Deferred to Phase 5
+### Deferred to v1.1.5
 
-- Version bump to 1.1.4 in `bayyinah/__init__.py` and `pyproject.toml`.
-- Four-density benchmark closure (white paper, NIST, AKIRA, dense
-  PDF stress) and CHANGELOG performance numbers populated.
 - Pass-by-pass cost-class-ordered early termination at the registry
-  level (`production`-mode full short-circuit).
+  level (`production`-mode full short-circuit). v1.1.4 short-circuits
+  at the report-emission boundary; v1.1.5 will short-circuit inside
+  the registry once class-A-first dispatch lands.
 - BatinObjectAnalyzer migration to the index.
 - Spatial indexing for `overlapping_text` (R-tree) to fully collapse
   the dense-PDF class-C cost.
+- F2 calibration plan that was originally scoped for v1.1.3.
 
 ## [1.1.2]: 2026-04-28
 

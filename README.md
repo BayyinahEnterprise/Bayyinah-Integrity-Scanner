@@ -1,6 +1,6 @@
 # Bayyinah
 
-> **Try it now:** [bayyinah.dev](https://bayyinah.dev/) — drag any file into the form and see the integrity report. See the [Hosted API](#hosted-api) section for the JSON endpoint.
+> **Try it now:** [bayyinah.dev](https://bayyinah.dev/). Drag any file into the form and see the integrity report. See the [Hosted API](#hosted-api) section for the JSON endpoint.
 
 **File integrity scanner for detecting hidden, concealed, or adversarial content in digital documents.**
 
@@ -10,7 +10,7 @@ Bayyinah extracts every content layer from a file, visible and invisible, and re
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.19677111-blue)](https://doi.org/10.5281/zenodo.19677111)
-[![Version](https://img.shields.io/badge/version-1.1.2-green.svg)](https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.4-green.svg)](https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/CHANGELOG.md)
 
 ## Why Bayyinah
 
@@ -363,7 +363,7 @@ pytest
 python -m cli.main scan path/to/file.pdf
 ```
 
-1,671 pytest cases across domain, infrastructure, analyzers, application, fixture corpora, and end-to-end integration (56 test files, verified on 1.1.2). Every Phase 0 fixture is asserted for exact mechanism firings, score, error text, and `scan_incomplete` flag, against both `bayyinah_v0.py` and `bayyinah_v0_1.py`. Byte-identical PDF parity with the reference implementation is re-verified after every phase; the invariant has held across every release from 0.2.x through 1.1.2.
+1,719 pytest cases across domain, infrastructure, analyzers, application, fixture corpora, and end-to-end integration (56 test files, verified on 1.1.4). Every Phase 0 fixture is asserted for exact mechanism firings, score, error text, and `scan_incomplete` flag, against both `bayyinah_v0.py` and `bayyinah_v0_1.py`. Byte-identical PDF parity with the reference implementation is re-verified after every phase; the invariant has held across every release from 0.2.x through 1.1.4.
 
 ## Academic reference
 

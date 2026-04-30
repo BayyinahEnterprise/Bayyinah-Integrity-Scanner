@@ -116,6 +116,28 @@ class FontInfo:
     encoding: str | None
 
 
+@dataclass(frozen=True)
+class PikepdfAnnotInfo:
+    """One annotation record sourced from pikepdf rather than pymupdf.
+
+    Used by ``pdf_hidden_text_annotation`` because pypdf's ``idnum``
+    and pikepdf's ``objgen[0]`` agree (verified on fixture 06: both
+    report 8 for the hidden /Text annotation), while pymupdf's
+    annotation API does not surface that idnum cleanly. Carrying a
+    parallel pikepdf-sourced annotation list keeps the migrated
+    detector's ``obj_id`` byte-identical with the pre-migration
+    pypdf-based output.
+
+    The pymupdf-sourced ``AnnotInfo`` list remains available on
+    ``ContentIndex.annotations_by_page``; do not merge the two lists.
+    """
+    page_idx: int
+    subtype: str          # e.g. "/Text", "/FreeText"; matches pypdf's str(/Subtype)
+    flags: int            # /F bit field
+    contents: str | None  # /Contents string, decoded
+    obj_id: int | None    # pikepdf objgen[0]; matches pypdf annot_ref.idnum
+
+
 # ---------------------------------------------------------------------------
 # ContentIndex
 # ---------------------------------------------------------------------------
@@ -158,8 +180,39 @@ class ContentIndex:
     #   "names_embedded", "ocproperties", "info_dict", "xmp_stream", "acroform"
     catalog: dict[str, Any] = field(default_factory=dict)
 
-    # Trailer summary (populated when Phase 3 migrates pdf_trailer_analyzer)
+    # Trailer summary (populated by populate_from_raw_bytes during Phase 3
+    # when pdf_trailer_analyzer reads from the index instead of doing its
+    # own raw-bytes read). ``last_eof_offset`` is the offset of the FINAL
+    # %%EOF marker (rfind), or -1 if no marker is present. ``trailing_
+    # after_last_eof`` is the bytes that follow the marker, capped at
+    # 4096 bytes so the index does not grow unbounded on pathological
+    # files; the per-mechanism finding text only cites a 64-byte sample
+    # so the cap does not affect byte-parity.
     eof_positions: list[int] = field(default_factory=list)
+    last_eof_offset: int = -1
+    trailing_after_last_eof: bytes = b""
+    raw_bytes_read_failed: bool = False
+
+    # Pikepdf-sourced data populated by populate_from_pikepdf during
+    # Phase 3. The catalog dict's "info_dict" key carries /Info as
+    # ``dict[str, str]``; "xmp_items" carries the XMP metadata as
+    # ``dict[str, str]`` with keys in pikepdf's ``"{namespace}localname"``
+    # form. ``page_raw_contents`` carries the raw content stream bytes
+    # per page, used by pdf_off_page_text and pdf_metadata_analyzer's
+    # rendered-text reconstruction. ``pikepdf_annotations_by_page``
+    # carries pikepdf-sourced annotation records so ``obj_id`` matches
+    # pypdf's ``idnum`` byte-for-byte.
+    page_raw_contents: dict[int, bytes] = field(default_factory=dict)
+    pikepdf_annotations_by_page: dict[int, list[PikepdfAnnotInfo]] = field(
+        default_factory=dict
+    )
+    # MediaBoxes sourced from pikepdf (kept separate from page_rects which
+    # is populated by from_pymupdf via page.rect). For most PDFs the two
+    # agree, but pikepdf's /MediaBox is the byte-parity-correct source
+    # for pdf_off_page_text whose existing self-walk reads list(page.MediaBox).
+    page_mediaboxes: dict[int, tuple[float, float, float, float]] = field(
+        default_factory=dict
+    )
 
     # Failure flag: True when the index could not be fully built.
     # Analyzers that read from the index check this and fall back to
@@ -348,6 +401,203 @@ class ContentIndex:
 
         return idx
 
+    # ------------------------------------------------------------------
+    # v1.1.4 Phase 3 - additional populate methods
+    # ------------------------------------------------------------------
+    #
+    # These methods extend an already-built ContentIndex with data from
+    # sources outside the pymupdf walk. They are called by ScanService's
+    # PDF preflight extension after ``from_pymupdf`` returns. Splitting
+    # the population across methods keeps each parser's failure isolated:
+    # if pikepdf cannot open the file, the pymupdf-sourced spans/drawings
+    # are still available; if the raw-bytes read fails, the pikepdf data
+    # is still available. Migrated analyzers check the relevant field
+    # (e.g. ``page_raw_contents``, ``last_eof_offset``) for presence
+    # before reading; missing data triggers the self-walk fallback.
+
+    def populate_from_pikepdf(self, pdf: Any) -> None:
+        """Fill catalog["info_dict"], catalog["xmp_items"], page_raw_contents,
+        and pikepdf_annotations_by_page from a pikepdf.Pdf instance.
+
+        Per-page failures degrade silently: that page's raw_contents
+        and annotations remain absent rather than aborting the whole
+        population. The caller is responsible for opening and closing
+        the pikepdf handle; this method does neither.
+        """
+        # /Info dictionary - dict[str, str], keys preserve the leading "/"
+        # to match the v1.1.1 detector output. ``pikepdf.Dictionary`` is
+        # iterable; ``str(value)`` matches the detector's `str(info[key])`
+        # call shape, which is byte-parity-preserving.
+        try:
+            docinfo = pdf.docinfo
+        except Exception:  # noqa: BLE001 - missing /Info is permissible
+            docinfo = None
+        if docinfo is not None:
+            info_dict: dict[str, str] = {}
+            try:
+                for key in docinfo.keys():
+                    try:
+                        info_dict[str(key)] = str(docinfo[key])
+                    except Exception:  # noqa: BLE001 - per-key degradation
+                        continue
+            except Exception:  # noqa: BLE001 - per-doc degradation
+                pass
+            self.catalog["info_dict"] = info_dict
+
+        # XMP metadata - dict[str, str], keys in pikepdf's
+        # "{namespace}localname" form to match the v1.1.1 detector's
+        # ``str(k)`` call shape.
+        try:
+            with pdf.open_metadata() as meta:
+                xmp_items: dict[str, str] = {}
+                try:
+                    for k, v in meta.items():
+                        try:
+                            xmp_items[str(k)] = str(v)
+                        except Exception:  # noqa: BLE001
+                            continue
+                except Exception:  # noqa: BLE001
+                    pass
+                self.catalog["xmp_items"] = xmp_items
+        except Exception:  # noqa: BLE001 - file may have no XMP
+            pass
+
+        # Per-page raw content streams + per-page pikepdf annotation
+        # records. Single walk of pdf.pages.
+        try:
+            pages_iter = list(pdf.pages)
+        except Exception:  # noqa: BLE001
+            pages_iter = []
+        for page_idx, page in enumerate(pages_iter):
+            # Raw content stream bytes for pdf_off_page_text and
+            # pdf_metadata_analyzer's rendered-text reconstruction.
+            try:
+                self.page_raw_contents[page_idx] = page.Contents.read_bytes()
+            except Exception:  # noqa: BLE001 - per-page degradation
+                # Leave the page absent from page_raw_contents; the
+                # migrated analyzer's get-or-fallback shape skips it.
+                pass
+
+            # MediaBox sourced from pikepdf for pdf_off_page_text
+            # byte-parity. The detector's existing self-walk reads
+            # ``list(page.MediaBox)`` and casts to float; we capture
+            # the same shape.
+            try:
+                mb = list(page.MediaBox)
+                self.page_mediaboxes[page_idx] = (
+                    float(mb[0]), float(mb[1]),
+                    float(mb[2]), float(mb[3]),
+                )
+            except Exception:  # noqa: BLE001 - per-page degradation
+                pass
+
+            # Pikepdf-sourced annotations. Walk /Annots and capture
+            # subtype, /F flags, /Contents, and the indirect-object
+            # idnum (pikepdf's objgen[0] matches pypdf's annot_ref.idnum
+            # for the same /Annots entry).
+            page_annots: list[PikepdfAnnotInfo] = []
+            try:
+                annots_obj = page.get("/Annots")
+            except Exception:  # noqa: BLE001
+                annots_obj = None
+            if annots_obj is not None:
+                try:
+                    annots_iter = list(annots_obj)
+                except Exception:  # noqa: BLE001
+                    annots_iter = []
+                for aref in annots_iter:
+                    try:
+                        # aref is a pikepdf indirect reference; the
+                        # objgen attribute exposes the (idnum, gen)
+                        # tuple. Resolving the object via aref directly
+                        # gives us the underlying dictionary.
+                        try:
+                            obj_id = int(aref.objgen[0])
+                        except (AttributeError, TypeError, IndexError):
+                            obj_id = None
+                        annot = aref
+                        try:
+                            subtype = str(annot.get("/Subtype", "") or "")
+                        except Exception:  # noqa: BLE001
+                            subtype = ""
+                        try:
+                            flag_raw = annot.get("/F")
+                            flags = int(flag_raw) if flag_raw is not None else 0
+                        except (TypeError, ValueError):
+                            flags = 0
+                        try:
+                            contents_raw = annot.get("/Contents")
+                            contents = (
+                                str(contents_raw)
+                                if contents_raw is not None else None
+                            )
+                        except Exception:  # noqa: BLE001
+                            contents = None
+                        page_annots.append(PikepdfAnnotInfo(
+                            page_idx=page_idx,
+                            subtype=subtype,
+                            flags=flags,
+                            contents=contents,
+                            obj_id=obj_id,
+                        ))
+                    except Exception:  # noqa: BLE001 - per-annotation degradation
+                        continue
+            self.pikepdf_annotations_by_page[page_idx] = page_annots
+
+    def populate_from_raw_bytes(self, raw: bytes) -> None:
+        """Fill eof_positions, last_eof_offset, and trailing_after_last_eof
+        from the file's raw byte stream.
+
+        Caps the trailing bytes at 4096 to keep the index size bounded;
+        the migrated pdf_trailer_analyzer only reads a 64-byte sample
+        from this buffer so the cap does not affect byte-parity. Sets
+        ``raw_bytes_read_failed=True`` if the input bytes are unusable
+        (length zero is permissible: an empty file has no %%EOF and the
+        analyzer fall-through handles that case).
+        """
+        EOF_TOKEN = b"%%EOF"
+        TRAILING_CAP = 4096
+
+        try:
+            data_len = len(raw)
+        except TypeError:
+            self.raw_bytes_read_failed = True
+            return
+
+        # Update raw_bytes_len if the caller didn't already populate it
+        # via from_pymupdf's raw_bytes_len parameter. The two values
+        # should agree; we trust the actual length over any prior
+        # estimate.
+        self.raw_bytes_len = data_len
+
+        if data_len == 0:
+            return
+
+        # Locate every %%EOF marker. The legacy pdf_trailer_analyzer
+        # uses only ``rfind`` to find the final marker; ``eof_positions``
+        # is also populated for the future incremental_update migration
+        # which counts markers. The ``rfind``-style ``last_eof_offset``
+        # is the byte-parity-critical value for trailer analyzer output.
+        positions: list[int] = []
+        idx = -1
+        while True:
+            nxt = raw.find(EOF_TOKEN, idx + 1)
+            if nxt == -1:
+                break
+            positions.append(nxt)
+            idx = nxt
+        self.eof_positions = positions
+
+        if positions:
+            self.last_eof_offset = positions[-1]
+            tail_start = positions[-1] + len(EOF_TOKEN)
+            self.trailing_after_last_eof = raw[
+                tail_start:tail_start + TRAILING_CAP
+            ]
+        else:
+            self.last_eof_offset = -1
+            self.trailing_after_last_eof = b""
+
 
 # ---------------------------------------------------------------------------
 # Thread-local context (mirrors the limits_context pattern in domain/config.py)
@@ -414,6 +664,7 @@ __all__ = [
     "DrawingInfo",
     "AnnotInfo",
     "FontInfo",
+    "PikepdfAnnotInfo",
     "ContentIndex",
     "get_current_content_index",
     "set_current_content_index",

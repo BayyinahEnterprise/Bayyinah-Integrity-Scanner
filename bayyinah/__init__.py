@@ -167,7 +167,11 @@ def scan_pdf(pdf_path: Path | str) -> IntegrityReport:
 # scan_file — the format-agnostic public entry point
 # ---------------------------------------------------------------------------
 
-def scan_file(file_path: Path | str) -> IntegrityReport:
+def scan_file(
+    file_path: Path | str,
+    *,
+    mode: str = "forensic",
+) -> IntegrityReport:
     """Scan a single file of any supported format for integrity violations.
 
     Format-agnostic counterpart to :func:`scan_pdf`. Dispatches to the
@@ -184,6 +188,12 @@ def scan_file(file_path: Path | str) -> IntegrityReport:
     callers who pinned to the PDF-only entry point; internally it
     delegates to the same :class:`ScanService` and is byte-identical.
 
+    The ``mode`` parameter (v1.1.4) accepts ``"forensic"`` (default,
+    every analyzer runs to completion) or ``"production"`` (early
+    termination on Tier 1 high-confidence findings; queued for full
+    pass-by-pass dispatch in v1.1.5). Forensic is the byte-parity-
+    preserving default for backward compatibility.
+
     Examples
     --------
     >>> from bayyinah import scan_file
@@ -192,12 +202,13 @@ def scan_file(file_path: Path | str) -> IntegrityReport:
     1.0
     >>> r = scan_file("invoice.docx")      # any supported format
     >>> r = scan_file("unknown.widget")    # falls back to FallbackAnalyzer
+    >>> r = scan_file("memo.pdf", mode="production")  # production mode
 
     Semantics match :func:`scan_pdf` for PDF inputs exactly; non-PDF
     inputs return the composed :class:`IntegrityReport` from the
     analyzers registered for that :class:`FileKind`.
     """
-    return ScanService().scan(Path(file_path))
+    return ScanService().scan(Path(file_path), mode=mode)
 
 
 # ---------------------------------------------------------------------------

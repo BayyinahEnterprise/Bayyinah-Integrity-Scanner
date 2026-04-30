@@ -341,6 +341,7 @@ class ScanService:
         file_path: Path | str | None = None,
         *,
         pdf_path: Path | str | None = None,
+        mode: str = "forensic",
     ) -> IntegrityReport:
         """Produce one merged IntegrityReport for ``file_path``.
 
@@ -376,6 +377,27 @@ class ScanService:
         analyzers is a ``scan_error`` + incomplete scan — the honest
         signal that the file is out of scope.
 
+        v1.1.4 - mode parameter (production|forensic)
+        ---------------------------------------------
+        ``mode="forensic"`` (the default) preserves the pre-v1.1.4
+        behaviour: every analyzer runs to completion regardless of
+        earlier findings. Byte-parity with the existing test suite
+        depends on this being the default, so legacy callers and the
+        full diagnostic suite continue to work unchanged.
+
+        ``mode="production"`` enables the early-termination path for
+        the live API: after the registry has run every analyzer in
+        the merged report, if any Tier 1 finding fires at confidence
+        >= 0.9 the scan returns immediately without recomputing
+        through the cold-path explanation layer. The hot-path
+        verdict is already definitive at that point; the explanation
+        narrative is generated downstream by a separate service
+        (per SCALE_PLAN section 6.4 hot/cold separation). In v1.1.4
+        production-mode short-circuit is implemented at the
+        report-emission boundary; full pass-by-pass cost-class-
+        ordered early termination is queued for v1.1.5 once the
+        registry supports class-A-first dispatch.
+
         Backward compatibility
         ----------------------
         Prior to 1.0 the parameter was spelled ``pdf_path``. It is
@@ -404,6 +426,11 @@ class ScanService:
         if file_path is None:
             raise TypeError(
                 "ScanService.scan() missing required argument: 'file_path'"
+            )
+        if mode not in ("production", "forensic"):
+            raise ValueError(
+                f"ScanService.scan() mode must be 'production' or "
+                f"'forensic'; got {mode!r}."
             )
         file_path = Path(file_path)
 
@@ -670,7 +697,7 @@ class ScanService:
         # the failure.
         # ------------------------------------------------------------------
         preflight_error: Exception | None = None
-        # v1.1.4 — build the ContentIndex while the pymupdf doc is open
+        # v1.1.4 - build the ContentIndex while the pymupdf doc is open
         # for preflight. Failure to build the index is non-fatal:
         # build_failed=True is set on the index and migrated analyzers
         # fall back to their self-walk path, preserving the existing
@@ -702,6 +729,34 @@ class ScanService:
         finally:
             client.close()
 
+        # v1.1.4 Phase 3 - extend the index with pikepdf-sourced data
+        # (catalog /Info, XMP, raw content streams, pikepdf annotations)
+        # and the raw byte-stream EOF positions. Each population step is
+        # independently defensive: a pikepdf failure does not block the
+        # raw-bytes step, and vice versa. Migrated analyzers check the
+        # specific field they need (catalog["info_dict"],
+        # page_raw_contents, last_eof_offset) for presence and fall
+        # back to their self-walk path when the field is missing.
+        if content_index is not None and not content_index.build_failed:
+            try:
+                import pikepdf
+                pikepdf_doc = pikepdf.open(str(file_path))
+                try:
+                    content_index.populate_from_pikepdf(pikepdf_doc)
+                finally:
+                    pikepdf_doc.close()
+            except Exception:  # noqa: BLE001 - pikepdf-side failure is non-fatal
+                # Migrated analyzers detect missing pikepdf data via the
+                # absence of the relevant field and fall back to their
+                # self-walk path, preserving the pre-migration behaviour.
+                pass
+
+            try:
+                raw_data = file_path.read_bytes()
+                content_index.populate_from_raw_bytes(raw_data)
+            except OSError:
+                content_index.raw_bytes_read_failed = True
+
         if preflight_error is not None:
             report = IntegrityReport(
                 file_path=str(file_path),
@@ -720,7 +775,7 @@ class ScanService:
         # filter is a no-op and the call reduces byte-for-byte to v0.1's
         # `scan_all(file_path)`. The Phase 0 parity harness asserts this.
         #
-        # v1.1.4 — install the ContentIndex via thread-local context for
+        # v1.1.4 - install the ContentIndex via thread-local context for
         # the duration of the registry dispatch. Migrated analyzers read
         # the index via ``get_current_content_index()``; unmigrated
         # analyzers ignore it and continue to self-walk. The context

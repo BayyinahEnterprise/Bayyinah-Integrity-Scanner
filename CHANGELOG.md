@@ -18,9 +18,9 @@ build the structural-address index, run mechanisms against the index
 instead of against the content. Cost drops from O(mechanisms x content)
 to O(content) + O(mechanisms x addresses).
 
-Phase 0 and Phases 1+2 of the migration are landed on the branch.
-Phase 3 (Batin + pdf_* analyzers, catalog population) and Phase 4
-(mode parameter, ordering) remain open.
+Phase 0, Phases 1+2, and Phases 3+4 of the migration are landed on
+the branch. Phase 5 (version bump to 1.1.4, final benchmark closure,
+push to main) is the next step.
 
 ### Added (Phase 0)
 
@@ -95,17 +95,78 @@ largest remaining win on the native-text class.
   count is identical across 5 benchmark runs on each fixture, so
   byte-parity is preserved end to end. No mechanism logic changed.
 
-### Deferred to Phase 3+
+### Added (Phase 3 + Phase 4)
 
+- `domain/content_index.py` extensions: `PikepdfAnnotInfo` dataclass
+  for byte-parity-correct `obj_id` reporting (pikepdf's `objgen[0]`
+  agrees with pypdf's `idnum` on the gauntlet fixtures, so the
+  pre-migration `f"page {n}, /Annot object {idnum}"` text remains
+  identical). `ContentIndex.populate_from_pikepdf` fills
+  `catalog["info_dict"]`, `catalog["xmp_items"]`, `page_raw_contents`,
+  `pikepdf_annotations_by_page`, and `page_mediaboxes`.
+  `ContentIndex.populate_from_raw_bytes` fills `eof_positions`,
+  `last_eof_offset`, and `trailing_after_last_eof` (capped at 4,096
+  bytes). The `raw_bytes_read_failed` flag is set on OSError so
+  migrated analyzers fall back to their self-walk path.
+- `application/scan_service.py` PDF preflight extended to call
+  `populate_from_pikepdf` and `populate_from_raw_bytes` on the same
+  index. Each population step is independently defensive: a pikepdf
+  failure does not block the raw-bytes step and vice versa. Migrated
+  analyzers detect missing fields (e.g. absent `info_dict`) and fall
+  back verbatim to their pre-migration walk.
+- Four PDF analyzers migrated to read from the index (Phase 3):
+  `pdf_trailer_analyzer.py` reads `last_eof_offset` and
+  `trailing_after_last_eof`; `pdf_metadata_analyzer.py` reads
+  `catalog["info_dict"]`, `catalog["xmp_items"]`, and the per-page
+  raw content streams; `pdf_hidden_text_annotation.py` reads
+  `pikepdf_annotations_by_page` (NOT the pymupdf-sourced
+  `annotations_by_page`, which lacks the indirect-object idnum);
+  `pdf_off_page_text.py` reads `page_raw_contents` and
+  `page_mediaboxes` (cannot read `spans_by_page` because pymupdf
+  silently drops glyphs whose Tm origin falls outside MediaBox, and
+  that drop is the exact concealment vector the mechanism targets).
+  Every analyzer keeps its self-walk fallback verbatim.
+- `mode=production|forensic` parameter on `ScanService.scan()`,
+  `bayyinah.scan_file()`, and the `/scan` API endpoint (Phase 4).
+  Default is `forensic` to preserve byte-parity with the existing
+  test suite. Invalid values raise `ValueError` from the service
+  surface and `400` from the API. The `production`-mode short
+  circuit is wired at the report-emission boundary in v1.1.4; full
+  pass-by-pass cost-class-ordered early termination is queued for
+  v1.1.5 once the registry supports class-A-first dispatch.
+
+### Tests (Phase 3 + Phase 4)
+
+- All 1,719 tests pass on the branch after Phase 3 + Phase 4 land.
+  The four-fixture gauntlet byte-parity check (descriptions,
+  locations, surfaces, concealed strings) shows identical Finding
+  shapes between the self-walk path and the index-fed path on
+  fixtures `04_metadata.pdf`, `05_after_eof.pdf`,
+  `06_optional_content_group.pdf`, and `03_off_page.pdf`.
+
+### Performance (Phase 3 measurement)
+
+- NIST AI RMF (48p, 1.95 MB, native text), P50 over 5 runs after
+  Phase 3+4: 2,448 ms (Phase 2 alone was 2,878 ms; the additional
+  win lands when adversarial fixtures fire the four migrated
+  detectors). The clean-profile case is roughly even with Phase 2
+  because the new pikepdf preflight + raw-bytes read costs offset
+  the four eliminated per-mechanism opens when those detectors
+  produce no findings. The structural win on adversarial fixtures
+  (where the four migrated detectors actually fire) is what the
+  v1.1.4 architecture earns; full closure measurement is the
+  Phase 5 step.
+
+### Deferred to Phase 5
+
+- Version bump to 1.1.4 in `bayyinah/__init__.py` and `pyproject.toml`.
+- Four-density benchmark closure (white paper, NIST, AKIRA, dense
+  PDF stress) and CHANGELOG performance numbers populated.
+- Pass-by-pass cost-class-ordered early termination at the registry
+  level (`production`-mode full short-circuit).
 - BatinObjectAnalyzer migration to the index.
-- pdf_metadata_analyzer, pdf_trailer_analyzer,
-  pdf_hidden_text_annotation, pdf_off_page_text migration; these add
-  catalog-summary, EOF-position, and per-annotation reads to the index.
-- mode parameter (`production`/`forensic`) and class-A-first dispatch
-  ordering at the registry level.
 - Spatial indexing for `overlapping_text` (R-tree) to fully collapse
   the dense-PDF class-C cost.
-- Version bump to 1.1.4 and final benchmark closure.
 
 ## [1.1.2]: 2026-04-28
 

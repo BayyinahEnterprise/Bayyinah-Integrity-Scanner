@@ -55,6 +55,7 @@ from typing import Iterable
 
 import pikepdf
 
+from domain import get_current_content_index
 from domain.finding import Finding
 
 
@@ -130,13 +131,19 @@ _TJ_LITERAL = re.compile(rb"\(((?:[^()\\]|\\.)*)\)\s*Tj")
 _TJ_INNER = re.compile(rb"\(((?:[^()\\]|\\.)*)\)")
 
 
-def _extract_rendered_text(pdf: pikepdf.Pdf) -> str:
+def _extract_rendered_text_from_streams(streams: Iterable[bytes]) -> str:
+    """Run the Tj/TJ literal-extraction regexes over a sequence of
+    raw page content streams and return the joined rendered-text view.
+
+    Shared helper used by both the index path (which reads streams
+    from ``ContentIndex.page_raw_contents.values()``) and the legacy
+    self-walk path (which reads streams from
+    ``page.Contents.read_bytes()``). The output is byte-parity-
+    identical because the per-page chunks land in identical order
+    when the input iterable is iterated in page-index order.
+    """
     chunks: list[str] = []
-    for page in pdf.pages:
-        try:
-            cs = page.Contents.read_bytes()
-        except Exception:
-            continue
+    for cs in streams:
         for m in _TJ_LITERAL.finditer(cs):
             chunks.append(m.group(1).decode("latin-1", errors="replace"))
         # TJ operands appear as ``[ (text) num (text) num ] TJ``; the
@@ -146,6 +153,19 @@ def _extract_rendered_text(pdf: pikepdf.Pdf) -> str:
             for sub in _TJ_INNER.finditer(m.group(1)):
                 chunks.append(sub.group(1).decode("latin-1", errors="replace"))
     return "\n".join(chunks)
+
+
+def _extract_rendered_text(pdf: pikepdf.Pdf) -> str:
+    """Walk pdf.pages in order and assemble the rendered-text view via
+    the shared regex helper. Per-page Contents read failures degrade
+    silently (that page contributes no chunks)."""
+    streams: list[bytes] = []
+    for page in pdf.pages:
+        try:
+            streams.append(page.Contents.read_bytes())
+        except Exception:
+            continue
+    return _extract_rendered_text_from_streams(streams)
 
 
 def _check_field(
@@ -242,8 +262,65 @@ def _check_field(
 def detect_pdf_metadata_analyzer(file_path: Path) -> list[Finding]:
     """Return Tier 1 findings for /Info dictionary or XMP metadata
     fields exhibiting structural anomalies.
+
+    v1.1.4 - reads /Info, XMP, and per-page raw content streams from
+    the per-scan ContentIndex when one is installed (the index's
+    populate_from_pikepdf step extracted them once at the top of the
+    scan). Falls back to opening its own pikepdf handle when no index
+    is available, when the build failed, or when the index lacks the
+    fields this detector needs. Detection logic, _check_field calls,
+    and finding construction are unchanged across both paths.
     """
     findings: list[Finding] = []
+
+    idx = get_current_content_index()
+    use_index = (
+        idx is not None
+        and not idx.build_failed
+        and "info_dict" in idx.catalog
+        and "xmp_items" in idx.catalog
+    )
+
+    if use_index:
+        # Reconstruct the rendered-text view from indexed page streams.
+        # Iterate page indices in order so the chunk order matches the
+        # legacy self-walk byte-for-byte.
+        streams_by_idx = sorted(idx.page_raw_contents.items())
+        rendered = _extract_rendered_text_from_streams(
+            cs for _, cs in streams_by_idx
+        )
+        info_dict = idx.catalog.get("info_dict") or {}
+        xmp_items = idx.catalog.get("xmp_items") or {}
+        # /Info dictionary checks. Iteration order matches pikepdf's
+        # docinfo.keys() because populate_from_pikepdf preserved that
+        # order via dict insertion.
+        for k, v in info_dict.items():
+            findings.extend(_check_field(
+                f"/Info {k}",
+                v,
+                rendered,
+                divergence_eligible=k in _DIVERGENCE_INFO_KEYS,
+            ))
+        # XMP metadata checks. The index already filtered nothing -
+        # it captured every key meta yields. The namespace filter
+        # below mirrors the legacy self-walk path verbatim.
+        for sk, sv in xmp_items.items():
+            if not any(sk.startswith(ns) for ns in _XMP_NAMESPACES):
+                continue
+            local = sk.rsplit("}", 1)[-1] if "}" in sk else sk
+            findings.extend(_check_field(
+                f"XMP {sk}",
+                sv,
+                rendered,
+                divergence_eligible=(
+                    local in _DIVERGENCE_XMP_LOCAL_NAMES
+                ),
+            ))
+        return findings
+
+    # Fallback: legacy self-walk via a fresh pikepdf handle. Preserved
+    # verbatim for direct analyzer-level tests and for scans where the
+    # index could not populate the catalog.
     try:
         pdf = pikepdf.open(str(file_path))
     except Exception:

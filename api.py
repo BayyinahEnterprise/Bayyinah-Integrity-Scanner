@@ -88,7 +88,10 @@ def version() -> dict:
 # ---------------------------------------------------------------------------
 
 @app.post("/scan")
-async def scan(file: UploadFile = File(...)) -> JSONResponse:
+async def scan(
+    file: UploadFile = File(...),
+    mode: str = "forensic",
+) -> JSONResponse:
     """Scan an uploaded file. Returns IntegrityReport.to_dict() as JSON.
 
     The caller should inspect `integrity_score`, `findings`, and
@@ -96,9 +99,22 @@ async def scan(file: UploadFile = File(...)) -> JSONResponse:
     `scan_incomplete=true` indicates the scan ran but did not cover the
     full document; absence of findings in such a report is not evidence
     of cleanness.
+
+    Query parameter ``mode`` (v1.1.4) is "forensic" (default, every
+    analyzer runs to completion) or "production" (early termination on
+    Tier 1 high-confidence findings, queued for full pass-by-pass
+    dispatch in v1.1.5). Invalid values return 400.
     """
     if file is None or not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded.")
+
+    if mode not in ("production", "forensic"):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"mode must be 'production' or 'forensic'; got {mode!r}."
+            ),
+        )
 
     # Read with a hard cap. Anything bigger than MAX_UPLOAD_BYTES is rejected.
     contents = await file.read(MAX_UPLOAD_BYTES + 1)
@@ -121,7 +137,7 @@ async def scan(file: UploadFile = File(...)) -> JSONResponse:
         tmp.write(contents)
         tmp.close()
         try:
-            report = scan_file(tmp.name)
+            report = scan_file(tmp.name, mode=mode)
         except Exception as exc:  # noqa: BLE001 — surfaced to caller as 500
             return JSONResponse(
                 status_code=500,

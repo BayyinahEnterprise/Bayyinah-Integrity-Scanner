@@ -46,6 +46,17 @@ from domain.exceptions import (
     PDFParseError,
     ScanError,
 )
+from domain.content_index import (
+    AnnotInfo,
+    ContentIndex,
+    DrawingInfo,
+    FontInfo,
+    SpanInfo,
+    content_index_context,
+    get_current_content_index,
+    set_current_content_index,
+)
+from domain.cost_classes import CostClass, MECHANISM_COST_CLASS, cost_class
 from domain.finding import Finding, ROUTING_DISCLOSURE_KEYS
 from domain.integrity_report import IntegrityReport
 from domain.value_objects import (
@@ -93,4 +104,16 @@ __all__ = [
     "get_current_limits",
     "set_current_limits",
     "limits_context",
+    # v1.1.4 — content index + cost-class taxonomy
+    "ContentIndex",
+    "SpanInfo",
+    "FontInfo",
+    "AnnotInfo",
+    "DrawingInfo",
+    "get_current_content_index",
+    "set_current_content_index",
+    "content_index_context",
+    "CostClass",
+    "MECHANISM_COST_CLASS",
+    "cost_class",
 ]

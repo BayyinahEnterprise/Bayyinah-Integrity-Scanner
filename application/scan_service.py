@@ -77,12 +77,14 @@ from analyzers import (
 )
 from domain import (
     DEFAULT_LIMITS,
+    ContentIndex,
     Finding,
     IntegrityReport,
     PDFParseError,
     ScanLimits,
     apply_scan_incomplete_clamp,
     compute_muwazana_score,
+    content_index_context,
     limits_context,
 )
 from infrastructure import FileKind, FileRouter, PDFClient
@@ -668,14 +670,35 @@ class ScanService:
         # the failure.
         # ------------------------------------------------------------------
         preflight_error: Exception | None = None
+        # v1.1.4 — build the ContentIndex while the pymupdf doc is open
+        # for preflight. Failure to build the index is non-fatal:
+        # build_failed=True is set on the index and migrated analyzers
+        # fall back to their self-walk path, preserving the existing
+        # scan_error semantics without forcing every analyzer to
+        # re-implement defensive parsing around the index.
+        content_index: ContentIndex | None = None
         client = PDFClient(file_path)
         try:
             try:
-                _ = client.fitz
+                doc = client.fitz
             except PDFParseError as exc:
                 preflight_error = exc.__cause__ or exc
             except Exception as exc:  # noqa: BLE001 — mirror v0.1 bare except
                 preflight_error = exc
+            else:
+                # Preflight succeeded; build the index in the same open.
+                try:
+                    content_index = ContentIndex.from_pymupdf(
+                        doc,
+                        str(file_path),
+                        raw_bytes_len=size_bytes if size_bytes >= 0 else 0,
+                    )
+                except Exception as exc:  # noqa: BLE001 - degradation, not abort
+                    content_index = ContentIndex(
+                        file_path=str(file_path),
+                        build_failed=True,
+                        build_error=f"index build: {exc}",
+                    )
         finally:
             client.close()
 
@@ -696,8 +719,16 @@ class ScanService:
         # ``default_pdf_registry()`` (every analyzer PDF-scoped), the
         # filter is a no-op and the call reduces byte-for-byte to v0.1's
         # `scan_all(file_path)`. The Phase 0 parity harness asserts this.
+        #
+        # v1.1.4 — install the ContentIndex via thread-local context for
+        # the duration of the registry dispatch. Migrated analyzers read
+        # the index via ``get_current_content_index()``; unmigrated
+        # analyzers ignore it and continue to self-walk. The context
+        # manager restores the prior state on exit, so concurrent scans
+        # on different threads do not see each other's indexes.
         # ------------------------------------------------------------------
-        merged = self.registry.scan_all(file_path, kind=FileKind.PDF)
+        with content_index_context(content_index):
+            merged = self.registry.scan_all(file_path, kind=FileKind.PDF)
 
         # Defence-in-depth: re-assert the invariants. If an older
         # registry in a custom setup forgets the clamp, we enforce it

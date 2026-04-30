@@ -10,6 +10,103 @@ reference implementation without touching it, the parity invariant
 (`bayyinah.scan_pdf == bayyinah_v0.scan_pdf` on every Phase 0 fixture) has
 held across every phase.
 
+## [Unreleased] v1.1.4 (in progress on branch `v1.1.4/content-index`)
+
+The v1.1.4 release follows the cost-taxonomy and content-index design
+in `docs/v1.1.4/SCALE_PLAN.md`. The principle: walk the document once,
+build the structural-address index, run mechanisms against the index
+instead of against the content. Cost drops from O(mechanisms x content)
+to O(content) + O(mechanisms x addresses).
+
+Phase 0 and Phases 1+2 of the migration are landed on the branch.
+Phase 3 (Batin + pdf_* analyzers, catalog population) and Phase 4
+(mode parameter, ordering) remain open.
+
+### Added (Phase 0)
+
+- `domain/cost_classes.py`: cost-class taxonomy A/B/C/D for every
+  mechanism in the registry. Distribution at HEAD: 55 class A
+  (structural address, O(1) per address), 82 class B (indexed content,
+  O(content) shared), 8 class C (cross-correlation, bounded), 10 class D
+  (full re-parse). Import-time assertion guarantees every registered
+  mechanism is classified or the test suite refuses to start.
+- `docs/v1.1.4/PHASE0_BASELINE.md`: pre-migration cProfile timing
+  reference for the four benchmark fixtures so Phase 2+ deltas are
+  measurable.
+
+### Added (Phase 1)
+
+- `domain/content_index.py`: per-scan structural index. SpanInfo,
+  DrawingInfo, AnnotInfo, FontInfo dataclasses. ContentIndex.from_pymupdf
+  walks the document once and captures spans, drawings, annotations,
+  page rectangles, fonts. Per-page failure is degraded, not fatal:
+  the page's lists go empty rather than aborting the whole index.
+- `domain/content_index.py` thread-local context (`content_index_context`,
+  `get_current_content_index`, `set_current_content_index`) mirrors the
+  existing `limits_context` pattern in `domain/config.py`. Analyzers
+  read the active index without any signature change to
+  `BaseAnalyzer.scan()`. This keeps the migration backward-compatible
+  across every existing analyzer (PDF and non-PDF) and avoids widening
+  the abstract contract that 50+ analyzers implement.
+
+### Changed (Phase 1)
+
+- `application/scan_service.py`: `_scan_inner` now builds the
+  ContentIndex inside the PDF preflight try-block while the pymupdf
+  doc is still open, then installs it via `content_index_context` for
+  the duration of the registry dispatch. Index-build failures degrade
+  gracefully: `build_failed=True` is set and migrated analyzers fall
+  back to their self-walk path, preserving the existing scan_error
+  semantics.
+
+### Changed (Phase 2)
+
+- `analyzers/text_analyzer.py` (`ZahirTextAnalyzer`): both per-page
+  callsites of `page.get_text("dict")` migrated to read from the index.
+  The first was in `_scan_spans` (color, size, off-page, unicode
+  checks); the second in `_scan_overlapping_spans` (IoU pairs). This
+  eliminates the two repeated-extraction calls that profiling identified
+  as the load-bearing cost on dense PDFs. Detection logic, finding
+  shape, and verdict semantics are unchanged across the migration.
+  Self-walk fallback path is preserved verbatim for direct
+  analyzer-level tests and for the index-build-failed degradation case.
+- `analyzers/text_analyzer.py`: added module-level `_RectShim` class.
+  Tuple-backed minimal stand-in for pymupdf.Rect that exposes
+  `.x0/.y0/.x1/.y1` plus tuple unpacking, so the existing helpers that
+  read `page_rect.x0` work unchanged on rectangle data extracted from
+  the index where rectangles are stored as plain float tuples.
+
+### Performance (measured on the v1.1.4/content-index branch)
+
+- Bayyinah White Paper (19p, 180 KB): 277 ms -> 226 ms P50
+  over 5 runs. Reduction: ~18%. 0 findings unchanged.
+- NIST AI RMF (48p, 1.95 MB, native text): 3,605 ms -> 2,878 ms P50
+  over 5 runs. Reduction: ~20%. 7 findings identical.
+
+The Phase 2 win on NIST is smaller than on the white paper in absolute
+ratio because the four `pdf_*.py` analyzers (pdf_metadata, pdf_trailer,
+pdf_hidden_text_annotation, pdf_off_page_text) each still open their
+own document handle. Phase 3 migrates those to the index and is the
+largest remaining win on the native-text class.
+
+### Tests
+
+- 1,719 tests pass on the branch with the migration in place. Findings
+  count is identical across 5 benchmark runs on each fixture, so
+  byte-parity is preserved end to end. No mechanism logic changed.
+
+### Deferred to Phase 3+
+
+- BatinObjectAnalyzer migration to the index.
+- pdf_metadata_analyzer, pdf_trailer_analyzer,
+  pdf_hidden_text_annotation, pdf_off_page_text migration; these add
+  catalog-summary, EOF-position, and per-annotation reads to the index.
+- mode parameter (`production`/`forensic`) and class-A-first dispatch
+  ordering at the registry level.
+- Spatial indexing for `overlapping_text` (R-tree) to fully collapse
+  the dense-PDF class-C cost.
+- Version bump to 1.1.4 and final benchmark closure.
+
 ## [1.1.2]: 2026-04-28
 
 Minor release. Six format-gauntlet rounds plus the Mughlaq Trap

@@ -54,6 +54,7 @@ from domain import (
     IntegrityReport,
     SourceLayer,
     compute_muwazana_score,
+    get_current_content_index,
 )
 from domain.config import (
     BACKGROUND_LUMINANCE_WHITE,
@@ -69,6 +70,41 @@ from domain.config import (
 )
 from domain.exceptions import PDFParseError
 from infrastructure.pdf_client import PDFClient
+
+
+# ---------------------------------------------------------------------------
+# v1.1.4 — _RectShim: tuple-backed stand-in for a pymupdf Rect.
+#
+# Exposes ``.x0`` / ``.y0`` / ``.x1`` / ``.y1`` plus tuple unpacking and
+# integer indexing, so existing helpers that read ``page_rect.x0`` or
+# ``rect.x0, rect.y0, rect.x1, rect.y1`` work unchanged on rectangle
+# data extracted from the ContentIndex (where rectangles are stored as
+# plain float tuples for hashability and serialization).
+# ---------------------------------------------------------------------------
+
+class _RectShim:
+    """Minimal stand-in for ``pymupdf.Rect`` over a 4-tuple.
+
+    Lets existing detection code that branches on ``rect.x0`` style
+    attribute access work without a type check when the rectangle
+    came from the index instead of from a live pymupdf page.
+    """
+    __slots__ = ("x0", "y0", "x1", "y1")
+
+    def __init__(self, x0: float, y0: float, x1: float, y1: float) -> None:
+        self.x0 = x0
+        self.y0 = y0
+        self.x1 = x1
+        self.y1 = y1
+
+    def __iter__(self):  # pragma: no cover - covered via _check_offpage path
+        yield self.x0
+        yield self.y0
+        yield self.x1
+        yield self.y1
+
+    def __getitem__(self, idx: int) -> float:  # pragma: no cover
+        return (self.x0, self.y0, self.x1, self.y1)[idx]
 
 
 # ---------------------------------------------------------------------------
@@ -397,25 +433,50 @@ class ZahirTextAnalyzer(BaseAnalyzer):
         sees (top span) and what a text extractor reads (both spans)
         diverge. IoU (intersection-over-union) above
         ``SPAN_OVERLAP_THRESHOLD`` is the trigger.
-        """
-        try:
-            page_dict = page.get_text("dict")
-        except Exception:  # noqa: BLE001
-            return []
 
+        v1.1.4 — reads spans from the per-scan ContentIndex when one is
+        installed, eliminating the second ``page.get_text("dict")`` call
+        that previously fired on every PDF page (the first being in
+        ``_scan_spans``). Falls back to the self-walk path when no index
+        is available. Detection logic is unchanged.
+        """
+        # v1.1.4 — prefer the per-scan content index. Avoids the
+        # repeated get_text("dict") call this method historically made
+        # in addition to the one _scan_spans makes on the same page.
+        idx = get_current_content_index()
         spans: list[tuple[tuple[float, float, float, float], str]] = []
-        for block in page_dict.get("blocks", []):
-            if block.get("type") != 0:
-                continue
-            for line in block.get("lines", []):
-                for span in line.get("spans", []):
-                    text = (span.get("text") or "").strip()
-                    if not text:
-                        continue
-                    bbox = tuple(span.get("bbox", (0, 0, 0, 0)))
-                    if (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]) <= 0:
-                        continue
-                    spans.append((bbox, text))
+
+        if (
+            idx is not None
+            and not idx.build_failed
+            and page_idx in idx.spans_by_page
+        ):
+            for si in idx.spans_by_page[page_idx]:
+                text = (si.text or "").strip()
+                if not text:
+                    continue
+                bbox = si.bbox
+                if (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]) <= 0:
+                    continue
+                spans.append((bbox, text))
+        else:
+            try:
+                page_dict = page.get_text("dict")
+            except Exception:  # noqa: BLE001
+                return []
+            for block in page_dict.get("blocks", []):
+                if block.get("type") != 0:
+                    continue
+                for line in block.get("lines", []):
+                    for span in line.get("spans", []):
+                        text = (span.get("text") or "").strip()
+                        if not text:
+                            continue
+                        bbox = tuple(span.get("bbox", (0, 0, 0, 0)))
+                        if (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]) <= 0:
+                            continue
+                        spans.append((bbox, text))
+
         if len(spans) < 2:
             return []
 
@@ -649,14 +710,78 @@ class ZahirTextAnalyzer(BaseAnalyzer):
     def _scan_spans(self, page: Any, page_idx: int) -> list[Finding]:
         """Per-span pass: colour, size, position, and per-span Unicode.
 
-        For each text span in ``page.get_text("dict")`` this dispatches
-        to four independent checks — ``_check_color`` (white-on-white),
+        For each text span on the page this dispatches to four
+        independent checks — ``_check_color`` (white-on-white),
         ``_check_size`` (microscopic font), ``_check_offpage`` (outside
         MediaBox), and ``_check_unicode`` (zero-width / bidi / TAG /
         homoglyph). The checks are independent so any combination can
         fire on a single span without mutual interference.
+
+        v1.1.4 — reads spans from the per-scan ContentIndex when one is
+        installed (built once by ScanService at the top of the PDF
+        dispatch path). Falls back to ``page.get_text("dict")`` and
+        ``page.get_drawings()`` self-walk when no index is available
+        (tests that call this analyzer directly outside ScanService,
+        or scans where the index build failed). Detection logic and
+        finding construction are unchanged across the two paths.
         """
         findings: list[Finding] = []
+
+        # v1.1.4 — prefer the per-scan content index when available.
+        # When the index is present and built successfully, use its
+        # pre-walked spans and drawings for this page. This eliminates
+        # the per-mechanism page.get_text("dict") and page.get_drawings()
+        # calls that dominate the cost on dense PDFs.
+        idx = get_current_content_index()
+        use_index = (
+            idx is not None
+            and not idx.build_failed
+            and page_idx in idx.spans_by_page
+        )
+
+        if use_index:
+            page_spans_idx = idx.spans_by_page[page_idx]
+            page_drawings_idx = idx.drawings_by_page.get(page_idx, [])
+            page_rect_tuple = idx.page_rects.get(page_idx)
+            # Synthesize a minimal page-rect-shaped object so the
+            # existing _check_offpage helper can read .x0/.x1/.y0/.y1
+            # without branching on whether it received a real
+            # pymupdf Rect or a tuple.
+            page_rect = (
+                _RectShim(*page_rect_tuple)
+                if page_rect_tuple
+                else page.rect
+            )
+            # Re-shape DrawingInfo into the dict form _has_dark_fill_behind
+            # already understands (fill list of floats + rect-like object).
+            page_fills = [
+                {
+                    "fill": list(d.fill),
+                    "rect": _RectShim(*d.rect) if d.rect else None,
+                }
+                for d in page_drawings_idx
+                if d.fill is not None and d.rect is not None
+            ]
+            for si in page_spans_idx:
+                text = si.text
+                if not text:
+                    continue
+                bbox = si.bbox
+                findings.extend(self._check_color(
+                    text, si.color, bbox, page_idx, page_fills,
+                ))
+                findings.extend(self._check_size(
+                    text, si.font_size, bbox, page_idx,
+                ))
+                findings.extend(self._check_offpage(
+                    text, bbox, page_rect, page_idx,
+                ))
+                findings.extend(self._check_unicode(text, bbox, page_idx))
+            return findings
+
+        # Fallback: legacy self-walk path. Preserved verbatim for
+        # backward compatibility with direct analyzer-level tests and
+        # for the index-build-failed degradation case.
         try:
             page_dict = page.get_text("dict")
         except Exception:  # noqa: BLE001

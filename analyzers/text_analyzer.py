@@ -108,6 +108,83 @@ class _RectShim:
 
 
 # ---------------------------------------------------------------------------
+# v1.1.5 spatial pre-filter for overlapping_text.
+#
+# The naive overlapping-spans scan is O(n^2) IoU calls over every pair
+# of spans on a page. On dense documents (220-page reports with ~100
+# spans per page) this dominates the per-document cost.
+#
+# This helper buckets spans into a uniform grid sized to the median
+# span width and height. A pair of spans whose bounding boxes overlap
+# by any positive area must occupy at least one common cell, so
+# limiting candidate pairs to co-cellular spans cannot drop a true
+# positive. The IoU predicate downstream re-checks each candidate;
+# false positives in candidate generation are filtered there. The
+# observable behaviour of `_scan_overlapping_spans` is unchanged.
+#
+# Implementation choice: stdlib only. The wider scanner refuses to
+# pull in libspatialindex (rtree) for the same attack-surface reason
+# the rest of the dependency block is kept minimal. A uniform grid
+# matches an R-tree's asymptotic complexity on roughly uniformly
+# sized boxes (text spans on a page) and ships in pure Python.
+# ---------------------------------------------------------------------------
+
+def _overlapping_pair_candidates(
+    spans: list[tuple[tuple[float, float, float, float], str]],
+):
+    """Yield (i, j) index pairs that may overlap by IoU >= threshold.
+
+    The grid cell size is the median span width / height (floored at
+    1.0 to defend against degenerate page layouts). Each span is
+    indexed under every cell its bounding box touches; pairs are
+    enumerated per cell and de-duplicated across cells. The caller is
+    expected to confirm each candidate with the IoU predicate.
+
+    On a page with n spans this generates O(n) work to build the grid
+    plus work proportional to the number of overlapping cell
+    occupants, which on a real document is dominated by the small
+    constant of glyphs that share neighborhoods rather than by n^2.
+    """
+    n = len(spans)
+    if n < 2:
+        return
+
+    # Pick cell size from median span dimensions. Median is robust to
+    # the occasional very wide or very tall span (table cells, headers).
+    widths = sorted(b[2] - b[0] for b, _ in spans)
+    heights = sorted(b[3] - b[1] for b, _ in spans)
+    cell_w = max(widths[n // 2], 1.0)
+    cell_h = max(heights[n // 2], 1.0)
+
+    grid: dict[tuple[int, int], list[int]] = {}
+    for i, (b, _) in enumerate(spans):
+        gx_lo = int(b[0] // cell_w)
+        gx_hi = int(b[2] // cell_w)
+        gy_lo = int(b[1] // cell_h)
+        gy_hi = int(b[3] // cell_h)
+        for gx in range(gx_lo, gx_hi + 1):
+            for gy in range(gy_lo, gy_hi + 1):
+                grid.setdefault((gx, gy), []).append(i)
+
+    seen: set[tuple[int, int]] = set()
+    for occupants in grid.values():
+        if len(occupants) < 2:
+            continue
+        m = len(occupants)
+        for ii in range(m):
+            for jj in range(ii + 1, m):
+                a = occupants[ii]
+                b = occupants[jj]
+                if a > b:
+                    a, b = b, a
+                key = (a, b)
+                if key in seen:
+                    continue
+                seen.add(key)
+                yield key
+
+
+# ---------------------------------------------------------------------------
 # ZahirTextAnalyzer
 # ---------------------------------------------------------------------------
 
@@ -480,33 +557,43 @@ class ZahirTextAnalyzer(BaseAnalyzer):
         if len(spans) < 2:
             return []
 
+        # v1.1.5 spatial pre-filter. The naive scan was O(n^2) IoU calls
+        # over every span pair on a page. _overlapping_pair_candidates
+        # buckets spans into a uniform grid sized to the median span
+        # dimensions; only spans sharing at least one cell are emitted
+        # as candidate pairs. The IoU predicate below is unchanged, so
+        # any pair the naive loop would have surfaced (IoU >= threshold)
+        # is still surfaced: a pair whose bounding boxes intersect by
+        # any positive area must share at least one grid cell. False
+        # positives in candidate generation are filtered by the
+        # existing IoU check.
         findings: list[Finding] = []
         seen_pairs: set[tuple[int, int]] = set()
-        for i, (b1, t1) in enumerate(spans):
-            for j in range(i + 1, len(spans)):
-                b2, t2 = spans[j]
-                iou = self._bbox_iou(b1, b2)
-                if iou < SPAN_OVERLAP_THRESHOLD:
-                    continue
-                if t1 == t2:
-                    continue
-                pair_key = (id(t1) & 0xFFFF, id(t2) & 0xFFFF)
-                if pair_key in seen_pairs:
-                    continue
-                seen_pairs.add(pair_key)
-                findings.append(Finding(
-                    mechanism="overlapping_text",
-                    tier=TIER["overlapping_text"],
-                    confidence=0.75,
-                    description=(
-                        f"Two text spans share {iou:.0%} of their bounding-box area "
-                        "but contain different text. The later-drawn span "
-                        "occludes the other visually; both survive in the text layer."
-                    ),
-                    location=f"page {page_idx + 1}, bbox {b1}",
-                    surface=t2[:200],
-                    concealed=t1[:200],
-                ))
+        for i, j in _overlapping_pair_candidates(spans):
+            b1, t1 = spans[i]
+            b2, t2 = spans[j]
+            iou = self._bbox_iou(b1, b2)
+            if iou < SPAN_OVERLAP_THRESHOLD:
+                continue
+            if t1 == t2:
+                continue
+            pair_key = (id(t1) & 0xFFFF, id(t2) & 0xFFFF)
+            if pair_key in seen_pairs:
+                continue
+            seen_pairs.add(pair_key)
+            findings.append(Finding(
+                mechanism="overlapping_text",
+                tier=TIER["overlapping_text"],
+                confidence=0.75,
+                description=(
+                    f"Two text spans share {iou:.0%} of their bounding-box area "
+                    "but contain different text. The later-drawn span "
+                    "occludes the other visually; both survive in the text layer."
+                ),
+                location=f"page {page_idx + 1}, bbox {b1}",
+                surface=t2[:200],
+                concealed=t1[:200],
+            ))
         return findings
 
     @staticmethod

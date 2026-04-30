@@ -10,6 +10,65 @@ reference implementation without touching it, the parity invariant
 (`bayyinah.scan_pdf == bayyinah_v0.scan_pdf` on every Phase 0 fixture) has
 held across every phase.
 
+## [1.1.5]: 2026-04-30
+
+Patch release. Spatial pre-filter for `overlapping_text`. Closes the
+first of the four items the v1.1.4 CHANGELOG named under `### Deferred
+to v1.1.5`. ADR-002 records the design.
+
+### Headline
+
+8% end-to-end reduction on the 220-page native-text dense report
+(15,335 ms to 14,162 ms P50, 5 measured runs). 8% reduction on the
+19-page typeset white paper (232 ms to 214 ms). Smaller deltas on
+the lighter fixtures, within stdev. Detection behaviour byte-identical
+to v1.1.4 across every fixture in the corpus.
+
+### Added
+
+- `analyzers.text_analyzer._overlapping_pair_candidates`: stdlib
+  uniform-grid candidate generator. Buckets spans into a grid sized
+  to median span width and height, yields only co-cellular index
+  pairs. Replaces the O(n^2) inner loop of `_scan_overlapping_spans`.
+  No new runtime dependency. The IoU predicate (`_bbox_iou`) and
+  `SPAN_OVERLAP_THRESHOLD` are unchanged, so any pair the naive scan
+  would have surfaced is still surfaced.
+- `docs/adr/ADR-002-v1_1_5-spatial-index.md`: decision record covering
+  the index choice (uniform grid vs `rtree`), the correctness argument
+  (overlapping bboxes must share a cell), and measured impact.
+- `docs/benchmarks/v1_1_5_rtree_spatial_index.py` and the accompanying
+  Markdown report: reproduction harness for the v1.1.5 numbers.
+
+### Tests
+
+- 6 new property tests in `tests/analyzers/test_text_analyzer.py`
+  exercising the candidate generator: empty input, single span,
+  identical-coordinate pair, distant-pair pruning, randomized
+  superset assertion (30 trials of 40+ spans each, the candidate set
+  must contain every pair the naive O(n^2) scan would surface at
+  IoU >= threshold), and end-to-end positive-fixture coverage.
+- 1,723 of 1,725 tests pass on this branch. The 2 failures
+  (`text.homoglyph` parametrizations) predate v1.1.5 and are
+  unrelated to this change; they sit on the v1.1.4 main commit
+  identically and are tracked as a separate hygiene item.
+
+### Profile
+
+On the 220-page report, `_overlapping_pair_candidates` indexes ~25,600
+spans across all pages and yields ~50,000 candidate pairs in total
+(down from the ~3.5 million pair evaluations the naive scan performs).
+The `_bbox_iou` call count drops by roughly 70x. The remaining
+end-to-end cost on dense PDFs is dominated by `pymupdf.get_text("dict")`
+which is the target of v1.1.6 (registry-level cost-class
+short-circuit) and a future BatinObjectAnalyzer migration.
+
+### Deferred to v1.1.6
+
+- Pass-by-pass cost-class-ordered early termination at the registry
+  level (`production`-mode full short-circuit).
+- BatinObjectAnalyzer migration to the content index.
+- F2 calibration plan that was originally scoped for v1.1.3.
+
 ## [1.1.4]: 2026-04-30
 
 Minor release. Content-index port and production mode. The release

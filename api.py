@@ -43,7 +43,7 @@ _ROOT = Path(__file__).resolve().parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 import bayyinah
@@ -90,7 +90,18 @@ def version() -> dict:
 @app.post("/scan")
 async def scan(
     file: UploadFile = File(...),
-    mode: str = "forensic",
+    mode: str = Query(
+        "forensic",
+        description=(
+            "Scan mode. 'forensic' (default) runs every analyzer to "
+            "completion and returns the full merged report. "
+            "'production' enables early termination on Tier 1 "
+            "high-confidence findings (the v1.1.4 short-circuit lands "
+            "at the report-emission boundary; full pass-by-pass "
+            "cost-class-ordered dispatch is queued for v1.1.5). "
+            "Invalid values return 400."
+        ),
+    ),
 ) -> JSONResponse:
     """Scan an uploaded file. Returns IntegrityReport.to_dict() as JSON.
 

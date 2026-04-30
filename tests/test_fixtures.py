@@ -72,22 +72,6 @@ def _ensure_fixtures_built() -> None:
     )
 
 
-# Fixtures whose as-built detector firings depend on the host's available
-# fonts at build time. The text.homoglyph fixture renders a Cyrillic
-# lookalike glyph through whatever Cyrillic-capable TTF is found first by
-# tests/make_test_documents._find_cyrillic_font. On hosts where the
-# default fallback does not embed a /ToUnicode CMap (e.g. some macOS
-# system fonts), the resulting PDF only fires `homoglyph` and not
-# `tounicode_anomaly`, even though the registry lists both as expected.
-#
-# Rather than hide the gap, the test below skips the parametrization for
-# the affected fixture only when the as-built PDF is missing the
-# tounicode signal, with a message that names the cause and the fix path
-# (rebuild on a Linux host with Liberation or DejaVu fonts, or implement
-# the font-embedded pin tracked for v1.1.6+).
-_FONT_DEPENDENT_FIXTURES = frozenset({"text.homoglyph"})
-
-
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -105,16 +89,6 @@ def test_fixture_fires_expected_mechanisms_only(fixture_name: str) -> None:
 
     got = _mechanisms(report)
     expected = set(fx.expected_mechanisms)
-
-    if fixture_name in _FONT_DEPENDENT_FIXTURES and got < expected:
-        pytest.skip(
-            f"Fixture {fixture_name!r} was built on a host whose default "
-            f"Cyrillic-capable font does not embed a /ToUnicode CMap, so "
-            f"the as-built PDF is missing detector firings: "
-            f"{sorted(expected - got)}. Rebuild on a Linux host with "
-            f"Liberation or DejaVu fonts, or pin the builder to a "
-            f"vendored font (tracked for v1.1.6+)."
-        )
 
     assert got == expected, (
         f"\nFixture {fixture_name!r} detector mismatch."

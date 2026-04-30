@@ -74,6 +74,10 @@ def _atomic_save(doc: "fitz.Document", out_path: Path) -> None:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
+_VENDORED_CYRILLIC_FONT = (
+    Path(__file__).parent / "fixtures" / "_fonts" / "LiberationSans-Regular.ttf"
+)
+
 _CYRILLIC_FONT_CANDIDATES = [
     "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -85,14 +89,19 @@ _CYRILLIC_FONT_CANDIDATES = [
 
 
 def _find_cyrillic_font() -> str:
-    """Locate a system TTF that has Cyrillic glyphs. Required by the
-    homoglyph fixture, which must produce text whose visible rendering
-    contains Cyrillic lookalike characters."""
+    """Locate a Cyrillic-capable TTF. Prefers the vendored
+    LiberationSans-Regular.ttf under tests/fixtures/_fonts so fixture
+    builds are deterministic across hosts. Falls back to system fonts
+    only if the vendored copy is absent."""
+    if _VENDORED_CYRILLIC_FONT.exists():
+        return str(_VENDORED_CYRILLIC_FONT)
     for p in _CYRILLIC_FONT_CANDIDATES:
         if Path(p).exists():
             return p
     raise RuntimeError(
-        "No Cyrillic-capable system font found. Install one of: "
+        "No Cyrillic-capable font found. Vendored copy missing at "
+        f"{_VENDORED_CYRILLIC_FONT} and no system fallback present. "
+        "Restore the vendored font or install one of: "
         + ", ".join(_CYRILLIC_FONT_CANDIDATES)
     )
 

@@ -1302,7 +1302,7 @@ h2 em { font-style: italic; color: var(--lamp); }
   <aside class="margin-index">
     <div class="brand-mark">bayyinah</div>
 
-    <div class="meta-row"><span class="k">CASE</span><span class="v">v1.1.2</span></div>
+    <div class="meta-row"><span class="k">CASE</span><span class="v">v1.1.4</span></div>
     <div class="meta-row"><span class="k">DATE</span><span class="v">2026.04</span></div>
     <div class="meta-row"><span class="k">SCANS</span><span class="v">23 kinds</span></div>
     <div class="meta-row"><span class="k">CORPUS</span><span class="v">56 files</span></div>
@@ -1493,7 +1493,7 @@ h2 em { font-style: italic; color: var(--lamp); }
           <div class="tl-year">2026</div>
           <div>
             <div class="tl-h">The Munafiq Protocol is formalized, and Bayyinah ships.</div>
-            <div class="tl-p">A diagnostic framework for surface-substrate divergence is published, and the first document firewall built on top of it goes live the same season. v1.1.2 today, with the CSV/JSON frontier as the next named milestone.</div>
+            <div class="tl-p">A diagnostic framework for surface-substrate divergence is published, and the first document firewall built on top of it goes live the same season. v1.1.4 today: a content-index port that walks each document once and runs every mechanism against the structural address space, plus an opt-in production mode for early termination on high-confidence findings. The CSV/JSON gauntlet was extended from 6 to 12 fixtures in v1.1.2 F2 and remains the named open frontier on payload-recovery calibration.</div>
           </div>
         </div>
       </div>
@@ -1503,7 +1503,7 @@ h2 em { font-style: italic; color: var(--lamp); }
     <section class="section" id="baseline">
       <span class="section-num">06 · Honest Baseline</span>
       <h2>We publish <em>what we miss.</em></h2>
-      <p class="lede">44 adversarial fixtures across 7 formats. Every hit and every miss disclosed. v1.1.2 closes 38 of 39 closed-format fixtures; the CSV/JSON gauntlet is the named open frontier.</p>
+      <p class="lede">50 adversarial fixtures across 7 formats. Every hit and every miss disclosed. The 38 closed-format fixtures are caught at full payload recovery; the CSV/JSON gauntlet was extended to 12 fixtures in v1.1.2 F2 and stands at 4 of 12 catch-by-payload-recovery, 8 of 12 catch-by-finding-fire. Calibration on the open band is the named work for v1.1.5.</p>
 
       <table class="baseline-table">
         <thead>
@@ -1516,14 +1516,14 @@ h2 em { font-style: italic; color: var(--lamp); }
           <tr><td>HTML</td><td class="num">6</td><td class="num caught">6</td><td class="num">0</td><td class="num">0</td></tr>
           <tr><td>EML</td><td class="num">6</td><td class="num caught">6</td><td class="num">0</td><td class="num">0</td></tr>
           <tr><td>Image</td><td class="num">8</td><td class="num caught">8</td><td class="num">0</td><td class="num">0</td></tr>
-          <tr><td>CSV / JSON</td><td class="num">6</td><td class="num">0</td><td class="num partial">1</td><td class="num missed">5</td></tr>
-          <tr class="total"><td>Total</td><td class="num">44</td><td class="num caught">38</td><td class="num partial">1</td><td class="num missed">5</td></tr>
+          <tr><td>CSV / JSON</td><td class="num">12</td><td class="num caught">4</td><td class="num partial">4</td><td class="num missed">4</td></tr>
+          <tr class="total"><td>Total</td><td class="num">50</td><td class="num caught">42</td><td class="num partial">4</td><td class="num missed">4</td></tr>
         </tbody>
       </table>
 
       <div class="baseline-callout">
-        Thirty-eight full catches, one structural-only, five misses, all in CSV/JSON. The closed-format surfaces are clean. CSV/JSON is the next published milestone, with a named fix path for every remaining miss.
-        <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/adversarial/REPORT.md">→ Read the full corpus on GitHub</a>
+        Forty-two full catches across the closed-format set and four of the twelve CSV/JSON fixtures. Four CSV/JSON fixtures fire findings without harness-matched payload recovery (the partial column); four register no findings against the current detector set. The closed-format surfaces are clean; CSV/JSON calibration is queued for v1.1.5 with a named fix path for every remaining gap.
+        <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/adversarial/csv_json_gauntlet/REPORT.md">→ Read the full corpus on GitHub</a>
       </div>
     </section>
 
@@ -1540,7 +1540,7 @@ h2 em { font-style: italic; color: var(--lamp); }
         </div>
         <div class="disc-row">
           <div class="disc-h">We publish what we miss.</div>
-          <div class="disc-p">v1.1.1 caught two of forty-two adversarial fixtures. v1.1.2 closes thirty-eight of thirty-nine across PDF, DOCX, XLSX, HTML, EML, and image formats. The remaining five live in CSV/JSON, named in the public corpus with their fix paths. A scanner that hides its misses is a scanner you cannot trust. The miss list is the trust artifact.</div>
+          <div class="disc-p">v1.1.1 caught two of forty-two adversarial fixtures. v1.1.2 closed thirty-eight of thirty-eight closed-format fixtures and the v1.1.2 F2 round extended the CSV/JSON gauntlet from six to twelve. v1.1.4 ships the content-index port and an opt-in production mode without changing any catch numbers; calibration of the open CSV/JSON band is the named work for v1.1.5. The full miss list with fix paths lives in the public corpus on GitHub. A scanner that hides its misses is a scanner you cannot trust. The miss list is the trust artifact.</div>
         </div>
         <div class="disc-row">
           <div class="disc-h">We test against equivalent methodology.</div>
@@ -1636,7 +1636,7 @@ h2 em { font-style: italic; color: var(--lamp); }
     <section class="section" id="waitlist">
       <span class="section-num">09 · Waitlist</span>
       <h2>Get the next <em>release report.</em></h2>
-      <p class="lede">v1.1.3 closes the four open recovery cases from our 12-fixture gauntlet. The thresholds and lines-of-code commitments are pre-registered. Subscribe for the release report when it ships, plus the periodic Munafiq Protocol notes that document what we miss.</p>
+      <p class="lede">v1.1.4 just shipped: a content-index port across the PDF analyzer set, an opt-in production mode for early termination on high-confidence findings, and a measured 32 percent scan-time reduction on a 48-page native-text fixture. v1.1.5 closes the remaining open recovery cases from the 12-fixture CSV/JSON gauntlet and lands cost-class-ordered short-circuit at the registry level. Subscribe for the release report when it ships, plus the periodic Munafiq Protocol notes that document what we miss.</p>
 
       <div class="waitlist-card">
         <span class="waitlist-label">Subscribe</span>

@@ -76,6 +76,7 @@ from typing import Any
 
 import pypdf
 
+from domain import get_current_content_index
 from domain.finding import Finding
 
 
@@ -134,16 +135,98 @@ def _set_bits_label(flag_int: int) -> str:
     return "+".join(parts) if parts else "(none)"
 
 
+def _build_finding(
+    page_idx: int,
+    subtype: str,
+    flag_int: int,
+    contents_str: str,
+    obj_id: int | None,
+) -> Finding:
+    """Construct the canonical hidden-text-annotation Finding shape.
+
+    Centralised so the index path and the legacy self-walk path emit
+    byte-parity-identical output. The only inputs that differ between
+    paths are the data-source plumbing; the finding text is computed
+    from these five values identically either way.
+    """
+    preview = contents_str[:_MAX_CONTENTS_PREVIEW]
+    if len(contents_str) > _MAX_CONTENTS_PREVIEW:
+        preview += "..."
+    bits_label = _set_bits_label(flag_int)
+    location = (
+        f"page {page_idx + 1}, /Annot object {obj_id}"
+        if obj_id is not None
+        else f"page {page_idx + 1}"
+    )
+    return Finding(
+        mechanism="pdf_hidden_text_annotation",
+        tier=1,
+        confidence=1.0,
+        description=(
+            f"Annotation {subtype} on page {page_idx + 1} "
+            f"has /F={flag_int} ({bits_label}) and "
+            f"non-whitespace /Contents. The annotation's "
+            f"text is invisible to a human viewing the "
+            f"rendered page but is recovered by any "
+            f"text-extraction pipeline that walks /Annots."
+        ),
+        location=location,
+        surface=f"annotation {subtype} suppressed by /F={flag_int}",
+        concealed=(
+            f"/F={flag_int} ({bits_label}); "
+            f"/Contents={preview!r}"
+        ),
+    )
+
+
 def detect_pdf_hidden_text_annotation(file_path: Path) -> list[Finding]:
     """Return Tier 1 findings for each annotation whose /F flag has
     a suppression bit set AND whose /Contents carries non-whitespace
     text.
 
-    Pure object-graph walk via pypdf. No content-stream parsing, no
-    rendering. Defensive: if pypdf cannot open the file at all, the
-    detector returns an empty list rather than raising.
+    v1.1.4 - reads pikepdf-sourced annotation records from the
+    per-scan ContentIndex when one is installed. Perplexity verified
+    on fixture 06 that pypdf's ``annot_ref.idnum`` and pikepdf's
+    ``objgen[0]`` agree (both report 8 for the hidden /Text
+    annotation), so the migrated path produces byte-identical
+    ``obj_id`` values in the location field. The pymupdf-sourced
+    AnnotInfo list on the same ContentIndex is intentionally NOT
+    used by this detector because pymupdf's annotation API does not
+    expose the indirect-object idnum cleanly. Falls back to the
+    legacy pypdf self-walk when no index is available, when the
+    build failed, or when the index lacks pikepdf annotation data
+    (e.g. pikepdf could not open the file).
     """
     findings: list[Finding] = []
+
+    idx = get_current_content_index()
+    if (
+        idx is not None
+        and not idx.build_failed
+        and idx.pikepdf_annotations_by_page
+    ):
+        for page_idx in sorted(idx.pikepdf_annotations_by_page.keys()):
+            for annot in idx.pikepdf_annotations_by_page[page_idx]:
+                if annot.subtype not in _TEXT_BEARING_SUBTYPES:
+                    continue
+                if not (annot.flags & _SUPPRESSION_MASK):
+                    continue
+                if annot.contents is None:
+                    continue
+                if not annot.contents.strip():
+                    continue
+                findings.append(_build_finding(
+                    page_idx=page_idx,
+                    subtype=annot.subtype,
+                    flag_int=annot.flags,
+                    contents_str=annot.contents,
+                    obj_id=annot.obj_id,
+                ))
+        return findings
+
+    # Fallback: legacy pypdf self-walk. Preserved verbatim so direct
+    # analyzer-level tests, scans where pikepdf could not open the
+    # file, and pre-migration callers continue to work unchanged.
     try:
         reader = pypdf.PdfReader(str(file_path))
     except Exception:
@@ -181,37 +264,16 @@ def detect_pdf_hidden_text_annotation(file_path: Path) -> list[Finding]:
                     contents_str = str(contents_raw)
                     if not contents_str.strip():
                         continue
-                    preview = contents_str[:_MAX_CONTENTS_PREVIEW]
-                    if len(contents_str) > _MAX_CONTENTS_PREVIEW:
-                        preview += "..."
-                    bits_label = _set_bits_label(flag_int)
                     obj_id = (
                         annot_ref.idnum
                         if hasattr(annot_ref, "idnum") else None
                     )
-                    location = (
-                        f"page {page_idx + 1}, /Annot object {obj_id}"
-                        if obj_id is not None
-                        else f"page {page_idx + 1}"
-                    )
-                    findings.append(Finding(
-                        mechanism="pdf_hidden_text_annotation",
-                        tier=1,
-                        confidence=1.0,
-                        description=(
-                            f"Annotation {subtype} on page {page_idx + 1} "
-                            f"has /F={flag_int} ({bits_label}) and "
-                            f"non-whitespace /Contents. The annotation's "
-                            f"text is invisible to a human viewing the "
-                            f"rendered page but is recovered by any "
-                            f"text-extraction pipeline that walks /Annots."
-                        ),
-                        location=location,
-                        surface=f"annotation {subtype} suppressed by /F={flag_int}",
-                        concealed=(
-                            f"/F={flag_int} ({bits_label}); "
-                            f"/Contents={preview!r}"
-                        ),
+                    findings.append(_build_finding(
+                        page_idx=page_idx,
+                        subtype=subtype,
+                        flag_int=flag_int,
+                        contents_str=contents_str,
+                        obj_id=obj_id,
                     ))
                 except Exception:
                     continue

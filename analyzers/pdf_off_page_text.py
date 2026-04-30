@@ -37,6 +37,7 @@ from pathlib import Path
 
 import pikepdf
 
+from domain import get_current_content_index
 from domain.finding import Finding
 
 
@@ -101,9 +102,98 @@ def _recover_off_page_text(content: bytes, start: int) -> str:
 _MARGIN = 1.0
 
 
+def _scan_page_for_off_page_tm(
+    page_idx: int,
+    content: bytes,
+    mediabox: tuple[float, float, float, float],
+) -> list[Finding]:
+    """Run the Tm regex over one page's content stream and emit
+    findings for each origin outside the supplied MediaBox.
+
+    Shared helper so the index path and the legacy self-walk path
+    produce byte-parity-identical findings (description, location,
+    surface, concealed) on the same content+mediabox inputs.
+    """
+    out: list[Finding] = []
+    x0, y0, x1, y1 = mediabox
+    for m in _TM_PATTERN.finditer(content):
+        e = float(m.group(5))
+        f_ = float(m.group(6))
+        if (
+            e < x0 - _MARGIN or e > x1 + _MARGIN
+            or f_ < y0 - _MARGIN or f_ > y1 + _MARGIN
+        ):
+            recovered = _recover_off_page_text(content, m.end())
+            if recovered:
+                concealed = (
+                    f"Tm origin ({e}, {f_}); "
+                    f"recovered text: {recovered!r}"
+                )
+            else:
+                # Tm fired but no following literal in the same text
+                # object (e.g., off-page positioning used for cursor
+                # manipulation only). Keep the structural pointer so
+                # the verdict floor still trips.
+                concealed = f"Tm origin ({e}, {f_})"
+            out.append(Finding(
+                mechanism="pdf_off_page_text",
+                tier=1,
+                confidence=1.0,
+                description=(
+                    f"Text-matrix origin ({e}, {f_}) at content-"
+                    f"stream offset {m.start()} positions a Tj/"
+                    f"TJ-subsequent glyph run outside page "
+                    f"MediaBox [{x0}, {y0}, {x1}, {y1}]. The "
+                    f"bytes are present in the file; no "
+                    f"rendering of the page shows them."
+                ),
+                location=f"page {page_idx + 1}",
+                surface=f"page MediaBox [{x0}, {y0}, {x1}, {y1}]",
+                concealed=concealed,
+            ))
+    return out
+
+
 def detect_pdf_off_page_text(file_path: Path) -> list[Finding]:
-    """Return Tier 1 findings for each Tm origin outside MediaBox."""
+    """Return Tier 1 findings for each Tm origin outside MediaBox.
+
+    v1.1.4 - reads per-page raw content streams and MediaBoxes from
+    the per-scan ContentIndex when one is installed (populated by
+    populate_from_pikepdf). Cannot read from spans_by_page because
+    pymupdf's get_text("dict") silently drops glyphs whose Tm origin
+    is outside MediaBox - that drop is the entire concealment vector
+    this mechanism targets. The migration win is sharing one pikepdf
+    open across pdf_metadata_analyzer + pdf_off_page_text via the
+    index, not eliminating the raw-content-stream regex walk. Falls
+    back to opening its own pikepdf handle when the index is
+    unavailable or lacks the data this detector needs.
+    """
     findings: list[Finding] = []
+
+    idx = get_current_content_index()
+    if (
+        idx is not None
+        and not idx.build_failed
+        and idx.page_raw_contents
+        and idx.page_mediaboxes
+    ):
+        # Iterate page indices in numeric order so the resulting
+        # findings list matches the legacy self-walk's enumerate(pdf.pages)
+        # order byte-for-byte.
+        page_indices = sorted(
+            set(idx.page_raw_contents.keys()) & set(idx.page_mediaboxes.keys())
+        )
+        for page_idx in page_indices:
+            content = idx.page_raw_contents[page_idx]
+            mediabox = idx.page_mediaboxes[page_idx]
+            findings.extend(_scan_page_for_off_page_tm(
+                page_idx, content, mediabox,
+            ))
+        return findings
+
+    # Fallback: legacy self-walk via a fresh pikepdf handle. Preserved
+    # verbatim for direct analyzer-level tests and for scans where the
+    # index could not populate the relevant fields.
     try:
         pdf = pikepdf.open(str(file_path))
     except Exception:
@@ -112,48 +202,16 @@ def detect_pdf_off_page_text(file_path: Path) -> list[Finding]:
         for page_idx, page in enumerate(pdf.pages):
             try:
                 mb = list(page.MediaBox)
-                x0, y0, x1, y1 = (
-                    float(mb[0]), float(mb[1]), float(mb[2]), float(mb[3])
+                mediabox = (
+                    float(mb[0]), float(mb[1]),
+                    float(mb[2]), float(mb[3]),
                 )
                 content = page.Contents.read_bytes()
             except Exception:
                 continue
-            for m in _TM_PATTERN.finditer(content):
-                e = float(m.group(5))
-                f_ = float(m.group(6))
-                if (
-                    e < x0 - _MARGIN or e > x1 + _MARGIN
-                    or f_ < y0 - _MARGIN or f_ > y1 + _MARGIN
-                ):
-                    recovered = _recover_off_page_text(content, m.end())
-                    if recovered:
-                        concealed = (
-                            f"Tm origin ({e}, {f_}); "
-                            f"recovered text: {recovered!r}"
-                        )
-                    else:
-                        # Tm fired but no following literal in the
-                        # same text object (e.g., off-page positioning
-                        # used for cursor manipulation only). Keep
-                        # the structural pointer so the verdict floor
-                        # still trips and reviewers see the geometry.
-                        concealed = f"Tm origin ({e}, {f_})"
-                    findings.append(Finding(
-                        mechanism="pdf_off_page_text",
-                        tier=1,
-                        confidence=1.0,
-                        description=(
-                            f"Text-matrix origin ({e}, {f_}) at content-"
-                            f"stream offset {m.start()} positions a Tj/"
-                            f"TJ-subsequent glyph run outside page "
-                            f"MediaBox [{x0}, {y0}, {x1}, {y1}]. The "
-                            f"bytes are present in the file; no "
-                            f"rendering of the page shows them."
-                        ),
-                        location=f"page {page_idx + 1}",
-                        surface=f"page MediaBox [{x0}, {y0}, {x1}, {y1}]",
-                        concealed=concealed,
-                    ))
+            findings.extend(_scan_page_for_off_page_tm(
+                page_idx, content, mediabox,
+            ))
     finally:
         pdf.close()
     return findings

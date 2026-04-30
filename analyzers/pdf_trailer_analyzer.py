@@ -46,6 +46,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from domain import get_current_content_index
 from domain.finding import Finding
 
 
@@ -63,57 +64,106 @@ _EOF_TOKEN = b"%%EOF"
 _SAMPLE_BYTES = 64
 
 
+def _emit_finding(
+    last: int,
+    trailing_full_len: int,
+    trailing_sample: bytes,
+    file_size: int,
+) -> Finding:
+    """Construct the canonical Finding from the located EOF + trailing.
+
+    Both the index path and the legacy self-walk path must produce
+    identical Finding shapes; centralising construction here keeps
+    them byte-parity-locked.
+    """
+    sample = trailing_sample[:_SAMPLE_BYTES]
+    sample_repr = repr(sample.decode("latin-1", errors="replace"))
+    return Finding(
+        mechanism="pdf_trailer_analyzer",
+        tier=2,
+        confidence=1.0,
+        description=(
+            f"File carries {trailing_full_len} bytes after the final "
+            f"%%EOF marker at offset {last}. PDF specification "
+            f"places %%EOF at the end of a valid file; bytes beyond "
+            f"the final marker are structurally orphan and not part "
+            f"of the rendered document. First {min(_SAMPLE_BYTES, trailing_full_len)} "
+            f"bytes (Latin-1 repr): {sample_repr}."
+        ),
+        location=f"byte offset {last + len(_EOF_TOKEN)}",
+        surface=f"file size {file_size} bytes; final %%EOF at offset {last}",
+        concealed=(
+            f"{trailing_full_len} non-whitespace trailing bytes "
+            f"(sample: {sample_repr})"
+        ),
+    )
+
+
 def detect_pdf_trailer_analyzer(file_path: Path) -> list[Finding]:
     """Return a Tier 2 finding if non-whitespace bytes follow the
     final %%EOF marker; otherwise return an empty list.
 
-    Pure byte scan. No PDF parser invoked.
+    v1.1.4 - reads from the per-scan ContentIndex when one is
+    installed (last_eof_offset, trailing_after_last_eof, raw_bytes_len
+    populated by populate_from_raw_bytes). Falls back to the
+    raw-byte-stream self-walk when no index is available, when the
+    raw-bytes read failed during index population, or when the index
+    is incomplete. Detection logic and finding construction are
+    byte-parity-identical across both paths because the trailing
+    region is the same bytes either way.
     """
     findings: list[Finding] = []
+
+    idx = get_current_content_index()
+    if (
+        idx is not None
+        and not idx.build_failed
+        and not idx.raw_bytes_read_failed
+        and idx.raw_bytes_len > 0
+        and idx.last_eof_offset >= -1  # -1 is a valid "no marker" sentinel
+    ):
+        last = idx.last_eof_offset
+        if last == -1:
+            return findings
+        # The index caps trailing_after_last_eof at 4096 bytes; the
+        # full trailing length is recoverable as raw_bytes_len minus
+        # the offset past the marker. Compute both so the description
+        # cites the full byte count while the sample stays a 64-byte
+        # snapshot identical to the legacy self-walk output.
+        trailing_full_len = idx.raw_bytes_len - (last + len(_EOF_TOKEN))
+        trailing_sample = idx.trailing_after_last_eof
+        if trailing_sample.strip() == b"":
+            # Whitespace-only trailing region - within spec.
+            return findings
+        findings.append(_emit_finding(
+            last=last,
+            trailing_full_len=trailing_full_len,
+            trailing_sample=trailing_sample,
+            file_size=idx.raw_bytes_len,
+        ))
+        return findings
+
+    # Fallback: legacy self-walk via raw bytes. Preserved verbatim so
+    # direct analyzer-level tests, scans where the index build failed,
+    # and pre-migration callers continue to work unchanged.
     try:
         data = Path(file_path).read_bytes()
     except OSError:
         return findings
 
-    # Locate the FINAL %%EOF marker. PDFs with incremental updates
-    # carry multiple %%EOF markers; only the bytes after the last
-    # one are structurally orphan.
     last = data.rfind(_EOF_TOKEN)
     if last == -1:
-        # No %%EOF at all - that is a separate parse-level problem
-        # already surfaced by pymupdf/pypdf scan_error paths. Tier 2
-        # trailing-bytes detection has nothing to say about it.
         return findings
 
     trailing = data[last + len(_EOF_TOKEN):]
-    # Whitespace-only trailing regions are within spec: many PDF
-    # generators end the file with a newline. Strip and check.
     if trailing.strip() == b"":
         return findings
 
-    sample = trailing[:_SAMPLE_BYTES]
-    # ASCII-decode the sample for the description; non-printable
-    # bytes are passed through as escape sequences via the repr()
-    # path so the finding stays printable in any UTF-8 console.
-    sample_repr = repr(sample.decode("latin-1", errors="replace"))
-    findings.append(Finding(
-        mechanism="pdf_trailer_analyzer",
-        tier=2,
-        confidence=1.0,
-        description=(
-            f"File carries {len(trailing)} bytes after the final "
-            f"%%EOF marker at offset {last}. PDF specification "
-            f"places %%EOF at the end of a valid file; bytes beyond "
-            f"the final marker are structurally orphan and not part "
-            f"of the rendered document. First {min(_SAMPLE_BYTES, len(trailing))} "
-            f"bytes (Latin-1 repr): {sample_repr}."
-        ),
-        location=f"byte offset {last + len(_EOF_TOKEN)}",
-        surface=f"file size {len(data)} bytes; final %%EOF at offset {last}",
-        concealed=(
-            f"{len(trailing)} non-whitespace trailing bytes "
-            f"(sample: {sample_repr})"
-        ),
+    findings.append(_emit_finding(
+        last=last,
+        trailing_full_len=len(trailing),
+        trailing_sample=trailing,
+        file_size=len(data),
     ))
     return findings
 

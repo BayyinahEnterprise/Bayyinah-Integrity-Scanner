@@ -84,9 +84,13 @@ identical to v1.1.6. 1,734 of 1,734 tests pass. Zero skipped.
 
 These two mechanisms are the dominant cost on dense PDFs (the
 pypdf parse plus the per-page `/Annots` walk) and account for the
-flat headline P50. Migrating them would require capturing the pypdf
-`IndirectObject` shape inside the ContentIndex preflight, which is
-tractable but defers to a later release.
+flat headline P50. ADR-004 records the decision to treat the
+v1.1.7 single-scan P50 as the practical floor for the v1.x line
+and shift future performance work to throughput axes (parallel
+scans, batch endpoints) rather than per-scan reduction. Closing
+`_scan_catalog` and `_scan_annotations` is reopened only at the
+v2.0 boundary as part of a pypdf removal, or earlier if a customer
+or judge specifically asks for it.
 
 ## [1.1.6]: 2026-04-30
 

@@ -48,6 +48,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 import bayyinah
 from bayyinah import scan_file
+from bayyinah.api_helpers import scan_file_bytes
 from domain.value_objects import tamyiz_verdict
 
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MiB hard cap for the demo endpoint
@@ -61,6 +62,20 @@ app = FastAPI(
     ),
     version=getattr(bayyinah, "__version__", "1.1.4"),
 )
+
+
+# ---------------------------------------------------------------------------
+# Demo route (v1.1.9, env-flag gated)
+# ---------------------------------------------------------------------------
+#
+# The /demo and /demo/summarize routes are mounted only when
+# BAYYINAH_DEMO_ENABLED=1. Production /scan, /version, /healthz, /,
+# /robots.txt, and /sitemap.xml are byte-identical whether the demo
+# is enabled or not. The demo carries a runtime dependency on
+# ANTHROPIC_API_KEY; the production scanner surface does not.
+if os.environ.get("BAYYINAH_DEMO_ENABLED") == "1":
+    from bayyinah.demo import router as _demo_router
+    app.include_router(_demo_router)
 
 
 # ---------------------------------------------------------------------------
@@ -140,35 +155,20 @@ async def scan(
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
-    # Preserve the original extension — Bayyinah's FileRouter uses both
-    # magic bytes and the extension to pick the analyzer set.
-    suffix = Path(file.filename).suffix
-    tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+    # Hand off the temp-file write/scan/cleanup dance to the shared
+    # helper used by both /scan and /demo/summarize.
     try:
-        tmp.write(contents)
-        tmp.close()
-        try:
-            report = scan_file(tmp.name, mode=mode)
-        except Exception as exc:  # noqa: BLE001 — surfaced to caller as 500
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "error": "scan_failed",
-                    "detail": str(exc),
-                    "trace": traceback.format_exc().splitlines()[-5:],
-                },
-            )
-        # Substitute the original filename back into the report so the
-        # caller does not see the temp path.
-        payload = report.to_dict()
-        payload["file_path"] = file.filename
-        payload["verdict"] = tamyiz_verdict(report)
-        return JSONResponse(content=payload)
-    finally:
-        try:
-            os.unlink(tmp.name)
-        except OSError:
-            pass
+        payload = scan_file_bytes(contents, file.filename, mode=mode)
+    except Exception as exc:  # noqa: BLE001 — surfaced to caller as 500
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "scan_failed",
+                "detail": str(exc),
+                "trace": traceback.format_exc().splitlines()[-5:],
+            },
+        )
+    return JSONResponse(content=payload)
 
 
 # ---------------------------------------------------------------------------

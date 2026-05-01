@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bayyinah Demo: Document Firewall for AI Pipelines</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Live demo of Bayyinah as a pre-LLM document firewall. Upload a PDF; if it conceals anything, Claude never sees it.">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --fg: #e0e0e0;
+      --muted: #888;
+      --pass: #7ec97e;
+      --block: #e26060;
+      --mughlaq: #d8b864;
+      --panel: #141414;
+      --border: #2a2a2a;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 760px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 1.25rem;
+      line-height: 1.55;
+    }
+    h1 {
+      font-size: 1.45rem;
+      font-weight: 600;
+      margin: 0 0 0.4rem;
+    }
+    .premise {
+      color: var(--muted);
+      margin: 0 0 2rem;
+      font-size: 0.95rem;
+    }
+    .dropzone {
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 1.75rem 1.25rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 120ms, background 120ms;
+    }
+    .dropzone.hover { border-color: var(--pass); background: #0e1410; }
+    .dropzone input[type=file] { display: none; }
+    .dropzone-label { color: var(--muted); font-size: 0.95rem; }
+    .dropzone-label strong { color: var(--fg); }
+
+    #output { margin-top: 1.5rem; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+      margin-top: 1rem;
+    }
+    .panel.pass { border-left: 3px solid var(--pass); }
+    .panel.block { border-left: 3px solid var(--block); }
+    .panel.mughlaq { border-left: 3px solid var(--mughlaq); }
+    .panel.error { border-left: 3px solid var(--muted); }
+
+    .verdict-badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .verdict-pass { background: #1a2a1a; color: var(--pass); }
+    .verdict-block { background: #2a1414; color: var(--block); }
+    .verdict-mughlaq { background: #2a2414; color: var(--mughlaq); }
+
+    .scan-log {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--muted);
+      white-space: pre-wrap;
+      margin: 0;
+    }
+    .what-happened {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin: 0.85rem 0 0;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--border);
+    }
+    .what-happened p { margin: 0.15rem 0; }
+    .what-happened strong { color: var(--fg); }
+    .summary-text {
+      margin: 0.75rem 0 0;
+      font-size: 0.95rem;
+    }
+    ul.findings { list-style: none; padding: 0; margin: 0.6rem 0 0; }
+    ul.findings li {
+      padding: 0.55rem 0;
+      border-top: 1px solid var(--border);
+      font-size: 0.88rem;
+    }
+    ul.findings li:first-child { border-top: none; }
+    .mech {
+      font-family: var(--mono);
+      color: var(--block);
+      font-size: 0.85rem;
+    }
+    .tier { color: var(--muted); font-size: 0.8rem; }
+    .concealed {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: #0a0a0a;
+      padding: 0.3rem 0.5rem;
+      border-radius: 3px;
+      display: block;
+      margin-top: 0.3rem;
+      word-break: break-all;
+    }
+    a { color: #6aa3d8; }
+  </style>
+</head>
+<body>
+  <h1>Bayyinah Demo: Document Firewall for AI Pipelines</h1>
+  <p class="premise">
+    Upload a PDF. If it conceals anything (Tier 1 finding, scan incomplete, or
+    high-confidence Tier 2), Claude never sees it. If clean, the document is
+    summarized and the token count is reported. Zero LLM tokens consumed on a
+    blocked document.
+  </p>
+
+  <label class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept="application/pdf,.pdf">
+    <span class="dropzone-label">
+      Drop a PDF here, or <strong>click to choose a file</strong>.
+    </span>
+  </label>
+
+  <div id="output"></div>
+
+  <p style="margin-top: 2.5rem; color: var(--muted); font-size: 0.85rem;">
+    Stateless: no file is persisted, no request body is logged. The demo
+    runs the same scanner that powers <a href="/">bayyinah.dev</a>.
+  </p>
+
+  <script src="/demo/demo.js"></script>
+</body>
+</html>

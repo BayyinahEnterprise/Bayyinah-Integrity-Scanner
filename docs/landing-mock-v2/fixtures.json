@@ -12,7 +12,8 @@
       "3": "Interpretive \u2014 suspicious, context-dependent"
     },
     "findings": [],
-    "error": null
+    "error": null,
+    "scanner_version": "1.1.9"
   },
   "adversarial": {
     "tool": "bayyinah",
@@ -156,7 +157,7 @@
         "location": "catalog /AA",
         "inversion_recovery": {
           "surface": "(no visible indication)",
-          "concealed": "{'/WC': IndirectObject(31, 0, 140473988789408)}"
+          "concealed": "{'/WC': IndirectObject(31, 0, 140154804662784)}"
         }
       },
       {
@@ -168,7 +169,7 @@
         "location": "catalog /Names /JavaScript",
         "inversion_recovery": {
           "surface": "(no visible indication)",
-          "concealed": "{'/Names': ['test_js', IndirectObject(30, 0, 140473988789408)]}"
+          "concealed": "{'/Names': ['test_js', IndirectObject(30, 0, 140154804662784)]}"
         }
       },
       {
@@ -180,7 +181,7 @@
         "location": "catalog /OCProperties /D /OFF",
         "inversion_recovery": {
           "surface": "(layer not shown in default rendering)",
-          "concealed": "[IndirectObject(32, 0, 140473988789408)]"
+          "concealed": "[IndirectObject(32, 0, 140154804662784)]"
         }
       },
       {
@@ -220,7 +221,8 @@
         }
       }
     ],
-    "error": null
+    "error": null,
+    "scanner_version": "1.1.9"
   },
   "encrypted": {
     "tool": "bayyinah",
@@ -235,6 +237,7 @@
       "3": "Interpretive \u2014 suspicious, context-dependent"
     },
     "findings": [],
-    "error": "Text layer scan error: document closed or encrypted; Object layer scan error: File has not been decrypted"
+    "error": "Text layer scan error: document closed or encrypted; Object layer scan error: File has not been decrypted",
+    "scanner_version": "1.1.9"
   }
 }

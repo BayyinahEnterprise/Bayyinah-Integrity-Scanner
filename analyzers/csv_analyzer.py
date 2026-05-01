@@ -86,6 +86,12 @@ from analyzers.csv_quoted_newline_payload import (
     detect_quoted_newline_payload,
 )
 from analyzers.csv_encoding_divergence import detect_encoding_divergence
+from analyzers.csv_oversized_freetext_cell import (
+    detect_oversized_freetext_cell,
+)
+from analyzers.csv_payload_in_adjacent_cell import (
+    detect_payload_in_adjacent_cell,
+)
 from domain import (
     Finding,
     IntegrityReport,
@@ -367,6 +373,27 @@ class CsvAnalyzer(BaseAnalyzer):
             # scan_limited path already records the truncation).
             findings.extend(
                 detect_encoding_divergence(delimiter, file_path),
+            )
+            # v1.1.8 F2 calibration item 2: oversized free-text cell
+            # detector (zahir). Per-column median-relative cell length
+            # threshold; fires on multi-paragraph payloads embedded
+            # in single tabular cells.
+            findings.extend(
+                detect_oversized_freetext_cell(
+                    text, delimiter, file_path,
+                ),
+            )
+            # v1.1.8 F2 calibration item 6: adjacent-cell payload
+            # detector (batin). Depends on csv_bidi_payload and
+            # csv_zero_width_payload findings; runs LAST so it
+            # observes the precondition findings already on the
+            # ``findings`` list. Flags rows where the
+            # invisible-character cell is paired with a long
+            # free-text cell elsewhere in the same row.
+            findings.extend(
+                detect_payload_in_adjacent_cell(
+                    text, delimiter, file_path, findings,
+                ),
             )
         except Exception as exc:  # noqa: BLE001 -- deliberately broad
             # An unexpected parser failure becomes a scan_error that

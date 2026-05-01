@@ -1,22 +1,36 @@
 [
   {
     "fixture": "01_csv_type_mismatch.csv",
-    "score": 1.0,
+    "score": 0.915,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 1,
     "tier_counts": {
       "1": 0,
-      "2": 0,
+      "2": 1,
       "3": 0
     },
-    "mechanisms": [],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "mechanisms": [
+      "csv_column_type_drift"
+    ],
+    "payload_recovered": true,
+    "payload_recovered_via": "csv_column_type_drift (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/01_csv_type_mismatch.csv",
-      "integrity_score": 1.0,
+      "integrity_score": 0.915,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "csv_column_type_drift",
+          "tier": 2,
+          "confidence": 0.85,
+          "description": "Column 'amount_usd' (column 1) was inferred as numeric from the first 2 data row(s); row 2 carries a free-text cell of 55 characters in that column (short band). The column header declares a strict type signature; the row value violates it by length and shape. A spreadsheet renderer carries the value through unchanged, but downstream type-aware consumers see a contract violation.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/01_csv_type_mismatch.csv:row=2,col=1",
+          "surface": "(column 'amount_usd' typed as numeric; row 2 cell length 55, short band)",
+          "concealed": "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
@@ -75,22 +89,47 @@
   },
   {
     "fixture": "04_json_concealment_in_keys.json",
-    "score": 1.0,
+    "score": 0.5249999999999999,
     "scan_incomplete": false,
-    "n_findings": 0,
+    "n_findings": 2,
     "tier_counts": {
-      "1": 0,
+      "1": 2,
       "2": 0,
       "3": 0
     },
-    "mechanisms": [],
+    "mechanisms": [
+      "json_key_invisible_chars"
+    ],
     "payload_recovered": false,
     "payload_recovered_via": null,
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/04_json_concealment_in_keys.json",
-      "integrity_score": 1.0,
+      "integrity_score": 0.5249999999999999,
       "scan_incomplete": false,
-      "findings": []
+      "findings": [
+        {
+          "mechanism": "json_key_invisible_chars",
+          "tier": 1,
+          "confidence": 0.95,
+          "description": "JSON object key at $.amount\u200b_usd contains 1 zero-width (U+200B). A pretty-printer or text editor renders the key indistinguishably (zero-width) or with reordered glyphs (bidi) from a clean variant; the byte stream carries the polluted form. A consumer keying on the rendered name and a consumer keying on the byte-exact name see two different documents.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/04_json_concealment_in_keys.json:$.amount\u200b_usd",
+          "surface": "rendered key 'amount<U+200B>_usd' (invisible codepoints made visible)",
+          "concealed": "key bytes (verbatim, length 11): 'amount\\u200b_usd'",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        },
+        {
+          "mechanism": "json_key_invisible_chars",
+          "tier": 1,
+          "confidence": 0.95,
+          "description": "JSON object key at $.n\u202eote contains 1 bidi (U+202E). A pretty-printer or text editor renders the key indistinguishably (zero-width) or with reordered glyphs (bidi) from a clean variant; the byte stream carries the polluted form. A consumer keying on the rendered name and a consumer keying on the byte-exact name see two different documents.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/04_json_concealment_in_keys.json:$.n\u202eote",
+          "surface": "rendered key 'n<U+202E>ote' (invisible codepoints made visible)",
+          "concealed": "key bytes (verbatim, length 5): 'n\\u202eote'",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        }
+      ]
     }
   },
   {
@@ -106,8 +145,8 @@
     "mechanisms": [
       "json_prototype_pollution_key"
     ],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "payload_recovered": true,
+    "payload_recovered_via": "json_prototype_pollution_key (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/05_json_prototype_pollution.json",
       "integrity_score": 0.4300000000000001,
@@ -117,10 +156,10 @@
           "mechanism": "json_prototype_pollution_key",
           "tier": 1,
           "confidence": 0.95,
-          "description": "JSON object contains key '__proto__' at $.__proto__, a canonical JavaScript prototype-pollution name. Recursive-merge consumers (Lodash _.merge, jQuery $.extend, minimist, dozens of others) treat such a key as a prototype-chain mutation primitive rather than data. A human reader who sees this as JSON data does not see the hazard.",
+          "description": "JSON object contains key '__proto__' at $.__proto__, a canonical JavaScript prototype-pollution name. Recursive-merge consumers (Lodash _.merge, jQuery $.extend, minimist, dozens of others) treat such a key as a prototype-chain mutation primitive rather than data. The polluting value attached to this key carries: {'polluted': 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'}. A human reader who sees this as JSON data does not see the hazard.",
           "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/05_json_prototype_pollution.json:$.__proto__",
           "surface": "object key '__proto__' (treated as data by the human reader)",
-          "concealed": "sibling keys in the same object: ['description', 'constructor']",
+          "concealed": "polluting value: {'polluted': 'HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex'}; sibling keys in the same object: ['description', 'constructor']",
           "source_layer": "batin",
           "inversion_recovery": {}
         },
@@ -128,10 +167,10 @@
           "mechanism": "json_prototype_pollution_key",
           "tier": 1,
           "confidence": 0.95,
-          "description": "JSON object contains key 'constructor' at $.constructor, a canonical JavaScript prototype-pollution name. Recursive-merge consumers (Lodash _.merge, jQuery $.extend, minimist, dozens of others) treat such a key as a prototype-chain mutation primitive rather than data. A human reader who sees this as JSON data does not see the hazard.",
+          "description": "JSON object contains key 'constructor' at $.constructor, a canonical JavaScript prototype-pollution name. Recursive-merge consumers (Lodash _.merge, jQuery $.extend, minimist, dozens of others) treat such a key as a prototype-chain mutation primitive rather than data. The polluting value attached to this key carries: {'prototype': {'isAdmin': True}}. A human reader who sees this as JSON data does not see the hazard.",
           "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/05_json_prototype_pollution.json:$.constructor",
           "surface": "object key 'constructor' (treated as data by the human reader)",
-          "concealed": "sibling keys in the same object: ['description', '__proto__']",
+          "concealed": "polluting value: {'prototype': {'isAdmin': True}}; sibling keys in the same object: ['description', '__proto__']",
           "source_layer": "batin",
           "inversion_recovery": {}
         },
@@ -139,10 +178,10 @@
           "mechanism": "json_prototype_pollution_key",
           "tier": 1,
           "confidence": 0.95,
-          "description": "JSON object contains key 'prototype' at $.constructor.prototype, a canonical JavaScript prototype-pollution name. Recursive-merge consumers (Lodash _.merge, jQuery $.extend, minimist, dozens of others) treat such a key as a prototype-chain mutation primitive rather than data. A human reader who sees this as JSON data does not see the hazard.",
+          "description": "JSON object contains key 'prototype' at $.constructor.prototype, a canonical JavaScript prototype-pollution name. Recursive-merge consumers (Lodash _.merge, jQuery $.extend, minimist, dozens of others) treat such a key as a prototype-chain mutation primitive rather than data. The polluting value attached to this key carries: {'isAdmin': True}. A human reader who sees this as JSON data does not see the hazard.",
           "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/05_json_prototype_pollution.json:$.constructor.prototype",
           "surface": "object key 'prototype' (treated as data by the human reader)",
-          "concealed": "sibling keys in the same object: []",
+          "concealed": "polluting value: {'isAdmin': True}; sibling keys in the same object: []",
           "source_layer": "batin",
           "inversion_recovery": {}
         }
@@ -171,26 +210,27 @@
   },
   {
     "fixture": "07_csv_bidi_zwsp_in_cell.csv",
-    "score": 0.16750000000000007,
+    "score": 0.08250000000000005,
     "scan_incomplete": false,
-    "n_findings": 5,
+    "n_findings": 6,
     "tier_counts": {
       "1": 3,
-      "2": 2,
+      "2": 3,
       "3": 0
     },
     "mechanisms": [
       "bidi_control",
       "csv_bidi_payload",
+      "csv_column_type_drift",
       "csv_encoding_divergence",
       "csv_zero_width_payload",
       "zero_width_chars"
     ],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "payload_recovered": true,
+    "payload_recovered_via": "csv_column_type_drift (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/07_csv_bidi_zwsp_in_cell.csv",
-      "integrity_score": 0.16750000000000007,
+      "integrity_score": 0.08250000000000005,
       "scan_incomplete": false,
       "findings": [
         {
@@ -213,6 +253,17 @@
           "surface": "(reordered display)",
           "concealed": "1 bidi-override codepoint(s)",
           "source_layer": "zahir",
+          "inversion_recovery": {}
+        },
+        {
+          "mechanism": "csv_column_type_drift",
+          "tier": 2,
+          "confidence": 0.85,
+          "description": "Column 'amount_usd' (column 1) was inferred as numeric from the first 2 data row(s); row 2 carries a free-text cell of 55 characters in that column (short band). The column header declares a strict type signature; the row value violates it by length and shape. A spreadsheet renderer carries the value through unchanged, but downstream type-aware consumers see a contract violation.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/07_csv_bidi_zwsp_in_cell.csv:row=2,col=1",
+          "surface": "(column 'amount_usd' typed as numeric; row 2 cell length 55, short band)",
+          "concealed": "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex",
+          "source_layer": "batin",
           "inversion_recovery": {}
         },
         {
@@ -298,24 +349,25 @@
   },
   {
     "fixture": "09_csv_type_drift_encoding_divergence.csv",
-    "score": 0.63,
+    "score": 0.545,
     "scan_incomplete": false,
-    "n_findings": 3,
+    "n_findings": 4,
     "tier_counts": {
       "1": 1,
-      "2": 2,
+      "2": 3,
       "3": 0
     },
     "mechanisms": [
       "csv_bom_anomaly",
+      "csv_column_type_drift",
       "csv_encoding_divergence",
       "csv_mixed_encoding"
     ],
-    "payload_recovered": false,
-    "payload_recovered_via": null,
+    "payload_recovered": true,
+    "payload_recovered_via": "csv_column_type_drift (in description/location)",
     "raw": {
       "file_path": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/09_csv_type_drift_encoding_divergence.csv",
-      "integrity_score": 0.63,
+      "integrity_score": 0.545,
       "scan_incomplete": false,
       "findings": [
         {
@@ -337,6 +389,17 @@
           "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/09_csv_type_drift_encoding_divergence.csv:byte=326",
           "surface": "(renders as Latin-1 glyphs in some readers)",
           "concealed": "bytes decode to different glyphs under UTF-8 vs. Latin-1",
+          "source_layer": "batin",
+          "inversion_recovery": {}
+        },
+        {
+          "mechanism": "csv_column_type_drift",
+          "tier": 2,
+          "confidence": 0.85,
+          "description": "Column 'amount_usd' (column 1) was inferred as numeric from the first 5 data row(s); row 4 carries a free-text cell of 55 characters in that column (short band). The column header declares a strict type signature; the row value violates it by length and shape. A spreadsheet renderer carries the value through unchanged, but downstream type-aware consumers see a contract violation.",
+          "location": "/home/user/workspace/bayyinah_clean/Bayyinah/docs/adversarial/csv_json_gauntlet/fixtures/09_csv_type_drift_encoding_divergence.csv:row=4,col=1",
+          "surface": "(column 'amount_usd' typed as numeric; row 4 cell length 55, short band)",
+          "concealed": "HIDDEN_TEXT_PAYLOAD: actual revenue $10,000 - see annex",
           "source_layer": "batin",
           "inversion_recovery": {}
         },

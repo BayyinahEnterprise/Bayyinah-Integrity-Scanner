@@ -121,7 +121,7 @@ from infrastructure import (
 # Public version — keep in sync with [project.version] in pyproject.toml.
 # ---------------------------------------------------------------------------
 
-__version__ = "1.1.7"
+__version__ = "1.1.8"
 
 
 # ---------------------------------------------------------------------------

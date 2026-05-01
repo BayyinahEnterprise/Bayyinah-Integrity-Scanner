@@ -21,8 +21,12 @@ Detector contract (per bayyinah_v1_1_2_f2_plan_v2.md Section 3.10):
     ``prototype`` (case-sensitive), emit one finding per occurrence.
   * Evidence key carries the JSONPath-dotted path to the offending
     key so the reader can locate it without re-parsing.
-  * Concealed field carries the local object's other keys (truncated
-    to 240 chars total) so the reader sees the merge-target shape.
+  * Concealed field carries the polluting key's VALUE (recursively
+    flattened, truncated to 500 chars) followed by the local
+    object's other keys so the reader sees both the payload and the
+    merge-target shape. v1.1.8 F2 calibration item 4: the value
+    extraction surfaces nested HIDDEN_TEXT_PAYLOAD strings that
+    fixture 05 buries under ``__proto__.polluted``.
 
 Tier 1 batin (parser-invisible structural concealment, high weight).
 The trigger is unambiguous (one of three canonical names) and the
@@ -72,26 +76,45 @@ _PREVIEW_LIMIT = 240
 
 def _walk_keys(
     tree: Any, path: str = '$',
-) -> Iterable[tuple[str, str, list[str]]]:
-    """Yield (json_path, key, sibling_keys) for every dict key found.
+) -> Iterable[tuple[str, str, list[str], Any]]:
+    """Yield (json_path, key, sibling_keys, key_value) for every dict key found.
 
     ``json_path`` uses the same dotted notation as ``_walk_strings``
     in json_analyzer: ``$`` for root, ``.key`` for member access,
     ``[idx]`` for array index. ``sibling_keys`` is the full list of
     keys present in the same local object (including the matched
     key) so the concealed field can show the merge-target shape.
+    ``key_value`` is the raw value the key maps to (any JSON type)
+    so v1.1.8 F2 item 4 can extract the polluting payload.
     """
     if isinstance(tree, dict):
         sibling_keys = [str(k) for k in tree.keys()]
         for key, value in tree.items():
             key_str = str(key)
             subpath = f'{path}.{key_str}'
-            yield (subpath, key_str, sibling_keys)
+            yield (subpath, key_str, sibling_keys, value)
             yield from _walk_keys(value, subpath)
     elif isinstance(tree, list):
         for idx, value in enumerate(tree):
             subpath = f'{path}[{idx}]'
             yield from _walk_keys(value, subpath)
+
+
+def _flatten_value(value: Any, limit: int = 500) -> str:
+    """Render a JSON value to a compact string for concealed-field display.
+
+    Recursively flattens objects/arrays via ``repr`` then truncates to
+    ``limit`` characters. Strings render verbatim (quoted) so a
+    HIDDEN_TEXT_PAYLOAD inside a nested string is recoverable. The
+    truncation note is appended to the caller's wrapper, not here.
+    """
+    try:
+        rendered = repr(value)
+    except Exception:
+        rendered = '<unrenderable>'
+    if len(rendered) > limit:
+        return rendered[:limit]
+    return rendered
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +132,7 @@ def detect_prototype_pollution_keys(
     ``file_path`` is the source path used in finding ``location``
     strings. The function never raises.
     """
-    for json_path, key, siblings in _walk_keys(tree):
+    for json_path, key, siblings, key_value in _walk_keys(tree):
         if key not in _POLLUTION_KEYS:
             continue
         # Show the local merge-target shape: the other keys present
@@ -119,6 +142,16 @@ def detect_prototype_pollution_keys(
         truncation_note = (
             ' (truncated)'
             if len(repr(other_keys)) > _PREVIEW_LIMIT
+            else ''
+        )
+        # v1.1.8 F2 item 4: include the polluting key's value so the
+        # smuggled payload (e.g. fixture 05's nested HIDDEN_TEXT_PAYLOAD
+        # under ``__proto__.polluted``) is recoverable directly from
+        # this finding's concealed field.
+        value_repr = _flatten_value(key_value, limit=500)
+        value_truncation_note = (
+            ' (truncated)'
+            if len(repr(key_value)) > 500
             else ''
         )
         yield Finding(
@@ -131,12 +164,15 @@ def detect_prototype_pollution_keys(
                 f'Recursive-merge consumers (Lodash _.merge, jQuery '
                 f'$.extend, minimist, dozens of others) treat such a '
                 f'key as a prototype-chain mutation primitive rather '
-                f'than data. A human reader who sees this as JSON '
-                f'data does not see the hazard.'
+                f'than data. The polluting value attached to this '
+                f'key carries: {value_repr}{value_truncation_note}. '
+                f'A human reader who sees this as JSON data does not '
+                f'see the hazard.'
             ),
             location=f'{file_path}:{json_path}',
             surface=f'object key {key!r} (treated as data by the human reader)',
             concealed=(
+                f'polluting value: {value_repr}{value_truncation_note}; '
                 f'sibling keys in the same object: {siblings_repr}'
                 f'{truncation_note}'
             ),

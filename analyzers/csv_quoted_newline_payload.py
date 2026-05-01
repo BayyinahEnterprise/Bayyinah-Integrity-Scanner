@@ -17,8 +17,13 @@ section 3.3):
   * For each cell, count the number of newline characters that appear
     inside the cell's quoted region (before CSV unquoting).
   * Compute the unquoted cell value length.
-  * If embedded_newline_count >= 2 AND cell_length > 128, emit a
-    finding.
+  * Standard band: embedded_newline_count >= 2 AND cell_length > 128
+    fires (severity 0.20).
+  * v1.1.8 F2 calibration item 7 second band: embedded_newline_count
+    >= 3 AND cell_length > 256 fires regardless of column count
+    (severity 0.20). The second band is logically OR-combined with
+    the first; cells matching both bands report against the standard
+    band only.
 
 Both conditions together guard against false positives on multi-line
 address or notes fields, which typically carry one or two newlines
@@ -55,6 +60,13 @@ _MIN_EMBEDDED_NEWLINES = 2
 # payload-shaped. 128 chars accommodates legitimate two-line postal
 # addresses (which typically run 60-100 chars) without firing.
 _CELL_LENGTH_THRESHOLD = 128
+
+# v1.1.8 F2 calibration item 7 second band: a cell with 3+ embedded
+# newlines and length > 256 fires regardless of column-count
+# divergence. Multi-paragraph payload smuggled with a clear paragraph
+# count would not survive a legitimate notes-field rationale.
+_BAND2_MIN_EMBEDDED_NEWLINES = 3
+_BAND2_CELL_LENGTH_THRESHOLD = 256
 
 
 # ---------------------------------------------------------------------------
@@ -167,10 +179,18 @@ def detect_quoted_newline_payload(
         # we report it as row 0 in that case.
         row_index = row_offset
         for col_index, (value, nl_count) in enumerate(row):
-            if nl_count < _MIN_EMBEDDED_NEWLINES:
+            cell_len = len(value)
+            band1 = (
+                nl_count >= _MIN_EMBEDDED_NEWLINES
+                and cell_len > _CELL_LENGTH_THRESHOLD
+            )
+            band2 = (
+                nl_count >= _BAND2_MIN_EMBEDDED_NEWLINES
+                and cell_len > _BAND2_CELL_LENGTH_THRESHOLD
+            )
+            if not (band1 or band2):
                 continue
-            if len(value) <= _CELL_LENGTH_THRESHOLD:
-                continue
+            band_label = "standard" if band1 else "high-density"
             header_name = (
                 header[col_index][0] if col_index < len(header) else ""
             )
@@ -182,18 +202,21 @@ def detect_quoted_newline_payload(
                     f"Cell at row {row_index}, column {col_index} "
                     f"({header_name!r}) is an RFC 4180 quoted field "
                     f"carrying {nl_count} embedded newline(s) and "
-                    f"{len(value)} characters of content. RFC 4180 "
-                    "permits embedded newlines inside quoted fields, "
-                    "and legitimate multi-line address or notes "
-                    "cells typically carry one newline. Two or more "
-                    "embedded newlines paired with a cell length "
-                    "above 128 characters indicates multi-paragraph "
-                    "payload smuggled into a single tabular cell."
+                    f"{cell_len} characters of content ({band_label} "
+                    f"band). RFC 4180 permits embedded newlines inside "
+                    "quoted fields, and legitimate multi-line address "
+                    "or notes cells typically carry one newline. Two "
+                    "or more embedded newlines paired with a cell "
+                    "length above 128 characters (standard band), or "
+                    "three or more newlines paired with a length above "
+                    "256 characters (high-density band), indicates "
+                    "multi-paragraph payload smuggled into a single "
+                    "tabular cell."
                 ),
                 location=f"{file_path}:row={row_index},col={col_index}",
                 surface=(
                     f"(quoted cell with {nl_count} embedded newlines, "
-                    f"length {len(value)})"
+                    f"length {cell_len}, {band_label} band)"
                 ),
                 concealed=value[:240],
                 source_layer="batin",

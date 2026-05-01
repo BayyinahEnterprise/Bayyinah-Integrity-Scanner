@@ -466,6 +466,28 @@ h2 em { font-style: italic; color: var(--lamp); }
 .btn .arrow { transition: transform 200ms var(--ease); }
 .btn:hover .arrow { transform: translateX(3px); }
 
+/* Live demo CTA — same primary colour as .btn, plus a quiet pulsing
+   indicator to communicate that the link goes to a working endpoint
+   rather than another in-page anchor. */
+.btn-live { position: relative; }
+.live-dot {
+  display: inline-block;
+  width: 0.5rem; height: 0.5rem;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+  animation: live-pulse 2s var(--ease) infinite;
+  flex-shrink: 0;
+}
+@keyframes live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+  70%  { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
+}
+
 /* ===========================================================
    THE EXAMINATION (simulator)
    The same lit-page becomes the result panel.
@@ -1455,7 +1477,7 @@ h2 em { font-style: italic; color: var(--lamp); }
   <aside class="margin-index">
     <div class="brand-mark">bayyinah</div>
 
-    <div class="meta-row"><span class="k">CASE</span><span class="v">v1.1.8</span></div>
+    <div class="meta-row"><span class="k">CASE</span><span class="v">v1.1.9</span></div>
     <div class="meta-row"><span class="k">DATE</span><span class="v">2026.04</span></div>
     <div class="meta-row"><span class="k">SCANS</span><span class="v">23 kinds</span></div>
     <div class="meta-row"><span class="k">CORPUS</span><span class="v">50 files</span></div>
@@ -1511,7 +1533,11 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
 
       <div class="cta-row">
-        <a class="btn" href="#scan">Try a file <span class="arrow">→</span></a>
+        <a class="btn btn-live" href="/demo">
+          <span class="live-dot" aria-hidden="true"></span>
+          Try it live <span class="arrow">→</span>
+        </a>
+        <a class="btn ghost" href="#scan">Try a file</a>
         <a class="btn ghost" href="#exam">See it examine</a>
       </div>
 

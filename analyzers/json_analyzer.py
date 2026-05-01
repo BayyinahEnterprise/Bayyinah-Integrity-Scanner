@@ -52,6 +52,12 @@ from analyzers.json_nested_payload import (
 from analyzers.json_prototype_pollution_key import (
     detect_prototype_pollution_keys,
 )
+from analyzers.json_key_invisible_chars import (
+    detect_key_invisible_chars,
+)
+from analyzers.json_oversized_string_band import (
+    detect_oversized_string_band,
+)
 from analyzers.json_trailing_payload import (
     detect_trailing_payload,
 )
@@ -265,6 +271,21 @@ class JsonAnalyzer(BaseAnalyzer):
         # consumer.
         findings.extend(
             detect_prototype_pollution_keys(tree, file_path)
+        )
+
+        # ---- v1.1.8 F2 calibration item 3 ----
+        # Invisible-character JSON keys (zero-width or bidi
+        # codepoints in dict keys). Same parsed tree, second walker.
+        findings.extend(
+            detect_key_invisible_chars(tree, file_path)
+        )
+
+        # ---- v1.1.8 F2 calibration item 5 ----
+        # Oversized JSON string-leaf band. Per-document median-
+        # relative string length threshold; fires on multi-paragraph
+        # payloads embedded in single leaf strings.
+        findings.extend(
+            detect_oversized_string_band(tree, file_path)
         )
 
         # ---- v1.1.2 F2 Step 12: deep-nesting + payload conjunction ----

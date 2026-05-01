@@ -10,6 +10,99 @@ reference implementation without touching it, the parity invariant
 (`bayyinah.scan_pdf == bayyinah_v0.scan_pdf` on every Phase 0 fixture) has
 held across every phase.
 
+## [1.1.8]: 2026-04-30
+
+Minor release. F2 calibration items closing the four zero-finding
+gauntlet fixtures (01, 03, 04, 06) pre-registered in v1.1.2 plus
+detection-gap items on fixtures 05, 07, 08, 09. Headline: gauntlet
+recovery moves from 4/12 to 8/12 (01, 02, 05, 07, 09, 10, 11, 12).
+
+### Headline
+
+Four new mechanisms (csv_oversized_freetext_cell, json_key_invisible_chars,
+json_oversized_string_band, csv_payload_in_adjacent_cell) plus four
+extensions to existing mechanisms (csv_column_type_drift second band
+and column-count walk fix, json_prototype_pollution_key value
+extraction, csv_quoted_newline_payload high-density band).
+
+Mechanism count: 155 to 159 (43 ZAHIR, 115 BATIN, 1 ROUTING). 1,767
+of 1,767 tests pass. Zero skipped.
+
+### Added
+
+- `analyzers/csv_oversized_freetext_cell.py`: Tier 2 ZAHIR. Fires
+  when a single cell exceeds the per-column median by >=10x and
+  has absolute length >500 chars, requiring at least 3 data rows
+  per column for the median to mean anything. CostClass.B.
+- `analyzers/json_key_invisible_chars.py`: Tier 2 BATIN. Walks
+  every dict in the document for keys containing zero-width
+  (U+200B, U+200C, U+200D, U+FEFF, U+2060) or bidi (U+202A through
+  U+202E, U+2066 through U+2069) codepoints. Surface displays the
+  sanitised key with hex notation for the invisible characters.
+  CostClass.B.
+- `analyzers/json_oversized_string_band.py`: Tier 2 ZAHIR. Fires
+  when a string value exceeds the document-wide median string
+  length by >=5x with absolute length >1000 chars, requiring at
+  least 3 strings in the document for the median to mean anything.
+  CostClass.B.
+- `analyzers/csv_payload_in_adjacent_cell.py`: Tier 2 BATIN.
+  Consumes csv_bidi_payload and csv_zero_width_payload findings
+  from earlier in the scan, then for each row carrying a Tier 1
+  invisible-character finding, fires when an adjacent cell in the
+  same row carries free-text content longer than 50 characters.
+  CostClass.C (depends on prior findings).
+
+### Changed
+
+- `analyzers/csv_column_type_drift.py`: Added a second band
+  triggered at 50-char outlier cells with severity 0.10 via
+  `severity_override`, in addition to the existing 200-char band
+  at severity 0.15. Removed the column-count short-circuit so the
+  detector now walks `min(header_count, row_count)` cells rather
+  than skipping rows whose column count diverges from the header.
+- `analyzers/csv_quoted_newline_payload.py`: Added a high-density
+  band that fires on cells with three or more embedded newlines
+  and length above 256 characters, OR'd with the existing
+  two-newline-plus-128-char standard band.
+- `analyzers/json_prototype_pollution_key.py`: The walker now
+  yields the value associated with each polluting key. The
+  `_flatten_value()` helper truncates representations at 500
+  characters. Both the concealed field and description carry
+  `polluting value: <repr>` so the actual hidden payload reaches
+  the reader.
+
+### Mechanism count
+
+- 155 to 159 mechanisms total
+- 41 to 43 ZAHIR (added csv_oversized_freetext_cell,
+  json_oversized_string_band)
+- 113 to 115 BATIN (added json_key_invisible_chars,
+  csv_payload_in_adjacent_cell)
+- 1 ROUTING (unchanged)
+
+### Known limitations
+
+Gauntlet fixtures 03 (165-char prose in a description column whose
+header is in the freetext allowlist) and 06 (a 275-char string in
+a document with only two strings, ratio 1.4x) do not fire under the
+spec'd Tier 2 thresholds (>500 cell + 10x median; >1000 string +
+5x median). The mechanisms are not tuned to fit fixtures, per the
+project's standing principle. The headline 4/12 to 8/12 gauntlet
+recovery target is still met.
+
+Fixture 04 emits two json_key_invisible_chars findings as designed,
+but the harness recovery check fails because HIDDEN_TEXT_PAYLOAD
+lives in the value of the bidi-key entry, not the key bytes
+themselves. Recovery via the value path will be addressed in a
+follow-up.
+
+Fixture 08 fires only csv_quoting_anomaly Tier 3 (existing
+mechanism); the high-density quoted-newline band requires three or
+more newlines AND length above 256, while the cell carries two
+newlines and 91 characters.
+
+Co-authored-by: Claude <noreply@anthropic.com>
+
 ## [1.1.7]: 2026-04-30
 
 Minor release. BatinObjectAnalyzer ContentIndex migration. Sub-mechanisms

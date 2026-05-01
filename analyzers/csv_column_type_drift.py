@@ -19,19 +19,27 @@ Detector contract (per docs/adversarial/csv_json_gauntlet/REPORT.md):
   * Majority-vote the column type from the sampled rows.
   * For each row beyond the sample, flag a cell whose column type is
     ``numeric`` or ``short_token`` and whose value is ``free_text``
-    longer than 200 chars.
+    longer than 200 chars (severity 0.15) OR longer than 50 chars
+    (severity 0.10 via severity_override). The 50-char band catches
+    short-form column hijacks that the original 200-char threshold
+    misses (e.g. fixture 01 carries a 60-char hijack).
   * Skip the flag if the column header contains ``note``, ``comment``,
     ``description``, or ``remarks`` (case-insensitive). Those headers
     are semantically free-text and would otherwise produce false
     positives on legitimate prose-bearing columns.
+  * Run type analysis on min(header_count, row_count) columns even
+    when the row's overall column count diverges from the header --
+    the v1.1.7 short-circuit suppressed type-drift findings on rows
+    that also tripped column-count anomalies (fixture 09).
 
 Tier 2 batin (parser-visible structural divergence). The cell content
 is plain text; it renders normally in a spreadsheet. The divergence
 lives in the column-type contract the header established versus the
 content the row delivers.
 
-Severity 0.15. Same calibration as csv_inconsistent_columns -- both
-are structural-divergence shapes a human reader would catch on close
+Severity 0.15 (default) or 0.10 (50-char band, via severity_override).
+Same calibration family as csv_inconsistent_columns -- both are
+structural-divergence shapes a human reader would catch on close
 inspection but a downstream pipeline does not flag.
 
 Reference: Munafiq Protocol Sec. 9. DOI: 10.5281/zenodo.19677111.
@@ -60,8 +68,11 @@ _SAMPLE_ROWS = 5
 # divergence in a numeric / short_token column. 200 chars catches
 # financial-column hijacks (typically 50-2000 chars of prose) without
 # firing on legitimate short notes that may slip past the header
-# allow-list below.
+# allow-list below. v1.1.8 F2 calibration adds a second band at
+# 50 chars (severity 0.10) for short-form hijacks.
 _FREETEXT_DRIFT_THRESHOLD = 200
+_FREETEXT_DRIFT_THRESHOLD_SHORT = 50
+_FREETEXT_DRIFT_SEVERITY_SHORT = 0.10
 
 # Maximum length of a free_text cell that still counts as short_token.
 # Anything longer is free_text by length alone, even if it has no
@@ -185,7 +196,12 @@ def detect_column_type_drift(
         # rows (header is row 0 in spreadsheet terms; first data
         # row is row 1).
         row_index = row_offset + 1
-        for col_index in range(min(len(row), column_count)):
+        # v1.1.8 F2 item 8: walk min(header_count, row_count) cells
+        # even when the row's column count diverges from the header.
+        # The earlier short-circuit suppressed type-drift findings on
+        # rows that also tripped column-count anomalies (fixture 09).
+        scan_cols = min(len(row), column_count)
+        for col_index in range(scan_cols):
             inferred = column_types[col_index]
             if inferred not in ("numeric", "short_token"):
                 continue
@@ -196,7 +212,14 @@ def detect_column_type_drift(
             cell_type = _classify_cell(cell_value)
             if cell_type != "free_text":
                 continue
-            if len(cell_value) <= _FREETEXT_DRIFT_THRESHOLD:
+            cell_len = len(cell_value)
+            if cell_len > _FREETEXT_DRIFT_THRESHOLD:
+                severity_override = None
+                band_label = "long"
+            elif cell_len > _FREETEXT_DRIFT_THRESHOLD_SHORT:
+                severity_override = _FREETEXT_DRIFT_SEVERITY_SHORT
+                band_label = "short"
+            else:
                 continue
             yield Finding(
                 mechanism="csv_column_type_drift",
@@ -207,18 +230,21 @@ def detect_column_type_drift(
                     f"inferred as {inferred} from the first "
                     f"{len(column_samples[col_index])} data row(s); "
                     f"row {row_index} carries a free-text cell of "
-                    f"{len(cell_value)} characters in that column. "
-                    "The column header declares a strict type "
-                    "signature; the row value violates it by length "
-                    "and shape. A spreadsheet renderer carries the "
-                    "value through unchanged, but downstream type-"
-                    "aware consumers see a contract violation."
+                    f"{cell_len} characters in that column "
+                    f"({band_label} band). The column header declares "
+                    "a strict type signature; the row value violates "
+                    "it by length and shape. A spreadsheet renderer "
+                    "carries the value through unchanged, but "
+                    "downstream type-aware consumers see a contract "
+                    "violation."
                 ),
                 location=f"{file_path}:row={row_index},col={col_index}",
                 surface=(
                     f"(column {header_name!r} typed as {inferred}; "
-                    f"row {row_index} cell length {len(cell_value)})"
+                    f"row {row_index} cell length {cell_len}, "
+                    f"{band_label} band)"
                 ),
                 concealed=cell_value[:240],
                 source_layer="batin",
+                severity_override=severity_override,
             )

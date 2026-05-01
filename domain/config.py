@@ -358,6 +358,18 @@ ZAHIR_MECHANISMS: Final[frozenset[str]] = frozenset({
     # Tier 1 zahir, severity 0.20. See
     # analyzers/csv_zero_width_payload.py.
     "csv_zero_width_payload",
+    # v1.1.8 F2 calibration item 2: oversized free-text cell in a
+    # tabular column. A cell longer than 500 chars AND more than
+    # 10x the column median is a multi-paragraph payload smuggled
+    # into a single tabular cell. Tier 2 zahir, severity 0.15.
+    # See analyzers/csv_oversized_freetext_cell.py.
+    "csv_oversized_freetext_cell",
+    # v1.1.8 F2 calibration item 5: oversized JSON string-leaf
+    # band. A string longer than 1000 chars AND more than 5x the
+    # document median string length is a multi-paragraph payload
+    # smuggled into a single leaf value. Tier 2 zahir, severity
+    # 0.15. See analyzers/json_oversized_string_band.py.
+    "json_oversized_string_band",
     # -----------------------------------------------------------------
     # Phase 24 — video (MP4 / MOV / WEBM / MKV) — Al-Baqarah 2:19-20
     # -----------------------------------------------------------------
@@ -1300,6 +1312,20 @@ BATIN_MECHANISMS: Final[frozenset[str]] = frozenset({
     # alone. Tier 1 batin (high precision, parser-invisible),
     # severity 0.20. See analyzers/json_trailing_payload.py.
     "json_trailing_payload",
+    # v1.1.8 F2 calibration item 3: invisible-character JSON keys.
+    # A JSON key carrying zero-width or bidi-override codepoints
+    # renders identically to a clean key but the byte stream
+    # carries a different identifier. Two consumers see two
+    # different documents. Tier 1 batin, severity 0.25. See
+    # analyzers/json_key_invisible_chars.py.
+    "json_key_invisible_chars",
+    # v1.1.8 F2 calibration item 6: payload in adjacent cell of an
+    # invisible-character row. Depends on csv_bidi_payload and
+    # csv_zero_width_payload findings; flags rows where the
+    # invisible-character cell is paired with a long free-text
+    # cell elsewhere in the same row. Tier 2 batin, severity 0.20.
+    # See analyzers/csv_payload_in_adjacent_cell.py.
+    "csv_payload_in_adjacent_cell",
     # Phase 21 — production-hardening meta-mechanisms. Both live in the
     # batin layer because they describe the *scanner's* inner state
     # (what was not inspected, what could not be identified) rather
@@ -2302,6 +2328,11 @@ SEVERITY: Final[dict[str, float]] = {
     "csv_quoted_newline_payload":     0.20,
     "csv_zero_width_payload":         0.20,
     "csv_encoding_divergence":        0.20,
+    # v1.1.8 F2 calibration items.
+    "csv_oversized_freetext_cell":    0.15,
+    "csv_payload_in_adjacent_cell":   0.20,
+    "json_key_invisible_chars":       0.25,
+    "json_oversized_string_band":     0.15,
     "csv_mixed_encoding":             0.15,
     "csv_mixed_delimiter":            0.15,
     "csv_bom_anomaly":                0.10,
@@ -2747,6 +2778,11 @@ TIER: Final[dict[str, int]] = {
     "csv_quoted_newline_payload":     1,
     "csv_zero_width_payload":         1,
     "csv_encoding_divergence":        1,
+    # v1.1.8 F2 calibration items.
+    "csv_oversized_freetext_cell":    2,
+    "csv_payload_in_adjacent_cell":   2,
+    "json_key_invisible_chars":       1,
+    "json_oversized_string_band":     2,
     "csv_bom_anomaly":                2,
     "csv_mixed_encoding":             2,
     "csv_mixed_delimiter":            2,

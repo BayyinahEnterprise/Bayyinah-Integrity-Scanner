@@ -198,13 +198,17 @@ MECHANISM_COST_CLASS: Final[dict[str, "CostClass"]] = {
     "csv_mixed_encoding":          CostClass.B,
     "csv_null_byte":               CostClass.D,  # raw byte scan
     "csv_oversized_field":         CostClass.B,
+    "csv_oversized_freetext_cell": CostClass.B,  # v1.1.8 F2 item 2
+    "csv_payload_in_adjacent_cell": CostClass.C,  # v1.1.8 F2 item 6
     "csv_quoted_newline_payload":  CostClass.B,
     "csv_quoting_anomaly":         CostClass.B,
     "csv_zero_width_payload":      CostClass.B,
 
     # --- JSON ---
     "json_comment_anomaly":          CostClass.D,  # raw byte scan
+    "json_key_invisible_chars":      CostClass.B,  # v1.1.8 F2 item 3
     "json_nested_payload":           CostClass.B,
+    "json_oversized_string_band":    CostClass.B,  # v1.1.8 F2 item 5
     "json_prototype_pollution_key":  CostClass.B,
     "json_trailing_payload":         CostClass.D,
     "json_unicode_escape_payload":   CostClass.B,

@@ -704,3 +704,23 @@ def sitemap_xml() -> FileResponse:
         path=str(_LANDING_SITEMAP),
         media_type="application/xml",
     )
+
+
+_LANDING_OG_DEMO = _LANDING_DIR / "og-demo.png"
+
+
+@app.api_route("/og-demo.png", methods=["GET", "HEAD"])
+def og_demo_png() -> FileResponse:
+    """Serve the Open Graph preview image for /demo and /.
+
+    Used by `og:image` and `twitter:image` meta tags so that pasting
+    https://bayyinah.dev/demo (or /) in Discord, Twitter, LinkedIn,
+    iMessage, etc. renders a 1200x630 preview card with the demo
+    page screenshot. Stateless, cacheable, no template logic.
+    """
+    if not _LANDING_OG_DEMO.is_file():
+        raise HTTPException(status_code=404, detail="og image unavailable")
+    return FileResponse(
+        path=str(_LANDING_OG_DEMO),
+        media_type="image/png",
+    )

@@ -23,148 +23,532 @@
   <meta name="twitter:title" content="Bayyinah Demo: Document Firewall for AI Pipelines">
   <meta name="twitter:description" content="Upload a PDF. If the firewall verdict is clean, Claude summarizes it. If it conceals anything, the LLM call is skipped entirely.">
   <meta name="twitter:image" content="https://bayyinah.dev/og-demo.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
   <style>
     :root {
-      --bg: #0a0a0a;
-      --fg: #e0e0e0;
-      --muted: #888;
-      --pass: #7ec97e;
-      --block: #e26060;
-      --mughlaq: #d8b864;
-      --panel: #141414;
-      --border: #2a2a2a;
-      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      /* Match the landing palette exactly so /demo reads as the same
+         publication, not a side widget. */
+      --bg:        #0F1115;
+      --bg-2:      #161A21;
+      --bg-3:      #1D2229;
+      --rule:      #262C36;
+      --rule-2:    #353D4A;
+
+      --vellum:    #E8E4D8;
+      --vellum-dim:#C7C3B5;
+
+      --ink:       #E8E4D8;
+      --ink-2:     #B5B0A2;
+      --muted:     #6F7684;
+      --faint:     #4A515E;
+
+      --lamp:      #F4D58A;
+      --lamp-soft: rgba(244, 213, 138, 0.16);
+      --lamp-glow: rgba(244, 213, 138, 0.55);
+
+      --t1: #E2725B;
+      --t1-soft: rgba(226, 114, 91, 0.14);
+      --t2: #7AA0C4;
+      --t2-soft: rgba(122, 160, 196, 0.14);
+      --t3: #B89B7A;
+      --ok: #8FBF95;
+
+      --fd: 'Source Serif 4', 'Times New Roman', serif;
+      --fs: 'Inter', system-ui, -apple-system, sans-serif;
+      --fm: 'JetBrains Mono', ui-monospace, monospace;
+
+      --ease: cubic-bezier(0.32, 0.72, 0.24, 1.0);
     }
-    * { box-sizing: border-box; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
     body {
+      font-family: var(--fs);
       background: var(--bg);
-      color: var(--fg);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      max-width: 760px;
-      margin: 2.5rem auto 4rem;
-      padding: 0 1.25rem;
-      line-height: 1.55;
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
-    h1 {
-      font-size: 1.45rem;
-      font-weight: 600;
-      margin: 0 0 0.4rem;
+
+    a { color: var(--lamp); text-decoration: none; transition: opacity 200ms var(--ease); }
+    a:hover { opacity: 0.78; }
+
+    /* ================================================================
+       LAYOUT: margin index sidebar + main column, mirrors landing
+       ================================================================ */
+    .page {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 3.5rem 2rem 5rem;
+      gap: 3rem;
     }
-    .premise {
+
+    /* ---------- margin index sidebar ---------- */
+    .margin-index {
+      position: sticky;
+      top: 3rem;
+      align-self: start;
+      border-right: 1px solid var(--rule);
+      padding-right: 1.5rem;
+    }
+    .brand-mark {
+      font-family: var(--fd);
+      font-style: italic;
+      font-size: 1.35rem;
+      color: var(--vellum);
+      margin-bottom: 2rem;
+      letter-spacing: -0.01em;
+    }
+    .brand-mark a { color: inherit; }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-family: var(--fm);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.4rem 0;
+      border-bottom: 1px dashed var(--rule);
+    }
+    .meta-row .k { color: var(--muted); }
+    .meta-row .v { color: var(--ink-2); }
+    .nav-back {
+      margin-top: 2.5rem;
+      font-family: var(--fm);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       color: var(--muted);
-      margin: 0 0 2rem;
-      font-size: 0.95rem;
     }
+    .nav-back a { color: var(--ink-2); }
+
+    /* ---------- main column ---------- */
+    main { min-width: 0; }
+
+    .section-mark {
+      font-family: var(--fm);
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--lamp);
+      margin-bottom: 1.25rem;
+    }
+    .section-mark .sep { color: var(--faint); margin: 0 0.5rem; }
+
+    h1 {
+      font-family: var(--fd);
+      font-weight: 500;
+      font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+      line-height: 1.15;
+      letter-spacing: -0.015em;
+      color: var(--vellum);
+      margin-bottom: 1.25rem;
+      max-width: 22ch;
+    }
+    h1 em {
+      font-style: italic;
+      color: var(--lamp);
+    }
+
+    .lede {
+      font-family: var(--fd);
+      font-size: 1.08rem;
+      line-height: 1.55;
+      color: var(--ink-2);
+      max-width: 60ch;
+      margin-bottom: 2.5rem;
+      font-style: italic;
+    }
+
+    .body-copy {
+      font-size: 0.98rem;
+      color: var(--ink-2);
+      max-width: 60ch;
+      margin-bottom: 2.25rem;
+    }
+    .body-copy p + p { margin-top: 0.85rem; }
+    .body-copy strong { color: var(--vellum); font-weight: 500; }
+
+    /* ================================================================
+       LIT PAGE: drop zone styled as the warm vellum panel
+       (the same metaphor the landing uses for its scan card)
+       ================================================================ */
+    .lit-page {
+      background: var(--vellum);
+      color: #1a1a1a;
+      border-radius: 4px;
+      padding: 2rem 1.75rem;
+      box-shadow:
+        0 1px 0 rgba(244, 213, 138, 0.08) inset,
+        0 24px 48px -16px rgba(0, 0, 0, 0.55);
+      position: relative;
+      transition: box-shadow 300ms var(--ease);
+    }
+    .lit-page::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--lamp-glow) 25%,
+        var(--lamp-glow) 75%,
+        transparent 100%
+      );
+    }
+
+    .page-folio {
+      font-family: var(--fm);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #7A7468;
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .page-folio .lamp-dot {
+      display: inline-block;
+      width: 0.42rem;
+      height: 0.42rem;
+      border-radius: 50%;
+      background: #8FBF95;
+      margin-right: 0.4rem;
+      transform: translateY(-1px);
+    }
+
     .dropzone {
-      border: 1px dashed var(--border);
-      border-radius: 8px;
-      padding: 1.75rem 1.25rem;
+      display: block;
+      border: 1.5px dashed #B5AC97;
+      border-radius: 4px;
+      padding: 2.25rem 1.25rem;
       text-align: center;
       cursor: pointer;
-      transition: border-color 120ms, background 120ms;
+      transition: border-color 200ms var(--ease), background 200ms var(--ease);
+      font-family: var(--fd);
+      font-size: 1.05rem;
+      color: #4A453B;
+      font-style: italic;
     }
-    .dropzone.hover { border-color: var(--pass); background: #0e1410; }
+    .dropzone:hover,
+    .dropzone.hover {
+      border-color: #6B8E72;
+      background: rgba(143, 191, 149, 0.08);
+    }
     .dropzone input[type=file] { display: none; }
-    .dropzone-label { color: var(--muted); font-size: 0.95rem; }
-    .dropzone-label strong { color: var(--fg); }
+    .dropzone strong {
+      font-style: normal;
+      font-family: var(--fs);
+      font-weight: 500;
+      color: #1a1a1a;
+    }
 
-    #output { margin-top: 1.5rem; }
+    .or-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin: 1.4rem 0;
+      font-family: var(--fm);
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #8A8474;
+    }
+    .or-divider::before,
+    .or-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #C7BFA7;
+    }
+
+    /* Three exhibit cards for one-click fixture demo */
+    .exhibits {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+    .exhibit {
+      background: #DAD4C2;
+      border: 1px solid #C7BFA7;
+      border-radius: 3px;
+      padding: 0.95rem 0.85rem;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      color: inherit;
+      transition: background 200ms var(--ease), border-color 200ms var(--ease);
+    }
+    .exhibit:hover {
+      background: #CFC8B5;
+      border-color: #A89F84;
+    }
+    .exhibit-mark {
+      font-family: var(--fm);
+      font-size: 0.65rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #7A7468;
+      margin-bottom: 0.4rem;
+    }
+    .exhibit-title {
+      font-weight: 500;
+      font-size: 0.92rem;
+      color: #1a1a1a;
+      margin-bottom: 0.2rem;
+    }
+    .exhibit-desc {
+      font-family: var(--fd);
+      font-style: italic;
+      font-size: 0.82rem;
+      color: #4A453B;
+      line-height: 1.4;
+    }
+
+    /* ================================================================
+       OUTPUT: verdict panels, in the dark cabinet aesthetic
+       ================================================================ */
+    #output { margin-top: 2rem; }
+
     .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem 1.1rem;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-left-width: 3px;
+      border-radius: 3px;
+      padding: 1.25rem 1.35rem;
       margin-top: 1rem;
     }
-    .panel.pass { border-left: 3px solid var(--pass); }
-    .panel.block { border-left: 3px solid var(--block); }
-    .panel.mughlaq { border-left: 3px solid var(--mughlaq); }
-    .panel.error { border-left: 3px solid var(--muted); }
+    .panel.pass    { border-left-color: var(--ok); }
+    .panel.block   { border-left-color: var(--t1); }
+    .panel.mughlaq { border-left-color: var(--t3); }
+    .panel.error   { border-left-color: var(--muted); }
 
     .verdict-badge {
       display: inline-block;
-      padding: 0.2rem 0.6rem;
-      border-radius: 4px;
-      font-family: var(--mono);
-      font-size: 0.8rem;
-      letter-spacing: 0.05em;
+      padding: 0.25rem 0.7rem;
+      border-radius: 2px;
+      font-family: var(--fm);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.85rem;
+      font-weight: 500;
     }
-    .verdict-pass { background: #1a2a1a; color: var(--pass); }
-    .verdict-block { background: #2a1414; color: var(--block); }
-    .verdict-mughlaq { background: #2a2414; color: var(--mughlaq); }
+    .verdict-pass    { background: rgba(143, 191, 149, 0.14); color: var(--ok); }
+    .verdict-block   { background: var(--t1-soft); color: var(--t1); }
+    .verdict-mughlaq { background: rgba(184, 155, 122, 0.18); color: var(--t3); }
+
+    .panel p { color: var(--ink-2); font-size: 0.95rem; }
+    .panel p strong { color: var(--vellum); font-weight: 500; }
+
+    .summary-text {
+      font-family: var(--fd);
+      font-size: 1rem;
+      line-height: 1.55;
+      color: var(--ink-2);
+      margin-top: 0.85rem;
+      padding: 1rem 1.1rem;
+      background: var(--bg);
+      border-left: 2px solid var(--rule-2);
+      border-radius: 2px;
+    }
 
     .scan-log {
-      font-family: var(--mono);
+      font-family: var(--fm);
       font-size: 0.82rem;
       color: var(--muted);
       white-space: pre-wrap;
       margin: 0;
     }
+
     .what-happened {
-      font-family: var(--mono);
-      font-size: 0.85rem;
+      font-family: var(--fm);
+      font-size: 0.78rem;
       color: var(--muted);
-      margin: 0.85rem 0 0;
-      padding-top: 0.85rem;
-      border-top: 1px solid var(--border);
+      letter-spacing: 0.02em;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--rule);
     }
-    .what-happened p { margin: 0.15rem 0; }
-    .what-happened strong { color: var(--fg); }
-    .summary-text {
-      margin: 0.75rem 0 0;
-      font-size: 0.95rem;
-    }
-    ul.findings { list-style: none; padding: 0; margin: 0.6rem 0 0; }
+    .what-happened p { color: var(--muted); font-size: 0.78rem; margin: 0.2rem 0; }
+    .what-happened strong { color: var(--vellum); font-weight: 500; }
+
+    ul.findings { list-style: none; padding: 0; margin: 0.85rem 0 0; }
     ul.findings li {
-      padding: 0.55rem 0;
-      border-top: 1px solid var(--border);
+      padding: 0.7rem 0;
+      border-top: 1px solid var(--rule);
       font-size: 0.88rem;
+      color: var(--ink-2);
     }
     ul.findings li:first-child { border-top: none; }
     .mech {
-      font-family: var(--mono);
-      color: var(--block);
-      font-size: 0.85rem;
+      font-family: var(--fm);
+      color: var(--t1);
+      font-size: 0.82rem;
+      letter-spacing: 0.02em;
     }
-    .tier { color: var(--muted); font-size: 0.8rem; }
-    .concealed {
-      font-family: var(--mono);
-      font-size: 0.78rem;
+    .tier {
       color: var(--muted);
-      background: #0a0a0a;
-      padding: 0.3rem 0.5rem;
-      border-radius: 3px;
-      display: block;
-      margin-top: 0.3rem;
-      word-break: break-all;
+      font-family: var(--fm);
+      font-size: 0.76rem;
+      letter-spacing: 0.06em;
     }
-    a { color: #6aa3d8; }
+    .concealed {
+      font-family: var(--fm);
+      font-size: 0.78rem;
+      color: var(--ink-2);
+      background: var(--bg);
+      padding: 0.45rem 0.6rem;
+      border-radius: 2px;
+      display: block;
+      margin-top: 0.4rem;
+      word-break: break-all;
+      border: 1px solid var(--rule);
+    }
+
+    /* ================================================================
+       FOOTER
+       ================================================================ */
+    .footer-note {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+      font-family: var(--fm);
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      max-width: 60ch;
+    }
+    .footer-note strong { color: var(--ink-2); font-weight: 500; }
+
+    /* ================================================================
+       RESPONSIVE: collapse to single column under 760px
+       ================================================================ */
+    @media (max-width: 760px) {
+      .page {
+        grid-template-columns: 1fr;
+        padding: 2rem 1.25rem 4rem;
+        gap: 2rem;
+      }
+      .margin-index {
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid var(--rule);
+        padding-right: 0;
+        padding-bottom: 1.5rem;
+      }
+      .nav-back { margin-top: 1rem; }
+      .lit-page { padding: 1.5rem 1.25rem; }
+      .exhibits { grid-template-columns: 1fr; }
+      h1 { font-size: 1.7rem; }
+    }
   </style>
 </head>
+
 <body>
-  <h1>Bayyinah Demo: Document Firewall for AI Pipelines</h1>
-  <p class="premise">
-    Upload a PDF. If it conceals anything (Tier 1 finding, scan incomplete, or
-    high-confidence Tier 2), Claude never sees it. If clean, the document is
-    summarized and the token count is reported. Zero LLM tokens consumed on a
-    blocked document.
-  </p>
+  <div class="page">
 
-  <label class="dropzone" id="dropzone">
-    <input type="file" id="fileInput" accept="application/pdf,.pdf">
-    <span class="dropzone-label">
-      Drop a PDF here, or <strong>click to choose a file</strong>.
-    </span>
-  </label>
+    <!-- ============== MARGIN INDEX (sidebar) ============== -->
+    <aside class="margin-index">
+      <div class="brand-mark"><a href="/">bayyinah</a></div>
 
-  <div id="output"></div>
+      <div class="meta-row"><span class="k">Case</span><span class="v">v1.1.9</span></div>
+      <div class="meta-row"><span class="k">Date</span><span class="v">2026.05</span></div>
+      <div class="meta-row"><span class="k">Mode</span><span class="v">Firewall</span></div>
+      <div class="meta-row"><span class="k">Model</span><span class="v">Sonnet 4.6</span></div>
+      <div class="meta-row"><span class="k">Mechs</span><span class="v">159</span></div>
+      <div class="meta-row"><span class="k">Tests</span><span class="v">1,775</span></div>
 
-  <p style="margin-top: 2.5rem; color: var(--muted); font-size: 0.85rem;">
-    Stateless: no file is persisted, no request body is logged. The demo
-    runs the same scanner that powers <a href="/">bayyinah.dev</a>.
-  </p>
+      <div class="nav-back">
+        <a href="/">&larr; Return to the case</a>
+      </div>
+    </aside>
+
+    <!-- ============== MAIN COLUMN ============== -->
+    <main>
+      <div class="section-mark">&sect; Demo<span class="sep">&middot;</span>Document Firewall</div>
+
+      <h1>The page <em>held up to the light</em>, before the model reads it.</h1>
+
+      <p class="lede">
+        Upload a PDF. The scanner runs the same 159 mechanisms that power
+        bayyinah.dev. If the firewall verdict is sahih (clean), Anthropic's
+        Sonnet 4.6 summarizes the document. If it is munafiq (concealed) or
+        mughlaq (locked), the model never sees the file, and zero LLM tokens
+        are consumed.
+      </p>
+
+      <div class="body-copy">
+        <p>
+          The argument is one layer below the model. Every benchmark in the
+          JailbreakBench / AgentHarm / RobustBench lineage assumes the
+          adversarial input has already reached the LLM. <strong>The firewall
+          argues for verification before ingestion:</strong> deterministic, no
+          inference, no optimizer, no surface for prompt injection because the
+          gate has no goal.
+        </p>
+      </div>
+
+      <!-- ============== LIT PAGE (drop zone + exhibits) ============== -->
+      <div class="lit-page">
+        <div class="page-folio">
+          <span><span class="lamp-dot"></span>Ready</span>
+          <span>Folio 01</span>
+        </div>
+
+        <label class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept="application/pdf,.pdf">
+          <span class="dropzone-label">
+            Drop a PDF here, or <strong>click to choose a file</strong>
+          </span>
+        </label>
+
+        <div class="or-divider">or, examine an exhibit</div>
+
+        <div class="exhibits">
+          <button class="exhibit" type="button" data-fixture="clean_q3_report.pdf">
+            <div class="exhibit-mark">Exhibit A</div>
+            <div class="exhibit-title">Q3 Financial Report</div>
+            <div class="exhibit-desc">Clean native-text PDF. Expected verdict: sahih.</div>
+          </button>
+
+          <button class="exhibit" type="button" data-fixture="adversarial_invisible_text.pdf">
+            <div class="exhibit-mark">Exhibit B</div>
+            <div class="exhibit-title">Concealment Sample</div>
+            <div class="exhibit-desc">16 mechanisms across substrate. Expected: munafiq.</div>
+          </button>
+
+          <button class="exhibit" type="button" data-fixture="encrypted_locked.pdf">
+            <div class="exhibit-mark">Exhibit C</div>
+            <div class="exhibit-title">Encrypted Document</div>
+            <div class="exhibit-desc">Password-locked PDF. Expected: mughlaq.</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- ============== OUTPUT: verdict panels render here ============== -->
+      <div id="output"></div>
+
+      <p class="footer-note">
+        <strong>Stateless.</strong> No file is persisted, no request body is
+        logged. The demo runs the same scanner that powers
+        <a href="/">bayyinah.dev</a>, gated by the same block decision used in
+        production. The token count reported is the actual Anthropic billing
+        unit on the request.
+      </p>
+    </main>
+
+  </div>
 
   <script src="/demo/demo.js"></script>
 </body>

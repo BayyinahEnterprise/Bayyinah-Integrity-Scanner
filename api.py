@@ -684,7 +684,7 @@ _LANDING_ROBOTS = _LANDING_DIR / "robots.txt"
 _LANDING_SITEMAP = _LANDING_DIR / "sitemap.xml"
 
 
-@app.get("/robots.txt")
+@app.api_route("/robots.txt", methods=["GET", "HEAD"])
 def robots_txt() -> FileResponse:
     """Serve robots.txt with a sitemap pointer for crawlers."""
     if not _LANDING_ROBOTS.is_file():
@@ -695,7 +695,7 @@ def robots_txt() -> FileResponse:
     )
 
 
-@app.get("/sitemap.xml")
+@app.api_route("/sitemap.xml", methods=["GET", "HEAD"])
 def sitemap_xml() -> FileResponse:
     """Serve sitemap.xml so Google Search Console has something to fetch."""
     if not _LANDING_SITEMAP.is_file():

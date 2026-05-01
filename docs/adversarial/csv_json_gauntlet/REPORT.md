@@ -1,4 +1,35 @@
-# CSV / JSON Adversarial Gauntlet, v1.1.2 F2 Closure
+# CSV / JSON Adversarial Gauntlet
+
+## v1.1.8 F2 Calibration Addendum (April 30, 2026)
+
+The v1.1.8 release executes the v1.1.3 calibration items pre-registered in this report and re-runs the full 12-fixture gauntlet. The historical v1.1.2 sections below are preserved verbatim as the original honest record; the numbers stated in those sections describe the v1.1.2 state and have been superseded by the v1.1.8 results stated here.
+
+**v1.1.8 aggregate results on the 12-fixture gauntlet:**
+
+- **Catch-by-payload-recovery: 8/12** (fixtures 01, 02, 05, 07, 09, 10, 11, 12)
+- **Catch-by-finding-fire: 10/12** (adds fixtures 04 and 08; only 03 and 06 produce zero findings)
+- **Clean (zero findings): 2/12** (fixtures 03, 06 only)
+
+**Conversions from v1.1.2 to v1.1.8:**
+
+- Fixture 01 (csv_type_mismatch): NO -> YES, recovered via `csv_column_type_drift` 50-char short band at severity 0.10 (calibration item 1)
+- Fixture 04 (json_concealment_in_keys): NO findings -> finding-fire via `json_key_invisible_chars` (BATIN, calibration item 3)
+- Fixture 05 (json_prototype_pollution): finding-fire NO recovery -> YES recovery via `json_prototype_pollution_key` value extraction (calibration item 4)
+- Fixture 07 (csv_bidi_zwsp_in_cell): finding-fire NO recovery -> YES recovery via `csv_payload_in_adjacent_cell` (BATIN, calibration item 6, adjacent threshold 50 chars)
+- Fixture 08 (csv_quoted_newline_payload): finding-fire Tier 3 -> finding-fire via `csv_quoted_newline_payload` second band (calibration item 7)
+- Fixture 09 (csv_type_drift_encoding_divergence): finding-fire NO recovery -> YES recovery via `csv_column_type_drift` after removing the column-count short-circuit (calibration item 8)
+
+**v1.1.8 mechanisms landed:** 4 new analyzers (`csv_oversized_freetext_cell` ZAHIR, `json_key_invisible_chars` BATIN, `json_oversized_string_band` ZAHIR, `csv_payload_in_adjacent_cell` BATIN) plus 4 calibration extensions to existing analyzers. Mechanism count 155 -> 159 (43 ZAHIR + 115 BATIN + 1 ROUTING). Test count 1,717 -> 1,767 passing.
+
+**What v1.1.8 does not claim.** Fixtures 03 (csv_long_quoted_payload) and 06 (json_long_string_payload) remain clean. The pre-registered `csv_oversized_freetext_cell` and `json_oversized_string_band` mechanisms shipped, but neither lands a finding on its target fixture under the calibrated thresholds. Both are left clean rather than tuning thresholds to fit the fixtures. These are pre-registered for v1.1.9 as threshold-revision candidates with the same regression-and-report commitment.
+
+**Live results data:** `docs/adversarial/csv_json_gauntlet/results_local.json` carries the v1.1.8 fixture-by-fixture output with mechanism attribution for each finding.
+
+The v1.1.2 historical record begins below. Aggregate counts in the v1.1.2 sections ("4/12 payload-recovery", "8/12 finding-fire", "4/12 clean") describe the v1.1.2 state and are superseded by the v1.1.8 numbers above. The per-fixture diagnoses, mechanism tables, and pre-registration list are retained as the original epistemic record.
+
+---
+
+# CSV / JSON Adversarial Gauntlet, v1.1.2 F2 Closure (historical)
 
 This report supersedes the v1.1.2 partial-CSV update with the full F2 closure: 6 CSV mechanisms + 6 JSON mechanisms landed, 6 new fixtures (07-12) added to extend the gauntlet from 6 to 12, and full local results recorded for all 12 fixtures.
 

@@ -94,6 +94,7 @@ from domain import (
     IntegrityReport,
     SourceLayer,
     compute_muwazana_score,
+    get_current_content_index,
 )
 from domain.config import (
     BIDI_CONTROL_CHARS,
@@ -242,7 +243,41 @@ class BatinObjectAnalyzer(BaseAnalyzer):
         Missing raw bytes (file-read failure) degrades to an empty
         finding list rather than raising. A single ``%%EOF`` is normal
         and emits nothing.
+
+        v1.1.7 - reads ``eof_positions`` from the per-scan ContentIndex
+        when one is installed (populated by
+        ``ContentIndex.populate_from_raw_bytes`` once at the top of the
+        scan). The legacy ``re.finditer(rb"%%EOF", data)`` and
+        ``populate_from_raw_bytes``'s ``raw.find`` walk produce the
+        same offsets for the same input bytes; the migration is
+        byte-parity-preserving by construction. Falls back to the
+        self-walk path when no index is available, when the build
+        failed, or when the raw-bytes read failed.
         """
+        idx = get_current_content_index()
+        if (
+            idx is not None
+            and not idx.build_failed
+            and not idx.raw_bytes_read_failed
+            and idx.raw_bytes_len > 0
+        ):
+            eof_positions = list(idx.eof_positions)
+            if len(eof_positions) <= 1:
+                return []
+            return [Finding(
+                mechanism="incremental_update",
+                tier=TIER["incremental_update"],
+                confidence=0.7,
+                description=(
+                    f"Document contains {len(eof_positions)} %%EOF markers, indicating "
+                    f"{len(eof_positions) - 1} incremental update(s). Prior revisions may "
+                    "contain content not rendered in the current view."
+                ),
+                location=f"byte offsets {eof_positions}",
+                surface="(current rendering shows single version)",
+                concealed=f"({len(eof_positions)} document revisions present in file)",
+            )]
+
         data = client.raw_bytes()
         if data is None:
             return []
@@ -400,8 +435,39 @@ class BatinObjectAnalyzer(BaseAnalyzer):
         indicates either a metadata tamper or a file cloned from a
         template and not re-stamped; the scanner surfaces the gap and
         lets the investigator decide.
+
+        v1.1.7 - reads ``/CreationDate`` and ``/ModDate`` from the
+        per-scan ContentIndex's ``catalog["info_dict"]`` when one is
+        installed (populated by ``populate_from_pikepdf``). The string
+        forms produced by pikepdf and pypdf are byte-identical for
+        date strings of the form ``D:YYYYMMDDHHMMSS`` (verified on
+        fixture object/metadata_injection.pdf: both report
+        ``D:20260101000000`` and ``D:20250101000000``). Falls back to
+        the legacy ``reader.metadata`` walk when no index is available,
+        when the build failed, or when ``info_dict`` is missing.
         """
         findings: list[Finding] = []
+        idx = get_current_content_index()
+        if (
+            idx is not None
+            and not idx.build_failed
+            and "info_dict" in idx.catalog
+        ):
+            info_dict = idx.catalog.get("info_dict") or {}
+            cd = info_dict.get("/CreationDate")
+            md = info_dict.get("/ModDate")
+            if cd and md and str(md) < str(cd):
+                findings.append(Finding(
+                    mechanism="metadata_anomaly",
+                    tier=TIER["metadata_anomaly"],
+                    confidence=0.6,
+                    description="Modification date precedes creation date.",
+                    location="/Info",
+                    surface=f"(CreationDate: {cd})",
+                    concealed=f"(ModDate:      {md})",
+                ))
+            return findings
+
         try:
             info = reader.metadata
         except Exception:
@@ -519,8 +585,34 @@ class BatinObjectAnalyzer(BaseAnalyzer):
         a FileAttachment annotation exposes them. The tree walk uses
         ``_walk_names_tree`` to descend both flat ``/Names`` arrays and
         nested ``/Kids`` structures uniformly.
+
+        v1.1.7 - reads the leaf-name list from the per-scan ContentIndex's
+        ``catalog["embedded_files"]`` when one is installed (populated by
+        ``populate_from_pikepdf`` via the same depth-first pre-order
+        traversal as the legacy walk; verified byte-identical on fixture
+        object/embedded_attachment.pdf). Falls back to the legacy pypdf
+        walk when no index is available, when the build failed, or when
+        the catalog key is missing.
         """
         findings: list[Finding] = []
+        idx = get_current_content_index()
+        if (
+            idx is not None
+            and not idx.build_failed
+            and "embedded_files" in idx.catalog
+        ):
+            for name in idx.catalog.get("embedded_files") or []:
+                findings.append(Finding(
+                    mechanism="embedded_file",
+                    tier=TIER["embedded_file"],
+                    confidence=0.95,
+                    description=f"Embedded file '{name}' present in document.",
+                    location="catalog /Names /EmbeddedFiles",
+                    surface="(no visible indication unless annotation present)",
+                    concealed=f"embedded file: {name}",
+                ))
+            return findings
+
         try:
             catalog = reader.trailer["/Root"]
             names = catalog.get("/Names")
@@ -561,9 +653,57 @@ class BatinObjectAnalyzer(BaseAnalyzer):
         Xref de-duplication keeps shared fonts from being reported
         multiple times across pages. Any individual font-parse error
         is swallowed so one malformed font does not hide the rest.
+
+        v1.1.7 - reads per-page font ToUnicode records from the
+        per-scan ContentIndex's ``fonts_by_page`` when one is installed
+        (populated by ``populate_from_pikepdf``). pikepdf's ``objgen[0]``
+        matches pypdf's ``idnum`` for the same indirect object, so
+        xref-dedup is byte-parity-preserving; the font_key string and
+        cmap_bytes are byte-identical across the two parsers (verified
+        on fixture object/tounicode_cmap.pdf). Falls back to the
+        legacy pypdf walk when no index is available, when the build
+        failed, or when ``fonts_by_page`` is empty.
         """
         findings: list[Finding] = []
         seen_xrefs: set[int] = set()
+
+        idx = get_current_content_index()
+        if (
+            idx is not None
+            and not idx.build_failed
+            and idx.fonts_by_page
+        ):
+            for page_idx in sorted(idx.fonts_by_page.keys()):
+                for fi in idx.fonts_by_page[page_idx]:
+                    if fi.xref is not None:
+                        if fi.xref in seen_xrefs:
+                            continue
+                        seen_xrefs.add(fi.xref)
+                    cmap_text = fi.cmap_bytes.decode(
+                        "latin-1", errors="ignore"
+                    )
+                    anomalies = self._parse_tounicode_cmap(cmap_text)
+                    if anomalies:
+                        previews = anomalies[:6]
+                        findings.append(Finding(
+                            mechanism="tounicode_anomaly",
+                            tier=TIER["tounicode_anomaly"],
+                            confidence=0.9,
+                            description=(
+                                f"Font {fi.font_key!s} on page {page_idx + 1} carries a "
+                                f"ToUnicode CMap with {len(anomalies)} entr(y/ies) that "
+                                "map visible glyph CIDs to adversarial Unicode targets "
+                                "(zero-width, bidi control, TAG, or Latin homoglyph). "
+                                "Visible text and extracted text will diverge."
+                            ),
+                            location=(
+                                f"page {page_idx + 1}, font {fi.font_key!s}, /ToUnicode"
+                            ),
+                            surface="(rendered glyphs look legitimate)",
+                            concealed="; ".join(previews)[:400],
+                        ))
+            return findings
+
         for page_idx, page in enumerate(reader.pages):
             try:
                 resources = page.get("/Resources")

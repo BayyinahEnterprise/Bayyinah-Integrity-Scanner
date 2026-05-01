@@ -117,6 +117,29 @@ class FontInfo:
 
 
 @dataclass(frozen=True)
+class FontToUnicodeInfo:
+    """One per-page font record carrying its ToUnicode CMap stream bytes.
+
+    Captured by populate_from_pikepdf during the v1.1.7 BatinObjectAnalyzer
+    migration. The legacy _scan_tounicode_cmaps walk reads the same
+    information from pypdf via per-page Resources/Font/ToUnicode
+    resolution; pikepdf's objgen[0] matches pypdf's idnum for the same
+    underlying object, so xref-dedup is byte-parity-preserving across
+    parsers. The font_key is captured as pikepdf's str(name) which
+    matches pypdf's str(name) for /Name objects (verified on fixture
+    object/tounicode_cmap.pdf: both report "/Fadv").
+
+    cmap_bytes is the raw ToUnicode stream bytes; the migrated detector
+    decodes via the same latin-1 path as the legacy walk so the
+    parsed bfchar/bfrange entries are byte-identical.
+    """
+    page_idx: int
+    font_key: str
+    xref: int | None
+    cmap_bytes: bytes
+
+
+@dataclass(frozen=True)
 class PikepdfAnnotInfo:
     """One annotation record sourced from pikepdf rather than pymupdf.
 
@@ -174,6 +197,16 @@ class ContentIndex:
 
     # Font table (for tounicode and font-related checks; populated on demand)
     fonts: dict[str, FontInfo] = field(default_factory=dict)
+
+    # Per-page ToUnicode CMap font records, populated by
+    # populate_from_pikepdf during v1.1.7. Keys are page indices in
+    # the same order pikepdf yields them. The migrated
+    # BatinObjectAnalyzer._scan_tounicode_cmaps walk reads from this
+    # mapping when present and falls back to the legacy pypdf walk
+    # otherwise.
+    fonts_by_page: dict[int, list[FontToUnicodeInfo]] = field(
+        default_factory=dict
+    )
 
     # Catalog summary (populated by Phase 3 migration; empty in Phase 1)
     # Keys when populated: "openaction", "aa", "names_javascript",
@@ -447,6 +480,76 @@ class ContentIndex:
         # XMP metadata - dict[str, str], keys in pikepdf's
         # "{namespace}localname" form to match the v1.1.1 detector's
         # ``str(k)`` call shape.
+        # /Names /EmbeddedFiles tree walk - capture leaf names so the
+        # v1.1.7 BatinObjectAnalyzer._scan_embedded_files migration can
+        # emit findings without re-walking pikepdf. The legacy walk
+        # uses pypdf's _walk_names_tree which produces the same leaf
+        # name strings as pikepdf's tree walk (verified on fixture
+        # object/embedded_attachment.pdf: both yield 'payload.txt').
+        # Stored as a list[str] under catalog["embedded_files"] so an
+        # empty embedding tree is distinguishable (key present, list
+        # empty) from "unable to capture" (key absent, fall through to
+        # legacy walk).
+        try:
+            cat = pdf.Root
+            names = cat.get("/Names") if hasattr(cat, "get") else None
+        except Exception:  # noqa: BLE001
+            names = None
+        if names is not None:
+            try:
+                ef = names.get("/EmbeddedFiles")
+            except Exception:  # noqa: BLE001
+                ef = None
+            if ef is not None:
+                embedded: list[str] = []
+
+                # Depth-first pre-order traversal mirroring the legacy
+                # _walk_names_tree recursive walk: visit current /Names
+                # entries first, then recurse into /Kids in order. The
+                # leaf-name iteration order is byte-parity-critical for
+                # the migrated _scan_embedded_files finding sequence.
+                def _walk(node: Any) -> None:
+                    try:
+                        ns = (
+                            node.get("/Names")
+                            if hasattr(node, "get") else None
+                        )
+                    except Exception:  # noqa: BLE001
+                        ns = None
+                    if ns:
+                        try:
+                            seq = list(ns)
+                        except Exception:  # noqa: BLE001
+                            seq = []
+                        for i in range(0, len(seq) - 1, 2):
+                            try:
+                                embedded.append(str(seq[i]))
+                            except Exception:  # noqa: BLE001
+                                continue
+                    try:
+                        kids = (
+                            node.get("/Kids")
+                            if hasattr(node, "get") else None
+                        )
+                    except Exception:  # noqa: BLE001
+                        kids = None
+                    if kids:
+                        try:
+                            kid_list = list(kids)
+                        except Exception:  # noqa: BLE001
+                            kid_list = []
+                        for kid in kid_list:
+                            try:
+                                _walk(kid)
+                            except Exception:  # noqa: BLE001
+                                continue
+
+                try:
+                    _walk(ef)
+                except Exception:  # noqa: BLE001
+                    pass
+                self.catalog["embedded_files"] = embedded
+
         try:
             with pdf.open_metadata() as meta:
                 xmp_items: dict[str, str] = {}
@@ -543,6 +646,60 @@ class ContentIndex:
                     except Exception:  # noqa: BLE001 - per-annotation degradation
                         continue
             self.pikepdf_annotations_by_page[page_idx] = page_annots
+
+            # v1.1.7 - per-page font ToUnicode CMap capture for the
+            # BatinObjectAnalyzer._scan_tounicode_cmaps migration.
+            # Walk Resources/Font and capture each font's ToUnicode
+            # stream bytes. Per-font failures degrade silently: the
+            # migrated detector treats a missing font_by_page entry
+            # the same as the legacy walk treats a per-font exception
+            # (continue). xref-dedup is performed by the consumer,
+            # not here, because the same font may appear on multiple
+            # pages and we capture all occurrences for byte-parity
+            # diagnosis.
+            page_fonts: list[FontToUnicodeInfo] = []
+            try:
+                resources = page.get("/Resources")
+            except Exception:  # noqa: BLE001
+                resources = None
+            if resources is not None:
+                try:
+                    fonts = resources.get("/Font")
+                except Exception:  # noqa: BLE001
+                    fonts = None
+                if fonts is not None:
+                    try:
+                        font_keys = list(fonts.keys())
+                    except Exception:  # noqa: BLE001
+                        font_keys = []
+                    for font_key in font_keys:
+                        try:
+                            font = fonts[font_key]
+                            try:
+                                tu = font.get("/ToUnicode")
+                            except Exception:  # noqa: BLE001
+                                tu = None
+                            if tu is None:
+                                continue
+                            try:
+                                xref = int(tu.objgen[0])
+                            except (
+                                AttributeError, TypeError, IndexError
+                            ):
+                                xref = None
+                            try:
+                                cmap_bytes = bytes(tu.read_bytes())
+                            except Exception:  # noqa: BLE001
+                                continue
+                            page_fonts.append(FontToUnicodeInfo(
+                                page_idx=page_idx,
+                                font_key=str(font_key),
+                                xref=xref,
+                                cmap_bytes=cmap_bytes,
+                            ))
+                        except Exception:  # noqa: BLE001
+                            continue
+            self.fonts_by_page[page_idx] = page_fonts
 
     def populate_from_raw_bytes(self, raw: bytes) -> None:
         """Fill eof_positions, last_eof_offset, and trailing_after_last_eof
@@ -664,6 +821,7 @@ __all__ = [
     "DrawingInfo",
     "AnnotInfo",
     "FontInfo",
+    "FontToUnicodeInfo",
     "PikepdfAnnotInfo",
     "ContentIndex",
     "get_current_content_index",

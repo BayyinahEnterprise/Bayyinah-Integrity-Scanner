@@ -10,6 +10,84 @@ reference implementation without touching it, the parity invariant
 (`bayyinah.scan_pdf == bayyinah_v0.scan_pdf` on every Phase 0 fixture) has
 held across every phase.
 
+## [1.1.7]: 2026-04-30
+
+Minor release. BatinObjectAnalyzer ContentIndex migration. Sub-mechanisms
+that had byte-parity-preserving paths through the per-scan ContentIndex
+are now read from the index instead of opening their own pypdf reader
+or walking the file independently. Same pattern as v1.1.4's ZahirText
+Analyzer migration: idx-first read with self-walk fallback when no
+index is installed.
+
+### Headline
+
+Structural migration only. Wall-clock P50 on the four-density panel is
+within measurement noise of v1.1.6: white_paper_19p 205 ms vs 206 ms,
+clean_50p_native 135 ms vs 134 ms, safety_report_220p 13858 ms vs
+13850 ms. The pypdf parse on which `_scan_catalog` and `_scan_annotations`
+still depend is the dominant cost on dense PDFs and was not removable
+in this release without breaking byte-parity on the `concealed`
+IndirectObject reprs those mechanisms emit. Future work: extend
+ContentIndex to capture the pypdf-derived catalog and annotation
+reprs so those two walks can also read from the index.
+
+Byte-parity preserved: every finding, verdict, and test result
+identical to v1.1.6. 1,734 of 1,734 tests pass. Zero skipped.
+
+### Added
+
+- `domain.content_index.FontToUnicodeInfo`: per-page font record
+  carrying its ToUnicode CMap stream bytes, captured during
+  `populate_from_pikepdf`. pikepdf's `objgen[0]` matches pypdf's
+  `idnum` for the same indirect object, so xref-dedup is byte-parity
+  preserving across the two parsers.
+- `domain.content_index.ContentIndex.fonts_by_page`: per-page list
+  of `FontToUnicodeInfo` records, populated by
+  `populate_from_pikepdf` for the v1.1.7 tounicode_anomaly migration.
+- `domain.content_index.ContentIndex.catalog["embedded_files"]`:
+  list of leaf names from the `/Names /EmbeddedFiles` tree, captured
+  via depth-first pre-order traversal mirroring the legacy pypdf
+  walk. Populated by `populate_from_pikepdf`.
+
+### Changed
+
+- `analyzers.object_analyzer.BatinObjectAnalyzer._scan_incremental_updates`:
+  reads `eof_positions` from `ContentIndex` when one is installed.
+  Falls back to the legacy `re.finditer(rb"%%EOF", data)` walk
+  otherwise. The two paths produce identical offsets for the same
+  input bytes; the migration is byte-parity-preserving by
+  construction.
+- `analyzers.object_analyzer.BatinObjectAnalyzer._scan_metadata`:
+  reads `/CreationDate` and `/ModDate` from
+  `ContentIndex.catalog["info_dict"]` when present. The string
+  forms produced by pikepdf and pypdf for `D:YYYYMMDDHHMMSS` date
+  values are byte-identical (verified on fixture
+  `object/metadata_injection.pdf`).
+- `analyzers.object_analyzer.BatinObjectAnalyzer._scan_embedded_files`:
+  reads the leaf-name list from `ContentIndex.catalog["embedded_files"]`
+  when present. Falls back to the legacy pypdf `_walk_names_tree`
+  otherwise.
+- `analyzers.object_analyzer.BatinObjectAnalyzer._scan_tounicode_cmaps`:
+  reads per-page font records from `ContentIndex.fonts_by_page`
+  when populated. CMap bytes are decoded via the same
+  `latin-1`-with-ignore path as the legacy walk so parsed
+  `bfchar`/`bfrange` entries are byte-identical.
+
+### Not migrated (deferred)
+
+- `_scan_catalog`: emits `concealed=self._safe_str(action)[:500]`
+  whose pypdf `IndirectObject(...)` repr is byte-parity-critical and
+  has no pikepdf-side equivalent. The legacy walk is preserved
+  verbatim.
+- `_scan_annotations`: same constraint as `_scan_catalog` for
+  annotation `/A` action concealed payloads. Legacy walk preserved.
+
+These two mechanisms are the dominant cost on dense PDFs (the
+pypdf parse plus the per-page `/Annots` walk) and account for the
+flat headline P50. Migrating them would require capturing the pypdf
+`IndirectObject` shape inside the ContentIndex preflight, which is
+tractable but defers to a later release.
+
 ## [1.1.6]: 2026-04-30
 
 Minor release. Registry-level cost-class-ordered short-circuit. Closes

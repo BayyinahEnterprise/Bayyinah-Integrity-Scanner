@@ -12,6 +12,8 @@ held across every phase.
 
 ## [Unreleased]
 
+## [1.1.9]: 2026-04-30
+
 ### Added
 
 - feat(demo): add /demo document-firewall page and /demo/summarize
@@ -29,6 +31,19 @@ held across every phase.
   missing-API-key, _block_decision branches, and env-flag-off 404.
   Three demo fixtures under docs/demo/fixtures/. Total test count:
   1,775 (was 1,767).
+
+### Fixed
+
+- deps: promote `httpx>=0.27,<1` from `[project.optional-dependencies] dev`
+  to runtime dependencies in `pyproject.toml` and `requirements.txt`.
+  `bayyinah/demo.py` imports httpx at module level for the Anthropic
+  API call; without this promotion the app crashes with
+  `ModuleNotFoundError: No module named 'httpx'` at startup whenever
+  `BAYYINAH_DEMO_ENABLED=1` is set in the deployment environment.
+  Also bumps `__version__` and `[project.version]` from 1.1.8 to 1.1.9
+  (the v1.1.9 PR shipped the demo router but left the version strings
+  on 1.1.8, so `/version` continued to report 1.1.8 against the
+  shipped 1.1.9 codebase).
 
 ## [1.1.8]: 2026-04-30
 

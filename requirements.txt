@@ -26,3 +26,9 @@ mutagen>=1.47,<2
 fastapi>=0.110,<1
 uvicorn[standard]>=0.27,<1
 python-multipart>=0.0.9,<1
+
+# Anthropic API client transport for the v1.1.9 demo router
+# (bayyinah/demo.py). Imported at module level whenever
+# BAYYINAH_DEMO_ENABLED is set, so it must be a runtime dep,
+# not a test-only one.
+httpx>=0.27,<1

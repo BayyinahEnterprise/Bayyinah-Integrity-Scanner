@@ -1315,7 +1315,7 @@ h2 em { font-style: italic; color: var(--lamp); }
   <aside class="margin-index">
     <div class="brand-mark">bayyinah</div>
 
-    <div class="meta-row"><span class="k">CASE</span><span class="v">v1.1.5</span></div>
+    <div class="meta-row"><span class="k">CASE</span><span class="v">v1.1.8</span></div>
     <div class="meta-row"><span class="k">DATE</span><span class="v">2026.04</span></div>
     <div class="meta-row"><span class="k">SCANS</span><span class="v">23 kinds</span></div>
     <div class="meta-row"><span class="k">CORPUS</span><span class="v">56 files</span></div>
@@ -1381,7 +1381,7 @@ h2 em { font-style: italic; color: var(--lamp); }
           <div class="label">File kinds analyzed</div>
         </div>
         <div class="stat">
-          <div class="num">155</div>
+          <div class="num">159</div>
           <div class="label">Detection mechanisms</div>
         </div>
         <div class="stat">
@@ -1506,7 +1506,7 @@ h2 em { font-style: italic; color: var(--lamp); }
           <div class="tl-year">2026</div>
           <div>
             <div class="tl-h">The Munafiq Protocol is formalized, and Bayyinah ships.</div>
-            <div class="tl-p">A diagnostic framework for surface-substrate divergence is published, and the first document firewall built on top of it goes live the same season. v1.1.5 today: a stdlib uniform-grid spatial pre-filter for overlapping-text detection on top of the v1.1.4 content-index port and opt-in production mode, an 8 percent end-to-end reduction on the 220-page native-text dense report with detection behaviour byte-identical to v1.1.4. The CSV/JSON gauntlet was extended from 6 to 12 fixtures in v1.1.2 F2 and remains the named open frontier on payload-recovery calibration.</div>
+            <div class="tl-p">A diagnostic framework for surface-substrate divergence is published, and the first document firewall built on top of it goes live the same season. v1.1.8 today: the F2 calibration round closes 4 of the 8 publicly pre-registered gauntlet items, taking catch-by-payload-recovery on the 12-fixture CSV/JSON gauntlet from 4 of 12 to 8 of 12 and catch-by-finding-fire from 8 of 12 to 10 of 12. v1.1.7 shipped the BatinObjectAnalyzer ContentIndex migration on top of the v1.1.4 content-index port and opt-in production mode; v1.1.5 added a stdlib uniform-grid spatial pre-filter for overlapping-text detection. The 4 remaining gauntlet gaps (fixtures 03, 04, 06, 08) are documented with named root causes and proposed closures.</div>
           </div>
         </div>
       </div>
@@ -1516,7 +1516,7 @@ h2 em { font-style: italic; color: var(--lamp); }
     <section class="section" id="baseline">
       <span class="section-num">06 · Honest Baseline</span>
       <h2>We publish <em>what we miss.</em></h2>
-      <p class="lede">50 adversarial fixtures across 7 formats. Every hit and every miss disclosed. The 38 closed-format fixtures are caught at full payload recovery; the CSV/JSON gauntlet was extended to 12 fixtures in v1.1.2 F2 and stands at 4 of 12 catch-by-payload-recovery, 8 of 12 catch-by-finding-fire. Calibration on the open band is the named work for v1.1.6.</p>
+      <p class="lede">50 adversarial fixtures across 7 formats. Every hit and every miss disclosed. The 38 closed-format fixtures are caught at full payload recovery; the CSV/JSON gauntlet was extended to 12 fixtures in v1.1.2 F2 and now stands at 8 of 12 catch-by-payload-recovery, 10 of 12 catch-by-finding-fire after the v1.1.8 F2 calibration round. The 4 remaining gaps are documented with named root causes.</p>
 
       <table class="baseline-table">
         <thead>
@@ -1529,13 +1529,13 @@ h2 em { font-style: italic; color: var(--lamp); }
           <tr><td>HTML</td><td class="num">6</td><td class="num caught">6</td><td class="num">0</td><td class="num">0</td></tr>
           <tr><td>EML</td><td class="num">6</td><td class="num caught">6</td><td class="num">0</td><td class="num">0</td></tr>
           <tr><td>Image</td><td class="num">8</td><td class="num caught">8</td><td class="num">0</td><td class="num">0</td></tr>
-          <tr><td>CSV / JSON</td><td class="num">12</td><td class="num caught">4</td><td class="num partial">4</td><td class="num missed">4</td></tr>
-          <tr class="total"><td>Total</td><td class="num">50</td><td class="num caught">42</td><td class="num partial">4</td><td class="num missed">4</td></tr>
+          <tr><td>CSV / JSON</td><td class="num">12</td><td class="num caught">8</td><td class="num partial">2</td><td class="num missed">2</td></tr>
+          <tr class="total"><td>Total</td><td class="num">50</td><td class="num caught">46</td><td class="num partial">2</td><td class="num missed">2</td></tr>
         </tbody>
       </table>
 
       <div class="baseline-callout">
-        Forty-two full catches across the closed-format set and four of the twelve CSV/JSON fixtures. Four CSV/JSON fixtures fire findings without harness-matched payload recovery (the partial column); four register no findings against the current detector set. The closed-format surfaces are clean; CSV/JSON calibration is queued for v1.1.6 with a named fix path for every remaining gap.
+        Forty-six full catches across the closed-format set and eight of the twelve CSV/JSON fixtures. Two CSV/JSON fixtures fire findings without harness-matched payload recovery (the partial column); two register no findings against the current detector set. The closed-format surfaces are clean; the v1.1.8 F2 round closed four of the eight pre-registered gauntlet items, and the four remaining gaps carry named fix paths in the public corpus.
         <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/adversarial/csv_json_gauntlet/REPORT.md">→ Read the full corpus on GitHub</a>
       </div>
     </section>
@@ -1553,7 +1553,7 @@ h2 em { font-style: italic; color: var(--lamp); }
         </div>
         <div class="disc-row">
           <div class="disc-h">We publish what we miss.</div>
-          <div class="disc-p">v1.1.1 caught two of forty-two adversarial fixtures. v1.1.2 closed thirty-eight of thirty-eight closed-format fixtures and the v1.1.2 F2 round extended the CSV/JSON gauntlet from six to twelve. v1.1.4 shipped the content-index port and an opt-in production mode without changing any catch numbers, and v1.1.5 added a stdlib spatial pre-filter for overlapping-text detection with detection behaviour byte-identical to v1.1.4. Calibration of the open CSV/JSON band is the named work for v1.1.6. The full miss list with fix paths lives in the public corpus on GitHub. A scanner that hides its misses is a scanner you cannot trust. The miss list is the trust artifact.</div>
+          <div class="disc-p">v1.1.1 caught two of forty-two adversarial fixtures. v1.1.2 closed thirty-eight of thirty-eight closed-format fixtures and the v1.1.2 F2 round extended the CSV/JSON gauntlet from six to twelve. v1.1.4 shipped the content-index port and an opt-in production mode without changing any catch numbers; v1.1.5 added a stdlib spatial pre-filter for overlapping-text detection with detection behaviour byte-identical to v1.1.4; v1.1.7 migrated the BatinObjectAnalyzer onto the same content index. v1.1.8 closes four of the eight publicly pre-registered F2 calibration items, taking the gauntlet from 4 of 12 to 8 of 12 catch-by-payload-recovery. The four remaining gaps (fixtures 03, 04, 06, 08) carry named fix paths in the public corpus on GitHub. A scanner that hides its misses is a scanner you cannot trust. The miss list is the trust artifact.</div>
         </div>
         <div class="disc-row">
           <div class="disc-h">We test against equivalent methodology.</div>
@@ -1649,7 +1649,7 @@ h2 em { font-style: italic; color: var(--lamp); }
     <section class="section" id="waitlist">
       <span class="section-num">09 · Waitlist</span>
       <h2>Get the next <em>release report.</em></h2>
-      <p class="lede">v1.1.5 just shipped: a stdlib uniform-grid spatial pre-filter for overlapping-text detection on top of the v1.1.4 content-index port, an 8 percent end-to-end reduction on the 220-page native-text dense report with detection behaviour byte-identical to v1.1.4. v1.1.6 lands cost-class-ordered short-circuit at the registry level and revisits the open recovery cases from the 12-fixture CSV/JSON gauntlet. Subscribe for the release report when it ships, plus the periodic Munafiq Protocol notes that document what we miss.</p>
+      <p class="lede">v1.1.8 just shipped: the F2 calibration round closes four of the eight publicly pre-registered gauntlet items, taking catch-by-payload-recovery on the 12-fixture CSV/JSON gauntlet from 4 of 12 to 8 of 12 and catch-by-finding-fire from 8 of 12 to 10 of 12. Four new mechanisms (csv_oversized_freetext_cell, json_key_invisible_chars, json_oversized_string_band, csv_payload_in_adjacent_cell) and four extensions to existing mechanisms; 1,767 of 1,767 tests pass. The four remaining gaps carry named root causes and proposed closures. Subscribe for the release report when it ships, plus the periodic Munafiq Protocol notes that document what we miss.</p>
 
       <div class="waitlist-card">
         <span class="waitlist-label">Subscribe</span>
@@ -1673,7 +1673,7 @@ h2 em { font-style: italic; color: var(--lamp); }
 
       <div class="authorship-note">
         <span class="auth-label">Authorship</span>
-        Bayyinah Integrity Scanner is built by <strong>Bilal Syed Arfeen</strong> and <strong>Fraz Ashraf</strong>, with substantive co-authorship credit to <strong>Claude</strong> (Anthropic), <strong>Computer</strong> (Perplexity), and <strong>Grok</strong> (xAI). The framework, the falsifiability discipline, and the gauntlet methodology emerged through extended human-AI collaboration; mechanism design, code review, and adversarial probing were performed jointly. Where AI tools made substantive contributions, they are credited by name in the relevant Zenodo deposit. The scanner itself contains zero LLM in the detection path; all 155 mechanisms are deterministic.
+        Bayyinah Integrity Scanner is built by <strong>Bilal Syed Arfeen</strong> and <strong>Fraz Ashraf</strong>, with substantive co-authorship credit to <strong>Claude</strong> (Anthropic), <strong>Computer</strong> (Perplexity), and <strong>Grok</strong> (xAI). The framework, the falsifiability discipline, and the gauntlet methodology emerged through extended human-AI collaboration; mechanism design, code review, and adversarial probing were performed jointly. Where AI tools made substantive contributions, they are credited by name in the relevant Zenodo deposit. The scanner itself contains zero LLM in the detection path; all 159 mechanisms are deterministic.
       </div>
 
       <div class="footer-meta">

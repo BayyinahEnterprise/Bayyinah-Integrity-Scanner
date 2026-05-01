@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 import pikepdf  # noqa: E402
+from bayyinah import __version__ as _BAYYINAH_VERSION  # noqa: E402
 from bayyinah import scan_file  # noqa: E402
 
 
@@ -40,6 +41,10 @@ def record(label: str, fixture_path: Path) -> dict:
     report = scan_file(str(fixture_path))
     payload = report.to_dict()
     payload["file_path"] = fixture_path.name
+    # Add scanner_version so a curious reader can distinguish the
+    # report-schema version (`version`, currently 0.1.0) from the
+    # scanner package version that produced the report.
+    payload["scanner_version"] = _BAYYINAH_VERSION
     return payload
 
 

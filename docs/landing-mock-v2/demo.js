@@ -217,4 +217,35 @@
       uploadFile(e.dataTransfer.files[0]);
     }
   });
+
+  // Exhibit buttons: fetch a whitelisted fixture from
+  // /demo/fixtures/<name>, wrap into a File, and run it through the
+  // exact same uploadFile() path a manual user upload takes. Lets a
+  // visitor see the firewall fire end-to-end without bringing their
+  // own PDF.
+  async function runExhibit(fixtureName) {
+    showStatus("Fetching exhibit " + fixtureName + " ...");
+    try {
+      var resp = await fetch("/demo/fixtures/" + encodeURIComponent(fixtureName));
+      if (!resp.ok) {
+        showServerError("Could not load exhibit (" + resp.status + ").");
+        return;
+      }
+      var blob = await resp.blob();
+      var file = new File([blob], fixtureName, { type: "application/pdf" });
+      await uploadFile(file);
+    } catch (e) {
+      showServerError(String(e));
+    }
+  }
+
+  var exhibitButtons = document.querySelectorAll(".exhibit[data-fixture]");
+  for (var i = 0; i < exhibitButtons.length; i++) {
+    (function (btn) {
+      btn.addEventListener("click", function () {
+        var name = btn.getAttribute("data-fixture");
+        if (name) runExhibit(name);
+      });
+    })(exhibitButtons[i]);
+  }
 })();

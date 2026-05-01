@@ -32,6 +32,17 @@ _DEMO_MAX_TEXT_CHARS = 30_000
 _DEMO_LANDING_DIR = (
     Path(__file__).resolve().parent.parent / "docs" / "landing-mock-v2"
 )
+_DEMO_FIXTURES_DIR = (
+    Path(__file__).resolve().parent.parent / "docs" / "demo" / "fixtures"
+)
+# Strict whitelist of fixture names servable through /demo/fixtures/<name>.
+# Anything not in this set returns 404 — prevents path traversal and
+# avoids accidentally serving private documents from the fixtures dir.
+_DEMO_FIXTURE_WHITELIST = {
+    "clean_q3_report.pdf",
+    "adversarial_invisible_text.pdf",
+    "encrypted_locked.pdf",
+}
 _ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 _ANTHROPIC_TIMEOUT_S = 30.0
 _ANTHROPIC_MAX_TOKENS = 300
@@ -188,6 +199,24 @@ def demo_js() -> FileResponse:
     if not p.is_file():
         raise HTTPException(status_code=404, detail="demo.js not built.")
     return FileResponse(path=str(p), media_type="application/javascript")
+
+
+@router.get("/demo/fixtures/{name}")
+def demo_fixture(name: str) -> FileResponse:
+    """Serve a whitelisted demo fixture PDF.
+
+    The page-level redesign exposes three one-click "exhibit"
+    buttons that fetch the fixture and upload it through the same
+    ``/demo/summarize`` path a manual user upload would take.
+    Hardcoded whitelist; no user-supplied path components reach the
+    filesystem beyond exact-match lookup.
+    """
+    if name not in _DEMO_FIXTURE_WHITELIST:
+        raise HTTPException(status_code=404, detail="Fixture not found.")
+    p = _DEMO_FIXTURES_DIR / name
+    if not p.is_file():
+        raise HTTPException(status_code=404, detail="Fixture not found.")
+    return FileResponse(path=str(p), media_type="application/pdf")
 
 
 __all__ = ["router", "_block_decision"]

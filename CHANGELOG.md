@@ -10,6 +10,26 @@ reference implementation without touching it, the parity invariant
 (`bayyinah.scan_pdf == bayyinah_v0.scan_pdf` on every Phase 0 fixture) has
 held across every phase.
 
+## [Unreleased]
+
+### Added
+
+- feat(demo): add /demo document-firewall page and /demo/summarize
+  endpoint demonstrating Bayyinah as a pre-LLM scanner. Mounted only
+  when BAYYINAH_DEMO_ENABLED=1. Stateless, no file persistence, no
+  request body logging. Uses the new bayyinah.api_helpers.scan_file_bytes
+  helper extracted from /scan so production and demo paths share one
+  scan implementation; production /scan, /version, /healthz, /,
+  /robots.txt, and /sitemap.xml are byte-identical when the demo flag
+  is unset. Block gate redundancy (Tier 1 always blocks; Tier 2 with
+  confidence >= 0.7 blocks) is intentional and load-bearing against
+  verdict-derivation drift; documented in
+  bayyinah.demo._block_decision. Eight new tests (tests/api/test_demo.py)
+  cover route mounting, oversize, empty, adversarial, clean,
+  missing-API-key, _block_decision branches, and env-flag-off 404.
+  Three demo fixtures under docs/demo/fixtures/. Total test count:
+  1,775 (was 1,767).
+
 ## [1.1.8]: 2026-04-30
 
 Minor release. F2 calibration items closing the four zero-finding

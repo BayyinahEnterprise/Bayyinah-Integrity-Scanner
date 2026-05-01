@@ -253,6 +253,58 @@
       color: #1a1a1a;
     }
 
+    /* Verdict logic strip: the contract a judge sees before clicking */
+    .verdict-logic {
+      margin-bottom: 1.4rem;
+      padding: 0.95rem 1.05rem;
+      background: #DAD4C2;
+      border: 1px solid #C7BFA7;
+      border-radius: 3px;
+    }
+    .verdict-logic-title {
+      font-family: var(--fm);
+      font-size: 0.65rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #7A7468;
+      margin-bottom: 0.7rem;
+    }
+    .verdict-row {
+      display: grid;
+      grid-template-columns: 8.5rem 5.5rem 1fr;
+      gap: 0.85rem;
+      align-items: baseline;
+      padding: 0.42rem 0;
+      border-top: 1px dashed #B5AC97;
+      font-family: var(--fm);
+      font-size: 0.78rem;
+      color: #4A453B;
+    }
+    .verdict-row:first-of-type { border-top: none; padding-top: 0.2rem; }
+    .verdict-tag {
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+    .verdict-tag.sahih   { color: #5C8262; }
+    .verdict-tag.munafiq { color: #B85742; }
+    .verdict-tag.mughlaq { color: #8A6B4D; }
+    .verdict-arrow {
+      color: #8A8474;
+      font-family: var(--fs);
+    }
+    .verdict-action {
+      font-family: var(--fd);
+      font-style: italic;
+      font-size: 0.86rem;
+      color: #1a1a1a;
+      line-height: 1.45;
+    }
+    .verdict-action strong {
+      font-style: normal;
+      font-family: var(--fs);
+      font-weight: 500;
+    }
+
     .or-divider {
       display: flex;
       align-items: center;
@@ -450,6 +502,12 @@
       .nav-back { margin-top: 1rem; }
       .lit-page { padding: 1.5rem 1.25rem; }
       .exhibits { grid-template-columns: 1fr; }
+      .verdict-row {
+        grid-template-columns: 7rem 1fr;
+        row-gap: 0.15rem;
+      }
+      .verdict-arrow { display: none; }
+      .verdict-action { grid-column: 1 / -1; padding-left: 0; font-size: 0.82rem; }
       h1 { font-size: 1.7rem; }
     }
   </style>
@@ -506,6 +564,25 @@
           <span>Folio 01</span>
         </div>
 
+        <div class="verdict-logic">
+          <div class="verdict-logic-title">Verdict logic</div>
+          <div class="verdict-row">
+            <span class="verdict-tag sahih">SAHIH (clean)</span>
+            <span class="verdict-arrow">&rarr;</span>
+            <span class="verdict-action"><strong>Sonnet 4.6 reads the file</strong> and returns a summary. Token count is the actual Anthropic billing unit.</span>
+          </div>
+          <div class="verdict-row">
+            <span class="verdict-tag munafiq">MUNAFIQ (concealed)</span>
+            <span class="verdict-arrow">&rarr;</span>
+            <span class="verdict-action"><strong>Blocked. The model never sees the file.</strong> Zero LLM tokens consumed. Findings are reported from deterministic mechanisms only.</span>
+          </div>
+          <div class="verdict-row">
+            <span class="verdict-tag mughlaq">MUGHLAQ (locked)</span>
+            <span class="verdict-arrow">&rarr;</span>
+            <span class="verdict-action"><strong>Blocked. The model never sees the file.</strong> Zero LLM tokens consumed. Encrypted or unparseable substrate cannot be verified.</span>
+          </div>
+        </div>
+
         <label class="dropzone" id="dropzone">
           <input type="file" id="fileInput" accept="application/pdf,.pdf">
           <span class="dropzone-label">
@@ -519,19 +596,19 @@
           <button class="exhibit" type="button" data-fixture="clean_q3_report.pdf">
             <div class="exhibit-mark">Exhibit A</div>
             <div class="exhibit-title">Q3 Financial Report</div>
-            <div class="exhibit-desc">Clean native-text PDF. Expected verdict: sahih.</div>
+            <div class="exhibit-desc">Clean native-text PDF. Expected verdict: sahih &rarr; Sonnet summarizes, ~93 input tokens, 2.28s.</div>
           </button>
 
           <button class="exhibit" type="button" data-fixture="adversarial_invisible_text.pdf">
             <div class="exhibit-mark">Exhibit B</div>
             <div class="exhibit-title">Concealment Sample</div>
-            <div class="exhibit-desc">16 mechanisms across substrate. Expected: munafiq.</div>
+            <div class="exhibit-desc">16 mechanisms across substrate. Expected verdict: munafiq &rarr; blocked, 0 LLM tokens consumed.</div>
           </button>
 
           <button class="exhibit" type="button" data-fixture="encrypted_locked.pdf">
             <div class="exhibit-mark">Exhibit C</div>
             <div class="exhibit-title">Encrypted Document</div>
-            <div class="exhibit-desc">Password-locked PDF. Expected: mughlaq.</div>
+            <div class="exhibit-desc">Password-locked PDF. Expected verdict: mughlaq &rarr; blocked, 0 LLM tokens consumed.</div>
           </button>
         </div>
       </div>

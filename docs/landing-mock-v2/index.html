@@ -1113,6 +1113,41 @@ h2 em { font-style: italic; color: var(--lamp); }
   font-style: normal;
 }
 
+.sister-project {
+  margin-top: 1.6rem;
+  padding-top: 1.4rem;
+  border-top: 1px dashed var(--rule);
+  font-family: var(--fd);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 640px;
+  font-style: italic;
+}
+.sister-project .sister-label {
+  font-family: var(--fm);
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-style: normal;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.sister-project strong {
+  color: var(--vellum);
+  font-weight: 500;
+  font-style: normal;
+}
+.sister-project a {
+  color: var(--lamp);
+  font-style: normal;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 200ms;
+}
+.sister-project a:hover { border-bottom-color: var(--lamp); }
+
 /* ===========================================================
    FOOTER - etymology, not Bismillah
    =========================================================== */
@@ -1857,6 +1892,11 @@ h2 em { font-style: italic; color: var(--lamp); }
       <div class="authorship-note">
         <span class="auth-label">Authorship</span>
         Bayyinah Integrity Scanner is built by <strong>Bilal Syed Arfeen</strong> and <strong>Fraz Ashraf</strong>, with substantive co-authorship credit to <strong>Claude</strong> (Anthropic), <strong>Computer</strong> (Perplexity), and <strong>Grok</strong> (xAI). The framework, the falsifiability discipline, and the gauntlet methodology emerged through extended human-AI collaboration; mechanism design, code review, and adversarial probing were performed jointly. Where AI tools made substantive contributions, they are credited by name in the relevant Zenodo deposit. The scanner itself contains zero LLM in the detection path; all 159 mechanisms are deterministic.
+      </div>
+
+      <div class="sister-project">
+        <span class="sister-label">Sister project</span>
+        <a href="https://tryfurqan.com"><strong>Furqan</strong></a>, a programming-language type-checker that rejects function shapes wider than the body can honestly return. Where Bayyinah applies the structural-honesty discipline at the <strong>input layer</strong> of an AI pipeline, Furqan applies it at the <strong>compile layer</strong> of the code that runs the pipeline. Same protocol, two enforcement points.
       </div>
 
       <div class="footer-meta">

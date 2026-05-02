@@ -12,6 +12,72 @@ held across every phase.
 
 ## [Unreleased]
 
+## [1.2.0]: 2026-05-02 - Parity-break: scan_complete and coverage
+
+### Parity-break
+
+This release breaks byte-identical parity with `bayyinah_v0` and
+`bayyinah_v0_1` on the `to_dict` output shape. The break is deliberate
+and follows the procedure documented in `PARITY.md`.
+
+**v0 defect demonstrated:** v0 and v0.1 emit no signal in their JSON
+output to distinguish a complete scan from one that terminated early.
+A clean-looking report from a half-finished scan reads identically to
+a clean-looking report from a complete scan. Flagged in the external
+audit submitted by Fraz Ashraf (issue tracked under the `parity-break`
+tag per the PARITY.md procedure).
+
+**Fix:** `IntegrityReport.to_dict` now emits two additional keys after
+the v0.1 key set:
+
+  * `scan_complete` (bool): True iff the scan covered the entire
+    document. Logical complement of the existing `scan_incomplete`
+    field. Always emitted. Derived in `to_dict`, not stored, so the
+    two cannot drift.
+  * `coverage` (dict[str, float | None] | None): per-layer coverage
+    fraction. Emitted as `{"zahir": None, "batin": None}` in v1.2.0;
+    layer-level instrumentation lands in v1.3. The contract is fixed
+    now so consumers can write `if report["coverage"]["zahir"] is not
+    None:` immediately and have it return False today, True later,
+    without a second contract change.
+
+The legacy v0.1 keys are emitted in the same order with the same
+values. v0.1 output remains a prefix subset of v1.2.0 output.
+
+**Test impact:** `tests/test_fixtures.py::test_v0_v01_parity` is
+unchanged (compares v0 to v0.1, not modular).
+`tests/test_integration.py` parity tests are unchanged (compare
+per-field, not whole-dict). `tests/domain/test_integrity_report.py`
+and `tests/infrastructure/test_report_formatter.py` parity assertions
+migrate from "identical key set" to "v0.1 keys are a prefix subset,
+identical values."
+
+### Changed
+
+- `domain/integrity_report.py`: added `coverage` field to the
+  `IntegrityReport` dataclass with default `None`. Updated `to_dict`
+  to emit `scan_complete` (derived) and `coverage` (per-layer mapping)
+  after the v0.1 key set. Updated docstring to flag the parity break
+  and document the contract.
+
+### Test count
+
+1,782 (unchanged from v1.1.9; existing parity assertions migrated to
+the prefix-subset shape; no new tests added because the new keys are
+covered by the rewritten parity tests).
+
+### Out of scope (deferred)
+
+- Layer-level coverage instrumentation. Land the field shape in
+  v1.2.0; instrument layers in v1.3.
+- Renaming `scan_incomplete` to `scan_complete`. Both remain emitted;
+  the field on the dataclass stays `scan_incomplete` because the
+  semantics ("did something go wrong") map more directly onto a
+  boolean that defaults to False.
+- CLI or formatter changes downstream of `to_dict`. The JSON formatter
+  emits the new keys automatically because it serialises whatever
+  `to_dict` returns.
+
 ## [1.1.9]: 2026-04-30
 
 ### Added

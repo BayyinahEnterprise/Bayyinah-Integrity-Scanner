@@ -64,27 +64,68 @@ def _v01_report_with_findings() -> bayyinah_v0_1.IntegrityReport:
     )
 
 
-def test_to_dict_keys_match_v01() -> None:
-    assert list(_domain_report_with_findings().to_dict().keys()) == \
-           list(_v01_report_with_findings().to_dict().keys())
+def test_modular_to_dict_preserves_v01_keys() -> None:
+    """v0.1 keys must remain in to_dict in the same order, with the same
+    values. Modular may add additional keys after the v0.1 keys
+    (parity-break, see PARITY.md). It must not remove or reorder v0.1
+    keys.
+    """
+    d = _domain_report_with_findings().to_dict()
+    v = _v01_report_with_findings().to_dict()
+    v_keys = list(v.keys())
+    d_keys = list(d.keys())
+    # v0.1 key order must be preserved as a prefix.
+    assert d_keys[:len(v_keys)] == v_keys, (
+        f"v0.1 key order broken.\n  v0.1: {v_keys}\n  modular: {d_keys}"
+    )
+    # Values for shared keys must match. ``findings`` is tested
+    # field-by-field in test_finding.py; comparing the whole list here
+    # would re-test that surface and tightly couple this test to
+    # Finding's serialisation shape.
+    for k in v_keys:
+        if k == "findings":
+            continue
+        assert d[k] == v[k], f"value drift on key {k!r}: {d[k]!r} vs {v[k]!r}"
+    # The additive keys must be present and well-typed.
+    assert "scan_complete" in d
+    assert "coverage" in d
+    assert isinstance(d["scan_complete"], bool)
+    assert d["scan_complete"] is (not d["scan_incomplete"])
+    assert d["coverage"] is None or isinstance(d["coverage"], dict)
 
 
-def test_to_dict_is_byte_identical_to_v01() -> None:
-    """The headline Phase 1 invariant: IntegrityReport.to_dict output
-    matches bayyinah_v0_1.IntegrityReport.to_dict byte-for-byte."""
-    d_json = json.dumps(_domain_report_with_findings().to_dict(),
-                        sort_keys=True, default=str)
-    v_json = json.dumps(_v01_report_with_findings().to_dict(),
-                        sort_keys=True, default=str)
+def test_to_dict_is_v01_prefix_byte_identical() -> None:
+    """v0.1 prefix of the modular to_dict output is byte-identical to
+    bayyinah_v0_1.IntegrityReport.to_dict, when both are serialised
+    over the same key set. Replaces the pre-v1.2.0 byte-for-byte test
+    that compared the full dict (no longer applicable after the
+    parity-break documented in PARITY.md and CHANGELOG.md).
+    """
+    d = _domain_report_with_findings().to_dict()
+    v = _v01_report_with_findings().to_dict()
+    # Restrict the modular output to v0.1's key set so the comparison
+    # holds at the byte level on the shared prefix.
+    d_v01_only = {k: d[k] for k in v.keys()}
+    d_json = json.dumps(d_v01_only, sort_keys=True, default=str)
+    v_json = json.dumps(v, sort_keys=True, default=str)
     assert d_json == v_json
 
 
 def test_to_dict_roundtrip_empty_report() -> None:
-    d_json = json.dumps(IntegrityReport(file_path="/tmp/x.pdf").to_dict(),
-                        sort_keys=True)
-    v_json = json.dumps(bayyinah_v0_1.IntegrityReport(file_path="/tmp/x.pdf").to_dict(),
-                        sort_keys=True)
+    """Empty report: v0.1 prefix matches v0.1 byte-for-byte; modular
+    output additionally carries scan_complete=True and the per-layer
+    coverage default.
+    """
+    d = IntegrityReport(file_path="/tmp/x.pdf").to_dict()
+    v = bayyinah_v0_1.IntegrityReport(file_path="/tmp/x.pdf").to_dict()
+    d_v01_only = {k: d[k] for k in v.keys()}
+    d_json = json.dumps(d_v01_only, sort_keys=True)
+    v_json = json.dumps(v, sort_keys=True)
     assert d_json == v_json
+    # Additive keys present, well-typed, and at the documented defaults
+    # for an empty report.
+    assert d["scan_complete"] is True
+    assert d["coverage"] == {"zahir": None, "batin": None}
 
 
 def test_to_dict_emits_scan_incomplete_flag() -> None:

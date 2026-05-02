@@ -175,21 +175,35 @@ def test_json_formatter_parses_back_to_to_dict_shape() -> None:
 
 
 def test_json_formatter_matches_v0_1_json_shape_for_clean() -> None:
+    """v0.1 keys are a prefix subset of the modular formatter's output;
+    on the shared keys the values are byte-identical. The two
+    additional v1.2.0 keys (scan_complete, coverage) are present and
+    well-typed but not compared against v0.1 (which does not emit
+    them). See PARITY.md and CHANGELOG.md.
+    """
     report = _clean_report()
     ours = json.loads(JsonReportFormatter().format(report))
     theirs = json.loads(
         json.dumps(_build_v0_1_report(report).to_dict(), indent=2, default=str)
     )
-    assert ours == theirs
+    # Restrict to v0.1 keys for the byte-identical check.
+    ours_v01_only = {k: ours[k] for k in theirs.keys()}
+    assert ours_v01_only == theirs
+    assert "scan_complete" in ours and isinstance(ours["scan_complete"], bool)
+    assert "coverage" in ours
 
 
 def test_json_formatter_matches_v0_1_json_shape_for_findings() -> None:
+    """Same prefix-subset shape as the clean variant (see PARITY.md)."""
     report = _one_finding_report()
     ours = json.loads(JsonReportFormatter().format(report))
     theirs = json.loads(
         json.dumps(_build_v0_1_report(report).to_dict(), indent=2, default=str)
     )
-    assert ours == theirs
+    ours_v01_only = {k: ours[k] for k in theirs.keys()}
+    assert ours_v01_only == theirs
+    assert "scan_complete" in ours and isinstance(ours["scan_complete"], bool)
+    assert "coverage" in ours
 
 
 def test_json_formatter_indents_two_spaces() -> None:

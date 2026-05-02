@@ -70,17 +70,35 @@ class IntegrityReport:
     findings: list[Finding] = field(default_factory=list)
     error: str | None = None
     scan_incomplete: bool = False
+    # v1.2.0 parity-break: per-layer coverage fraction. None means the
+    # layer did not run or did not report coverage. Layer names are
+    # source_layer values (zahir / batin). Initial implementation emits
+    # {"zahir": None, "batin": None} via to_dict; instrumentation lands
+    # in v1.3. See PARITY.md for the procedure under which this break
+    # was made.
+    coverage: dict[str, float | None] | None = None
 
     # ------------------------------------------------------------------
     # Serialisation
     # ------------------------------------------------------------------
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialise to the Phase 0 report shape — byte-identical to v0.1.
+        """Serialise to the Phase 0 report shape extended for v1.2.0.
 
-        Emits exactly the keys v0.1 emits, in the insertion order v0.1
-        uses. Nothing from the domain-layer-only ``source_layer`` field
-        of individual findings leaks into this output.
+        v0.1 keys are emitted in the same order with the same values, so
+        the v0.1 output remains a prefix subset of this method's output.
+        v1.2.0 appends two additional keys after the v0.1 set:
+
+          * ``scan_complete`` (bool): logical complement of
+            ``scan_incomplete``, exposed under a positively-named key
+            for downstream readability.
+          * ``coverage`` (dict[str, float | None] | None): per-layer
+            coverage fraction. ``{"zahir": None, "batin": None}`` until
+            layer instrumentation lands in v1.3.
+
+        This is a deliberate parity break documented in PARITY.md and
+        CHANGELOG.md. Nothing from the domain-layer-only ``source_layer``
+        field of individual findings leaks into this output.
         """
         return {
             "tool": TOOL_NAME,
@@ -92,6 +110,15 @@ class IntegrityReport:
             "tier_legend": TIER_LEGEND,
             "findings": [f.to_dict() for f in self.findings],
             "error": self.error,
+            # v1.2.0 additions (parity break, see PARITY.md and CHANGELOG.md).
+            # scan_complete is a derived view of scan_incomplete so the two
+            # cannot drift; coverage defaults to a per-layer mapping with
+            # None values until layer instrumentation lands in v1.3.
+            "scan_complete": not self.scan_incomplete,
+            "coverage": (
+                self.coverage if self.coverage is not None
+                else {"zahir": None, "batin": None}
+            ),
         }
 
     # ------------------------------------------------------------------

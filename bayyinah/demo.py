@@ -19,10 +19,11 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
 from bayyinah.api_helpers import scan_file_bytes
+from bayyinah import counter as _counter
 
 router = APIRouter()
 
@@ -74,7 +75,10 @@ def _block_decision(payload: dict[str, Any]) -> tuple[bool, str]:
 
 
 @router.post("/demo/summarize")
-async def demo_summarize(file: UploadFile = File(...)) -> JSONResponse:
+async def demo_summarize(
+    request: Request,
+    file: UploadFile = File(...),
+) -> JSONResponse:
     """Scan an uploaded PDF; if clean, summarize via Claude; else block.
 
     Always returns 200 with a JSON envelope describing what happened.
@@ -91,6 +95,7 @@ async def demo_summarize(file: UploadFile = File(...)) -> JSONResponse:
         raise HTTPException(status_code=400, detail="Empty upload.")
 
     filename = file.filename or "upload.pdf"
+    client_ip = _counter.client_ip(request)
 
     # Step 1: scan.
     scan_start = time.perf_counter()
@@ -109,6 +114,11 @@ async def demo_summarize(file: UploadFile = File(...)) -> JSONResponse:
             "llm_input_tokens": 0,
         })
     scan_ms = int((time.perf_counter() - scan_start) * 1000)
+
+    # The scan completed (no exception). Both blocked and clean outcomes
+    # count as a successful scan from the user's perspective. HTTP-error
+    # paths above (413, 400) and the scan_failed branch already returned.
+    _counter.record_scan(client_ip)
 
     blocked, reason = _block_decision(payload)
     response: dict[str, Any] = {
@@ -183,6 +193,17 @@ async def demo_summarize(file: UploadFile = File(...)) -> JSONResponse:
     return JSONResponse(content=response)
 
 
+@router.get("/demo/stats")
+def demo_stats() -> JSONResponse:
+    """Return public scan + unique-visitor counts as JSON.
+
+    The frontend fetches this on page load and again after every
+    successful scan. All counts are computed live from SQLite (no
+    cache); at single-digit-thousands-per-day this is fine.
+    """
+    return JSONResponse(content=_counter.get_stats())
+
+
 @router.get("/demo")
 def demo_page() -> FileResponse:
     """Serve the static demo page from docs/landing-mock-v2/demo.html."""
@@ -219,4 +240,4 @@ def demo_fixture(name: str) -> FileResponse:
     return FileResponse(path=str(p), media_type="application/pdf")
 
 
-__all__ = ["router", "_block_decision"]
+__all__ = ["router", "_block_decision", "demo_stats"]

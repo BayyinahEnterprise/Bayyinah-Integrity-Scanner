@@ -16,7 +16,9 @@ Bayyinah extracts every content layer from a file, visible and invisible, and re
 
 Modern documents are a surface and a substrate. The surface is what a user sees when they open the file. The substrate is what a parser, a mail gateway, or a language model actually ingests. Adversarial documents exploit the gap between the two. Zero-width characters that rewrite the meaning of a contract while leaving its rendering untouched, a PDF whose object graph carries a JavaScript action the viewer never shows, a spreadsheet whose hidden sheet holds the figures the visible sheet disguises, an email whose `From` header says one thing and whose `Return-Path` says another.
 
-Bayyinah scans that substrate. It applies the same question to 23 file kinds across PDF, Office documents, email, HTML, CSV, JSON, text and code, raster images, SVG, **video (MP4/MOV/WEBM/MKV)**, and **audio (MP3/WAV/FLAC/M4A/OGG)**. Does the outward display correspond to the inner content, or has the inner content been performed into a display that hides it? A separate cross-modal correlation engine (opt-in) reads the stems already separated by the video and audio analyzers and emits findings for cross-stem divergence.
+Bayyinah scans that substrate. It applies the same question to 23 file kinds across PDF, Office documents, email, HTML, CSV, JSON, text and code, raster images, SVG, **video (MP4/MOV/WEBM/MKV)**, and **audio (MP3/WAV/FLAC/M4A/OGG)**. Does the outward display correspond to the inner content, or has the inner content been performed into a display that hides it? A separate cross-modal correlation engine reads the stems already separated by the video and audio analyzers and emits findings for cross-stem divergence.
+
+> **Default coverage disclosure.** Cross-modal correlation is **opt-in** and is **not** wired into the default `ScanService().scan(path)` pipeline while the rule set stabilises. A scan that completes against a video or audio file via the default pipeline does not exercise cross-modal divergence detection; it exercises the per-stem analyzers only. The v1.2 report shape adds a `coverage` field that lists the mechanism groups that actually ran, so a downstream CI step can fail-closed when a required mechanism was not exercised. To opt into cross-modal correlation in v1.1.x, instantiate `CrossModalCorrelator` directly; v1.3 is the candidate release for making cross-modal default-on. See `QUESTIONS.md` Q5 for the open policy question.
 
 ## What Bayyinah detects
 
@@ -239,8 +241,16 @@ hosting provider.
 The public `/demo` page on bayyinah.dev shows a live counter of total
 scans run and unique visitors. Counts are persisted in a small SQLite
 DB; uniqueness is tracked via a daily-salt-rotated SHA-256 hash of the
-client IP, so the same IP on the same UTC day produces one record but
-cross-day correlation is impossible without the per-instance secret.
+client IP. The same IP on the same UTC day produces one record. Cross-day
+correlation requires the per-instance secret (`BAYYINAH_COUNTER_SECRET`).
+
+> **The hash is obfuscation, not anonymization.** IPv4 has only ~4.3 billion
+> possible inputs; SHA-256 over a known salt is brute-forceable by
+> enumeration in seconds on commodity hardware. If `BAYYINAH_COUNTER_SECRET`
+> is logged, leaked, or rotated in a way that retains the prior value, the
+> entire same-day population is reversible. v1.2 commits to a HyperLogLog
+> migration so unique-count tracking does not retain per-IP-derived state
+> at all. See `QUESTIONS.md` Q7 for the open question.
 
 Two environment variables control the counter:
 
@@ -341,7 +351,7 @@ infrastructure/          PDFClient, FileRouter, formatters
 domain/                  pure Finding / IntegrityReport / scoring
 ```
 
-The reference implementation is preserved unchanged at `bayyinah_v0.py` and its fat-split intermediate at `bayyinah_v0_1.py`; both ship in the wheel. The parity invariant, `bayyinah.scan_pdf == bayyinah_v0.scan_pdf` on every Phase 0 fixture, is asserted by the integration test suite and held across the full modular refactor.
+The reference implementation is preserved unchanged at `bayyinah_v0.py` and its fat-split intermediate at `bayyinah_v0_1.py`; both ship in the wheel. The parity invariant, `bayyinah.scan_pdf == bayyinah_v0.scan_pdf` on every Phase 0 fixture, is asserted by the integration test suite and held across the full modular refactor. The invariant is **conditional on the correctness of the reference implementation**: when a v0 finding, score, or output shape is demonstrated to be incorrect, the parity baseline is updated under the procedure documented in `PARITY.md`. A parity break is a deliberate, CHANGELOG-documented, version-bumped decision, not a side effect of refactoring.
 
 ## Qur'anic Prompt-Engineering Principles for Development
 

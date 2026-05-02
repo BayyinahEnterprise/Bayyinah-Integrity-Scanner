@@ -31,10 +31,18 @@ def _build_app_with_flag_on(monkeypatch, mock_anthropic_handler=None):
     mock instead of the real Anthropic API.
     """
     monkeypatch.setenv("BAYYINAH_DEMO_ENABLED", "1")
+    import bayyinah.summary_queue as summary_queue
+    importlib.reload(summary_queue)
+    import bayyinah.summary_worker as summary_worker
+    importlib.reload(summary_worker)
     import bayyinah.demo as demo_module
     importlib.reload(demo_module)
     import api as api_module
     importlib.reload(api_module)
+    # Lifespan runs only when TestClient is used as a context manager;
+    # the v1.1.9 helper uses bare TestClient(app), so initialise the
+    # v1.2.2 summary queue schema explicitly here.
+    summary_queue.init_db()
 
     if mock_anthropic_handler is not None:
         # Patch httpx.AsyncClient inside the demo module so requests
@@ -131,6 +139,16 @@ def test_demo_summarize_blocks_adversarial_fixture(monkeypatch):
 # 5. /demo/summarize passes a clean fixture and includes a summary.
 # ---------------------------------------------------------------------------
 def test_demo_summarize_passes_clean_with_summary(monkeypatch):
+    """Clean PDFs enqueue (v1.2.2 contract; was synchronous in v1.1.9).
+
+    The v1.1.9 shape returned ``summary`` in the synchronous response.
+    v1.2.2 enqueues the work and returns ``summary_status: "queued"``
+    with a ``summary_job_id``; the actual summary lands later via
+    GET /demo/summary/{job_id} (covered by
+    tests/test_demo_queue_endpoints.py and the worker tests). This
+    test now asserts the new synchronous contract per the framework's
+    "convert to the new shape" rule, not the retired one.
+    """
     app = _build_app_with_flag_on(monkeypatch, _mock_anthropic_ok)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
     client = TestClient(app)
@@ -142,8 +160,9 @@ def test_demo_summarize_passes_clean_with_summary(monkeypatch):
     assert r.status_code == 200
     payload = r.json()
     assert payload["blocked"] is False
-    assert payload["summary"] == "Mocked summary."
-    assert payload["llm_input_tokens"] == 287
+    assert payload["summary"] is None  # v1.2.2: summary delivered async
+    assert payload["summary_status"] == "queued"
+    assert payload["summary_job_id"] is not None
     assert payload["scan"]["verdict"] == "sahih"
 
 

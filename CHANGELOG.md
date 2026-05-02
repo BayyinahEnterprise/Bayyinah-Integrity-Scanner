@@ -12,6 +12,74 @@ held across every phase.
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-05-02 - Claude summarization queue (cable-pull resilience)
+
+### Added
+
+- Claude summarization queue. Demo summarization is now a background
+  job backed by SQLite, surviving both network loss and process
+  restart. New endpoints `/demo/summary/{job_id}` and
+  `/demo/queue/state` expose job and aggregate state. The static demo
+  page renders a live drain log so the cable-pull resilience is
+  visible.
+- Exponential backoff (1, 2, 4, 8, 16, 32, 60 seconds, capped) with
+  on-demand drain triggered by new requests. Permanent failure after
+  24 hours of continuous error. Hard 4xx responses (other than 408,
+  425, 429) go straight to permanent failure with no retry.
+- Worker startup recovery sweep: any `in_flight` rows from a prior
+  process are reverted to `queued` on startup so a power-pull mid-call
+  does not strand a job.
+- `bayyinah/summary_queue.py` and `bayyinah/summary_worker.py`
+  modules. The queue uses sqlite3 stdlib only, WAL mode, and the same
+  `_resolve_db_path` shape as `bayyinah/counter.py`. The worker
+  exposes `_sleep` as a module-level alias for `asyncio.sleep` so
+  tests can monkeypatch the timer without affecting unrelated awaits.
+
+### Changed
+
+- `/demo/summarize` no longer blocks on the Anthropic API. The
+  synchronous response now carries `summary_status` and
+  `summary_job_id` for clean documents; `summary` is delivered
+  asynchronously through the new endpoints. `summary_status` values:
+  `queued`, `skipped_blocked`, `skipped_no_key`,
+  `skipped_extraction_failed`.
+- `api.py` migrates from `@app.on_event` (deprecated since FastAPI
+  0.93) to FastAPI's `lifespan` async context manager. Worker startup
+  and shutdown happen inside the lifespan, gated on
+  `BAYYINAH_DEMO_ENABLED=1` so production paths are unchanged.
+
+### Privacy
+
+- Extracted PDF text is held in the queue only until delivery or
+  permanent failure, then cleared and the row is deleted within 60
+  seconds. Text is never returned by any endpoint and never logged.
+  The privacy contract is enforced by tests in
+  `tests/test_summary_queue.py` and `tests/test_summary_worker.py`.
+
+### Remaining limitations
+
+- `/demo/queue/state` `recent_transitions` ring is process-local.
+  Multi-worker uvicorn deployments would see per-worker rings that
+  disagree about recent history. Pending and in-flight counts
+  (SQLite-backed) remain consistent across workers; only the
+  transition log is per-process. Production runs single-worker today.
+  Pinned by
+  `tests/test_documented_limits.py::test_recent_transitions_is_in_memory_only`
+  and documented in
+  `tests/fixtures/documented_limits/recent_transitions_single_worker.md`.
+
+### Out of scope (v1.2.3 candidates)
+
+- Multi-worker concurrency for the `recent_transitions` ring.
+- Per-tenant queues or rate limiting.
+- Job batching for the Anthropic call.
+- Authentication on `/demo/queue/state`.
+
+### Test count
+
+1,790 + 42 = 1,832 (18 queue, 14 worker, 9 endpoint, 1 documented-limit
+pinning).
+
 ## [1.2.1] - 2026-05-02
 
 ### Security

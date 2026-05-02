@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bayyinah"
-version = "1.2.1"
+version = "1.2.2"
 description = "File integrity scanner that detects hidden, concealed, or adversarial content in digital documents. Applies the Munafiq Protocol's performed-alignment detection to data."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -101,6 +101,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7",
+    "pytest-asyncio>=0.23",
     "pytest-cov>=4",
     "ruff>=0.6",
     "mypy>=1.8",
@@ -192,6 +193,7 @@ indent-style = "space"
 minversion = "7.0"
 addopts = "-ra --strict-markers"
 testpaths = ["tests"]
+asyncio_mode = "strict"
 
 [tool.mypy]
 python_version = "3.10"

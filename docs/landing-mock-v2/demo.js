@@ -294,6 +294,137 @@
     })(exhibitButtons[i]);
   }
 
+  // ---------------------------------------------------------------
+  // v1.2.2: live drain log panel.
+  //
+  // Polls /demo/queue/state every 2 seconds while the panel is
+  // visible. On submit, also polls /demo/summary/{job_id} until the
+  // job reaches a terminal state. The panel is unobtrusive when the
+  // queue is empty.
+  // ---------------------------------------------------------------
+
+  var drainLogContainer = null;
+  var drainLogTimer = null;
+
+  function ensureDrainLog() {
+    if (drainLogContainer) return drainLogContainer;
+    var anchor = document.getElementById("output");
+    if (!anchor) return null;
+    drainLogContainer = document.createElement("div");
+    drainLogContainer.id = "drain-log";
+    drainLogContainer.style.cssText = (
+      "margin-top: 1rem; padding: 0.5rem 0.7rem; " +
+      "border: 1px solid #2a2a2a; border-radius: 4px; " +
+      "background: #0a0a0a; font-family: ui-monospace, " +
+      "Menlo, Consolas, monospace; font-size: 0.75rem; " +
+      "color: #888;"
+    );
+    drainLogContainer.innerHTML = (
+      "<div style='color: #d8b864; margin-bottom: 0.3rem;'>" +
+      "queue drain log</div>" +
+      "<div id='drain-log-counts'>pending: 0 in_flight: 0</div>" +
+      "<div id='drain-log-transitions'></div>"
+    );
+    anchor.parentNode.insertBefore(
+      drainLogContainer, anchor.nextSibling
+    );
+    return drainLogContainer;
+  }
+
+  async function refreshDrainLog() {
+    try {
+      var resp = await fetch("/demo/queue/state");
+      if (!resp.ok) return;
+      var state = await resp.json();
+      ensureDrainLog();
+      var counts = document.getElementById("drain-log-counts");
+      var transitions = document.getElementById("drain-log-transitions");
+      if (counts) {
+        counts.textContent = (
+          "pending: " + state.pending +
+          " in_flight: " + state.in_flight +
+          " delivered_1h: " + state.delivered_last_hour +
+          " failed_1h: " + state.failed_permanent_last_hour
+        );
+      }
+      if (transitions && state.recent_transitions) {
+        var rows = state.recent_transitions.slice(0, 8).map(function (t) {
+          var shortId = (t.job_id || "").slice(0, 8);
+          return shortId + ": " + t.from + " to " + t.to;
+        });
+        transitions.innerHTML = rows.map(function (r) {
+          return "<div>" + escapeHtml(r) + "</div>";
+        }).join("");
+      }
+    } catch (e) {
+      // Silent: the drain log is best-effort UI.
+    }
+  }
+
+  function startDrainLog() {
+    if (drainLogTimer) return;
+    refreshDrainLog();
+    drainLogTimer = setInterval(refreshDrainLog, 2000);
+  }
+
+  async function pollSummaryUntilTerminal(jobId) {
+    if (!jobId) return;
+    var maxPolls = 60;  // ~2 minutes at 2s interval
+    for (var i = 0; i < maxPolls; i++) {
+      await new Promise(function (r) { setTimeout(r, 2000); });
+      try {
+        var resp = await fetch(
+          "/demo/summary/" + encodeURIComponent(jobId)
+        );
+        if (!resp.ok) continue;
+        var state = await resp.json();
+        if (state.status === "delivered" ||
+            state.status === "failed_permanent") {
+          var anchor = document.getElementById("output");
+          if (anchor && state.summary) {
+            var card = document.createElement("div");
+            card.className = "panel pass";
+            card.style.marginTop = "0.5rem";
+            card.innerHTML = (
+              "<span class='verdict-badge verdict-pass'>" +
+              "summary delivered</span>" +
+              "<p class='summary-text'>" +
+              escapeHtml(state.summary) + "</p>"
+            );
+            anchor.appendChild(card);
+          } else if (anchor && state.status === "failed_permanent") {
+            var card2 = document.createElement("div");
+            card2.className = "panel block";
+            card2.style.marginTop = "0.5rem";
+            card2.innerHTML = (
+              "<span class='verdict-badge verdict-block'>" +
+              "summary failed</span>" +
+              "<p>" + escapeHtml(state.error || "unknown error") +
+              "</p>"
+            );
+            anchor.appendChild(card2);
+          }
+          return;
+        }
+      } catch (e) {
+        // Continue polling.
+      }
+    }
+  }
+
+  // Hook into the existing render() flow: when the response carries
+  // a summary_job_id, kick off polling. The render() function above
+  // handles the synchronous response; this extension picks up the
+  // async summary delivery.
+  var originalRender = render;
+  render = function (envelope) {
+    originalRender(envelope);
+    startDrainLog();
+    if (envelope && envelope.summary_job_id) {
+      pollSummaryUntilTerminal(envelope.summary_job_id);
+    }
+  };
+
   // Initial counter fetch on page load.
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", refreshStats);

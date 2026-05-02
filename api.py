@@ -43,6 +43,11 @@ _ROOT = Path(__file__).resolve().parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+from contextlib import asynccontextmanager
+
+import asyncio
+import logging
+
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
@@ -53,6 +58,54 @@ from domain.value_objects import tamyiz_verdict
 
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MiB hard cap for the demo endpoint
 
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# v1.2.2 lifespan: summarization-queue worker
+# ---------------------------------------------------------------------------
+#
+# Replaces the deprecated @app.on_event("startup") shape with FastAPI's
+# modern lifespan async context manager. The worker is started only
+# when BAYYINAH_DEMO_ENABLED=1, parallel to how the demo router is
+# conditionally included below. Production /scan path is unchanged
+# whether the demo is on or off.
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start the summarization-queue worker on app startup; cancel on
+    shutdown.
+
+    Worker only runs when BAYYINAH_DEMO_ENABLED=1. The wakeup event
+    is exposed on app.state so /demo/summarize can wake the worker
+    opportunistically when a new job lands.
+    """
+    worker_task = None
+    if os.environ.get("BAYYINAH_DEMO_ENABLED") == "1":
+        from bayyinah import summary_queue, summary_worker
+        # Initialise the queue schema once at startup.
+        summary_queue.init_db()
+        # Wakeup event lives on app.state so handlers can reach it.
+        app.state.summary_wakeup = asyncio.Event()
+        worker_task = asyncio.create_task(
+            summary_worker.worker_loop(app.state.summary_wakeup),
+            name="bayyinah-summary-worker",
+        )
+        logger.info(
+            "summary_worker: started (BAYYINAH_DEMO_ENABLED=1)"
+        )
+    try:
+        yield
+    finally:
+        if worker_task is not None:
+            worker_task.cancel()
+            try:
+                await worker_task
+            except asyncio.CancelledError:
+                pass
+            logger.info("summary_worker: stopped")
+
+
 app = FastAPI(
     title="Bayyinah Integrity Scanner",
     description=(
@@ -61,11 +114,12 @@ app = FastAPI(
         "of the Munafiq Protocol."
     ),
     version=getattr(bayyinah, "__version__", "1.1.4"),
+    lifespan=lifespan,
 )
 
 
 # ---------------------------------------------------------------------------
-# Demo route (v1.1.9, env-flag gated)
+# Demo route (v1.1.9, env-flag gated; v1.2.2 lifespan-driven worker added)
 # ---------------------------------------------------------------------------
 #
 # The /demo and /demo/summarize routes are mounted only when

@@ -411,3 +411,15 @@ Apache 2.0. See [LICENSE](LICENSE) for full text and [CHANGELOG.md](CHANGELOG.md
 ---
 
 *Bayyinah* (بَيِّنَة), "clear evidence."
+
+## Remaining limitations
+
+- **`/demo/queue/state` recent_transitions is process-local.** The
+  ring buffer of recent queue transitions lives in memory inside a
+  single worker. Multi-worker uvicorn deployments would see
+  per-worker rings that disagree about recent history. Pending and
+  in-flight counts (SQLite-backed) remain consistent across workers;
+  only the transition log is per-process. Production runs
+  single-worker today. Pinned by
+  `tests/test_documented_limits.py::test_recent_transitions_is_in_memory_only`.
+

@@ -12,6 +12,49 @@
   var dropzone = document.getElementById("dropzone");
   var fileInput = document.getElementById("fileInput");
   var output = document.getElementById("output");
+  var counterScans = document.getElementById("counter-scans");
+  var counterVisitors = document.getElementById("counter-visitors");
+
+  // -----------------------------------------------------------------------
+  // Scan counter strip: fetch /demo/stats on load and after each scan.
+  // -----------------------------------------------------------------------
+  function formatCount(n) {
+    if (typeof n !== "number" || !isFinite(n)) return "-";
+    return n.toLocaleString("en-US");
+  }
+
+  async function refreshStats() {
+    if (!counterScans || !counterVisitors) return;
+    try {
+      var resp = await fetch("/demo/stats", { cache: "no-store" });
+      if (!resp.ok) return;
+      var s = await resp.json();
+      counterScans.textContent = formatCount(s.scans);
+      counterVisitors.textContent = formatCount(s.unique_visitors_total);
+    } catch (e) {
+      // Counter is informational only; failures are silent.
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Post-scan waitlist CTA: appended below the result, calm, not a popup.
+  // -----------------------------------------------------------------------
+  function appendWaitlistCta() {
+    if (!output) return;
+    // Don't stack duplicates if a result re-renders.
+    var existing = output.querySelector(".waitlist-cta-card");
+    if (existing) existing.parentNode.removeChild(existing);
+
+    var card = document.createElement("div");
+    card.className = "waitlist-cta-card";
+    card.innerHTML =
+      "<p class='waitlist-cta-text'>" +
+      "<strong>Want API access?</strong> Join the waitlist for release " +
+      "reports, integration notes, and early access." +
+      "</p>" +
+      "<a class='waitlist-cta-button' href='/#waitlist'>Join the waitlist</a>";
+    output.appendChild(card);
+  }
 
   function escapeHtml(s) {
     if (s == null) return "";
@@ -194,6 +237,8 @@
       }
       var envelope = await resp.json();
       render(envelope);
+      appendWaitlistCta();
+      refreshStats();
     } catch (e) {
       showServerError(String(e));
     }
@@ -247,5 +292,12 @@
         if (name) runExhibit(name);
       });
     })(exhibitButtons[i]);
+  }
+
+  // Initial counter fetch on page load.
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", refreshStats);
+  } else {
+    refreshStats();
   }
 })();

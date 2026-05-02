@@ -234,6 +234,26 @@ enforces deeper scan limits via `domain.scan_limits.ScanLimits`. There
 is no auth on the demo endpoint; rate limiting is delegated to the
 hosting provider.
 
+### Demo counter (env vars)
+
+The public `/demo` page on bayyinah.dev shows a live counter of total
+scans run and unique visitors. Counts are persisted in a small SQLite
+DB; uniqueness is tracked via a daily-salt-rotated SHA-256 hash of the
+client IP, so the same IP on the same UTC day produces one record but
+cross-day correlation is impossible without the per-instance secret.
+
+Two environment variables control the counter:
+
+| Variable                  | Default            | Purpose                                                                       |
+|---------------------------|--------------------|-------------------------------------------------------------------------------|
+| `BAYYINAH_COUNTER_DB`     | `/data/counter.db` | SQLite path. Falls back to `/tmp/counter.db` if `/data` is not writable.      |
+| `BAYYINAH_COUNTER_SECRET` | (per-process random) | HMAC-SHA256 secret seeding the daily IP-hash salt. Set this in production. |
+
+The production deployment expects `/data` to be backed by a Railway
+volume; see `RAILWAY_VOLUME.md` for the one-time setup steps. In local
+dev, neither variable needs to be set: the counter falls back to
+`/tmp/counter.db` with a per-process secret and logs a warning.
+
 ## Configuration: `ScanLimits`
 
 Every capacity ceiling the scanner applies is declared once, on a frozen

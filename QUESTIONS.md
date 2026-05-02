@@ -36,10 +36,6 @@ A score of `0.5` in a CI dashboard is ambiguous: half-dirty file, or unscanned? 
 
 Cross-modal correlation (subtitle/audio/metadata divergence) is listed as a supported mechanism but is opt-in and not wired into `ScanService().scan(path)` by default. The README and the report header now disclose this in v1.2; the question is whether default-off is the right policy long-term or whether v1.3 should make cross-modal default-on once the rule set stabilizes. Default-off preserves backward compatibility; default-on matches what the README's mechanism table implies.
 
-### Q6. The parser is the attack surface
-
-`pymupdf` and `pypdf` have shipped CVEs. A malicious PDF crafted to exploit the parser is the threat model of a hosted scan endpoint at bayyinah.dev. The current cloud deployment has a 25 MiB upload cap and a 256 MB library ceiling but no wall-clock timeout, no CPU-time limit, no process isolation, no seccomp/landlock posture, no description of what happens when `pymupdf` segfaults mid-parse. Q6 is whether v1.2's threat model is the right one and what isolation primitives the v1.3 cloud deployment commits to.
-
 ### Q7. The demo counter is obfuscated, not anonymized
 
 SHA-256 of IPv4 over a daily-rotating salt is brute-forceable by enumeration in seconds on commodity hardware once the salt is known. The README's claim that "cross-day correlation is impossible without the per-instance secret" is true only as long as the secret is never logged, leaked, or rotated in a way that retains the prior value. v1.2 corrects the language to "obfuscated, not anonymized." The structural fix is HyperLogLog or a Bloom filter — counts without identifiers — and is committed for v1.2. Q7 stays open until that lands.
@@ -60,4 +56,15 @@ This is not a question about removing the framework. It is a question about whet
 
 ## Resolved
 
-(Empty. Resolved questions are appended here with the version that closed them.)
+### Q6. The parser is the attack surface (Resolved in v1.2.1)
+
+v1.2.1 wraps every scan in a subprocess with a 30-second wall-clock
+timeout. Timed-out scans return ``scan_incomplete=True`` with verdict
+``mughlaq``. Subprocess isolation means a pymupdf segfault no longer
+crashes the API worker. The original v1.2 framing of Q6 (whether
+v1.2's threat model is the right one and what isolation primitives
+the v1.3 cloud deployment commits to) is preserved in the v1.2.1
+CHANGELOG entry; v1.2.1 closure addresses the timeout and process-
+isolation halves of that question. The deeper fix (seccomp-bpf,
+dedicated scanning microservice, OS-level CPU rlimit per request)
+remains on the v1.3 roadmap.

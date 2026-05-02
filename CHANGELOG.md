@@ -12,6 +12,47 @@ held across every phase.
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-05-02
+
+### Security
+
+- Wall-clock timeout (30 seconds) on all scan endpoints. Pathological
+  inputs that trigger slow parsing in pymupdf or pypdf are now
+  terminated and return ``scan_incomplete=True`` with verdict
+  ``mughlaq``. The scanner runs in subprocess isolation; a pymupdf
+  segfault no longer crashes the API process. Closes QUESTIONS.md
+  Q6 from the round-2 audit.
+
+### Added
+
+- Public-surface additive-only enforcement test
+  (``tests/test_public_surface_additive.py``). Records
+  ``bayyinah.__all__`` at v1.2.0 (58 names) and asserts every prior
+  snapshot is a subset of the current surface. Closes the East-West
+  asymmetry identified in the round-3 audit: Furqan-the-language
+  enforces additive-only via ``src/furqan/checker/additive.py``;
+  Bayyinah-the-Python-package now enforces it at the
+  ``bayyinah.__all__`` boundary.
+- ``SCAN_TIMEOUT_SECONDS`` exported from ``bayyinah.api_helpers`` for
+  per-route override.
+
+### Notes
+
+- The 30-second timeout is generous: the slowest measured scan (a
+  220-page dense PDF) takes ~14 seconds. Headroom factor: ~2x.
+- Subprocess uses an explicit ``multiprocessing.get_context("fork")``
+  so test runs on macOS see the same semantics as production on
+  Railway (Linux). Windows is unsupported as it does not have fork.
+- The deeper isolation fix (seccomp-bpf, dedicated scanning
+  microservice, OS-level CPU-time rlimit) remains on the v1.3
+  roadmap. v1.2.1 closes the most concrete instance of the threat
+  model; v1.3 hardens the rest.
+
+### Test count
+
+1,790 (was 1,782). +6 from ``tests/test_scan_timeout.py`` and +2 from
+``tests/test_public_surface_additive.py``.
+
 ## [1.2.0]: 2026-05-02 - Parity-break: scan_complete and coverage
 
 ### Parity-break

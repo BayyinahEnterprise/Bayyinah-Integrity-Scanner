@@ -12,6 +12,29 @@ held across every phase.
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-05-03 - corrective release (Fraz round 10)
+
+### Fixed
+
+- requirements-dev.txt now matches `pyproject.toml` `[project.optional-dependencies].dev` exactly. Four entries were missing on v1.2.2 (`pytest-asyncio`, `fastapi`, `httpx`, `python-multipart`); a contributor running `pip install -r requirements-dev.txt` got a clean install but a noisy and partially skipping test run. A new sync test, `tests/test_requirements_dev_sync.py`, fails the suite if either file drifts again.
+- `SummaryQueue.claim_next_job` now returns a dict whose `status` and `last_attempted_at` reflect the row that was just persisted, instead of a stale `sqlite3.Row` snapshot taken before the UPDATE. Reported by Fraz round 10 MEDIUM 2. The persisted row was always correct; only the value handed back to the caller was lying. The transition itself (queued -> in_flight) is unchanged. New regression: `tests/test_summary_queue.py::test_claim_next_job_returned_dict_reflects_in_flight_state`.
+- `tests/test_public_surface_additive.py` now declares one frozenset per shipped minor and per shipped patch (Framework v2.0 section 7.6). Until v1.2.3 the file pinned only `V1_2_0_SURFACE`, so v1.2.1 and v1.2.2 had no named boundary. The new constants `V1_2_1_SURFACE`, `V1_2_2_SURFACE`, `V1_2_3_SURFACE` are aliases of `V1_2_0_SURFACE` because none of those releases changed `__all__`. Three new subset tests run alongside the existing one.
+
+### Internal
+
+- Test count: 1832 -> 1837 (one sync test, one queue regression, three new surface subset tests).
+- Warning count: 33 -> 18 after a clean `pip install -r requirements-dev.txt` (and unchanged at 18 after `pip install -e .[dev]`). The drop comes from restoring `pytest-asyncio>=0.23`, which silenced pytest's async-marker collection warnings and unblocked 14 async tests that previously failed under the requirements-dev.txt install path. The remaining 18 are `multiprocessing/popen_fork.py` `DeprecationWarning`s emitted by Python 3.12 + starlette's `TestClient` thread-then-fork pattern; they are third-party origin and pre-date this release. They are not suppressed via `filterwarnings` because doing so would mask a future starlette regression.
+- No public surface change (`bayyinah.__all__` is unchanged from v1.2.2).
+- No parity break.
+
+### Five questions (release level)
+
+1. Smallest input demonstrating the corrective release: a clean clone of v1.2.3, `pip install -e .[dev]`, then `python3 -m pytest -q` shows 1837 passed and 18 warnings (all `multiprocessing/popen_fork.py` from starlette's `TestClient` on Python 3.12; pre-existing third-party noise). On the alternative `pip install -r requirements-dev.txt` install path the warning count is also 18 (vs 33 + 14 failed tests on v1.2.2).
+2. Smallest input that would have shown each gap on v1.2.2: a sorted diff between top-level entries in requirements-dev.txt and the [project.optional-dependencies].dev list in pyproject.toml for MEDIUM 1; an enqueue + claim_next_job round trip with the returned dict compared against the row in sqlite3 for MEDIUM 2; a grep for `V1_2_1_SURFACE` in tests/test_public_surface_additive.py for MEDIUM 3.
+3. What this release does not do: it does not change runtime behavior of `scan_pdf`, the demo, or the queue worker. It does not retroactively introduce a parity break (the new surface snapshots are deliberately equal to V1_2_0_SURFACE).
+4. New code paths: a sync test that parses both manifests and a regression test that reads back from sqlite3 to verify the returned dict matches DB truth. Three new alias frozensets and three new subset tests.
+5. Limitations retired: closes Fraz round 10 MEDIUM 1, MEDIUM 2, MEDIUM 3. The LOW warning-count item is documented as a residual rather than fixed; the residual is third-party origin (starlette + Python 3.12 multiprocessing) and out of scope for a Bayyinah patch. None new.
+
 ## [1.2.2] - 2026-05-02 - Claude summarization queue (cable-pull resilience)
 
 ### Added

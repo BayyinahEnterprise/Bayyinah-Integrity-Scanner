@@ -284,3 +284,44 @@ def test_soonest_next_retry_at(db_path, monkeypatch):
 def test_soonest_returns_none_when_empty(db_path):
     """No queued jobs -> None."""
     assert sq.soonest_next_retry_at(db_path=db_path) is None
+
+
+def test_claim_next_job_returned_dict_reflects_in_flight_state(db_path):
+    """The dict returned by claim_next_job must show post-UPDATE state.
+
+    Before the v1.2.3 fix, claim_next_job returned a dict captured
+    from the pre-UPDATE SELECT, so callers saw status='queued' and
+    last_attempted_at=None even though the DB row had been
+    transitioned to in_flight. Closes Fraz round 10 MEDIUM 2.
+
+    The load-bearing assertion is the final one: it reads the row
+    directly from SQLite and checks the returned dict equals the DB
+    truth, rather than asserting hard-coded constants. That keeps the
+    regression test honest if status/last_attempted_at semantics
+    change in a future release.
+    """
+    import sqlite3 as _sqlite3
+
+    sq.enqueue("text", db_path=db_path)
+    claimed = sq.claim_next_job(db_path=db_path)
+    assert claimed is not None
+
+    # Caller-visible state matches the post-UPDATE contract.
+    assert claimed["status"] == sq.STATUS_IN_FLIGHT
+    assert claimed["last_attempted_at"] is not None
+    assert isinstance(claimed["last_attempted_at"], str)
+    assert claimed["last_attempted_at"] != ""
+
+    # DB truth equals caller-visible truth.
+    conn = _sqlite3.connect(db_path)
+    conn.row_factory = _sqlite3.Row
+    try:
+        db_row = dict(conn.execute(
+            "SELECT status, last_attempted_at FROM summary_jobs "
+            "WHERE job_id = ?",
+            (claimed["job_id"],),
+        ).fetchone())
+    finally:
+        conn.close()
+    assert claimed["status"] == db_row["status"]
+    assert claimed["last_attempted_at"] == db_row["last_attempted_at"]

@@ -233,8 +233,17 @@ def claim_next_job(db_path: Optional[str] = None) -> Optional[dict]:
             "WHERE job_id = ?",
             (STATUS_IN_FLIGHT, now, job_id),
         )
+        # Convert the sqlite3.Row to a mutable dict and reflect the
+        # UPDATE we just performed, so the returned value matches the
+        # row in the database. Without this refresh, callers see a
+        # stale status='queued' and last_attempted_at=None even though
+        # the row in the database is already in_flight. Reported by
+        # Fraz, round 10 MEDIUM 2.
+        result = dict(row)
+        result["status"] = STATUS_IN_FLIGHT
+        result["last_attempted_at"] = now
     record_transition(job_id, STATUS_QUEUED, STATUS_IN_FLIGHT)
-    return dict(row)
+    return result
 
 
 def mark_delivered(

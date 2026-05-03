@@ -1381,8 +1381,8 @@ h2 em { font-style: italic; color: var(--lamp); }
   "applicationCategory": "SecurityApplication",
   "applicationSubCategory": "Pre-LLM File Integrity Verification",
   "operatingSystem": "Cross-platform (Python 3.10+)",
-  "description": "A deterministic scanner that reads what a file actually contains, not what it presents. 159 detection mechanisms across 23 file kinds, with a published 12-fixture adversarial gauntlet and full per-fixture results.",
-  "softwareVersion": "1.1.8",
+  "description": "A deterministic scanner that reads what a file actually contains, not what it presents. 159 detection mechanisms across 23 file kinds, with a published 12-fixture adversarial gauntlet and full per-fixture results. v1.2 hardens the API surface (subprocess-isolated wall-clock timeout, additive-only public surface enforcement, parity-break to expose scan completion).",
+  "softwareVersion": "1.2.3",
   "author": [
     {"@type": "Person", "name": "Bilal Syed Arfeen"},
     {"@type": "Person", "name": "Fraz Ashraf"}
@@ -1517,8 +1517,8 @@ h2 em { font-style: italic; color: var(--lamp); }
   <aside class="margin-index">
     <div class="brand-mark">bayyinah</div>
 
-    <div class="meta-row"><span class="k">CASE</span><span class="v">v1.1.9</span></div>
-    <div class="meta-row"><span class="k">DATE</span><span class="v">2026.04</span></div>
+    <div class="meta-row"><span class="k">CASE</span><span class="v">v1.2.3</span></div>
+    <div class="meta-row"><span class="k">DATE</span><span class="v">2026.05</span></div>
     <div class="meta-row"><span class="k">SCANS</span><span class="v">23 kinds</span></div>
     <div class="meta-row"><span class="k">CORPUS</span><span class="v">50 files</span></div>
 
@@ -1712,7 +1712,7 @@ h2 em { font-style: italic; color: var(--lamp); }
           <div class="tl-year">2026</div>
           <div>
             <div class="tl-h">The Munafiq Protocol is formalized, and Bayyinah ships.</div>
-            <div class="tl-p">A diagnostic framework for surface-substrate divergence is published, and the first document firewall built on top of it goes live the same season. v1.1.8 today: the F2 calibration round closes 4 of the 8 publicly pre-registered gauntlet items, taking catch-by-payload-recovery on the 12-fixture CSV/JSON gauntlet from 4 of 12 to 8 of 12 and catch-by-finding-fire from 8 of 12 to 10 of 12. v1.1.7 shipped the BatinObjectAnalyzer ContentIndex migration on top of the v1.1.4 content-index port and opt-in production mode; v1.1.5 added a stdlib uniform-grid spatial pre-filter for overlapping-text detection. The 4 remaining gauntlet gaps (fixtures 03, 04, 06, 08) are documented with named root causes and proposed closures.</div>
+            <div class="tl-p">A diagnostic framework for surface-substrate divergence is published, and the first document firewall built on top of it goes live the same season. v1.2.3 today: the API surface is hardened on top of the v1.1.8 detector set. v1.2.0 broke parity with v0/v0.1 to add a derived scan_complete flag and a per-layer coverage map so a clean-looking report from a half-finished scan no longer reads identically to a complete one. v1.2.1 added a 30-second wall-clock timeout in subprocess isolation, so a pathological PDF that segfaults pymupdf no longer crashes the API; the same release pinned an additive-only enforcement test on bayyinah.__all__ at 58 names. v1.2.2 moved demo summarization onto a SQLite-backed queue with cable-pull resilience and lifespan-managed startup. v1.2.3 closed three corrective items from external audit (requirements-dev sync, claim_next_job return-value drift, per-version surface snapshots). 1,837 of 1,837 tests pass. The four remaining gauntlet gaps (fixtures 03, 04, 06, 08) carry named root causes and proposed closures in the public corpus.</div>
           </div>
         </div>
       </div>
@@ -1722,7 +1722,7 @@ h2 em { font-style: italic; color: var(--lamp); }
     <section class="section" id="baseline">
       <span class="section-num">06 · Honest Baseline</span>
       <h2>We publish <em>what we miss.</em></h2>
-      <p class="lede">50 adversarial fixtures across 7 formats. Every hit and every miss disclosed. The 38 closed-format fixtures are caught at full payload recovery; the CSV/JSON gauntlet was extended to 12 fixtures in v1.1.2 F2 and now stands at 8 of 12 catch-by-payload-recovery, 10 of 12 catch-by-finding-fire after the v1.1.8 F2 calibration round. The 4 remaining gaps are documented with named root causes.</p>
+      <p class="lede">50 adversarial fixtures across 7 formats. Every hit and every miss disclosed. The 38 closed-format fixtures are caught at full payload recovery; the CSV/JSON gauntlet was extended to 12 fixtures in v1.1.2 F2 and stands at 8 of 12 catch-by-payload-recovery, 10 of 12 catch-by-finding-fire after the v1.1.8 F2 calibration round. The detector set is unchanged through v1.2.x; the 4 remaining gaps are documented with named root causes.</p>
 
       <table class="baseline-table">
         <thead>
@@ -1741,7 +1741,7 @@ h2 em { font-style: italic; color: var(--lamp); }
       </table>
 
       <div class="baseline-callout">
-        Forty-six full catches across the closed-format set and eight of the twelve CSV/JSON fixtures. Two CSV/JSON fixtures fire findings without harness-matched payload recovery (the partial column); two register no findings against the current detector set. The closed-format surfaces are clean; the v1.1.8 F2 round closed four of the eight pre-registered gauntlet items, and the four remaining gaps carry named fix paths in the public corpus.
+        Forty-six full catches across the closed-format set and eight of the twelve CSV/JSON fixtures. Two CSV/JSON fixtures fire findings without harness-matched payload recovery (the partial column); two register no findings against the current detector set. The closed-format surfaces are clean; the v1.1.8 F2 round closed four of the eight pre-registered gauntlet items, and the four remaining gaps carry named fix paths in the public corpus. The numbers below have not moved through v1.2.x because v1.2 is API and durability work, not new detectors.
         <a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/docs/adversarial/csv_json_gauntlet/REPORT.md">→ Read the full corpus on GitHub</a>
       </div>
     </section>
@@ -1759,7 +1759,7 @@ h2 em { font-style: italic; color: var(--lamp); }
         </div>
         <div class="disc-row">
           <div class="disc-h">We publish what we miss.</div>
-          <div class="disc-p">v1.1.1 caught two of forty-two adversarial fixtures. v1.1.2 closed thirty-eight of thirty-eight closed-format fixtures and the v1.1.2 F2 round extended the CSV/JSON gauntlet from six to twelve. v1.1.4 shipped the content-index port and an opt-in production mode without changing any catch numbers; v1.1.5 added a stdlib spatial pre-filter for overlapping-text detection with detection behaviour byte-identical to v1.1.4; v1.1.7 migrated the BatinObjectAnalyzer onto the same content index. v1.1.8 closes four of the eight publicly pre-registered F2 calibration items, taking the gauntlet from 4 of 12 to 8 of 12 catch-by-payload-recovery. The four remaining gaps (fixtures 03, 04, 06, 08) carry named fix paths in the public corpus on GitHub. A scanner that hides its misses is a scanner you cannot trust. The miss list is the trust artifact.</div>
+          <div class="disc-p">v1.1.1 caught two of forty-two adversarial fixtures. v1.1.2 closed thirty-eight of thirty-eight closed-format fixtures and the v1.1.2 F2 round extended the CSV/JSON gauntlet from six to twelve. v1.1.4 shipped the content-index port and an opt-in production mode without changing any catch numbers; v1.1.5 added a stdlib spatial pre-filter for overlapping-text detection with detection behaviour byte-identical to v1.1.4; v1.1.7 migrated the BatinObjectAnalyzer onto the same content index. v1.1.8 closes four of the eight publicly pre-registered F2 calibration items, taking the gauntlet from 4 of 12 to 8 of 12 catch-by-payload-recovery. v1.2.0 disclosed a v0/v0.1 defect surfaced by external audit: a clean-looking JSON report could not be distinguished from a complete one, and the parity break to fix it is documented in PARITY.md. v1.2.1 added a 30-second subprocess-isolated scan timeout. v1.2.2 made demo summarization survive a cable pull. v1.2.3 closed three more audit items. The four remaining gauntlet gaps (fixtures 03, 04, 06, 08) carry named fix paths in the public corpus on GitHub. A scanner that hides its misses is a scanner you cannot trust. The miss list is the trust artifact.</div>
         </div>
         <div class="disc-row">
           <div class="disc-h">We test against equivalent methodology.</div>
@@ -1867,7 +1867,7 @@ h2 em { font-style: italic; color: var(--lamp); }
     <section class="section" id="waitlist">
       <span class="section-num">09 · Waitlist</span>
       <h2>Get the next <em>release report.</em></h2>
-      <p class="lede">v1.1.8 just shipped: the F2 calibration round closes four of the eight publicly pre-registered gauntlet items, taking catch-by-payload-recovery on the 12-fixture CSV/JSON gauntlet from 4 of 12 to 8 of 12 and catch-by-finding-fire from 8 of 12 to 10 of 12. Four new mechanisms (csv_oversized_freetext_cell, json_key_invisible_chars, json_oversized_string_band, csv_payload_in_adjacent_cell) and four extensions to existing mechanisms; 1,767 of 1,767 tests pass. The four remaining gaps carry named root causes and proposed closures. Subscribe for the release report when it ships, plus the periodic Munafiq Protocol notes that document what we miss.</p>
+      <p class="lede">v1.2.3 just shipped: a corrective release closing three audit items from round 10 (requirements-dev manifest sync, a claim_next_job return-value mismatch, per-version public-surface snapshots) on top of the v1.2.x hardening line. v1.2.0 broke parity with v0/v0.1 to expose scan completion in the JSON output; v1.2.1 added a subprocess-isolated 30-second scan timeout and pinned the public surface at 58 names with an additive-only enforcement test; v1.2.2 moved demo summarization onto a SQLite-backed queue that survives a cable pull. 1,837 of 1,837 tests pass. The detector set is unchanged from v1.1.8; the four CSV/JSON gauntlet gaps remain documented in the public corpus. Subscribe for the release report when it ships, plus the periodic Munafiq Protocol notes that document what we miss.</p>
 
       <div class="waitlist-card">
         <span class="waitlist-label">Subscribe</span>

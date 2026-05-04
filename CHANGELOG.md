@@ -12,12 +12,12 @@ held across every phase.
 
 ## [Unreleased]
 
-## [1.2.3] - 2026-05-03 - corrective release (Fraz round 10)
+## [1.2.3] - 2026-05-03 - corrective release (round 10 audit)
 
 ### Fixed
 
 - requirements-dev.txt now matches `pyproject.toml` `[project.optional-dependencies].dev` exactly. Four entries were missing on v1.2.2 (`pytest-asyncio`, `fastapi`, `httpx`, `python-multipart`); a contributor running `pip install -r requirements-dev.txt` got a clean install but a noisy and partially skipping test run. A new sync test, `tests/test_requirements_dev_sync.py`, fails the suite if either file drifts again.
-- `SummaryQueue.claim_next_job` now returns a dict whose `status` and `last_attempted_at` reflect the row that was just persisted, instead of a stale `sqlite3.Row` snapshot taken before the UPDATE. Reported by Fraz round 10 MEDIUM 2. The persisted row was always correct; only the value handed back to the caller was lying. The transition itself (queued -> in_flight) is unchanged. New regression: `tests/test_summary_queue.py::test_claim_next_job_returned_dict_reflects_in_flight_state`.
+- `SummaryQueue.claim_next_job` now returns a dict whose `status` and `last_attempted_at` reflect the row that was just persisted, instead of a stale `sqlite3.Row` snapshot taken before the UPDATE. Surfaced by the round 10 audit (MEDIUM 2). The persisted row was always correct; only the value handed back to the caller was lying. The transition itself (queued -> in_flight) is unchanged. New regression: `tests/test_summary_queue.py::test_claim_next_job_returned_dict_reflects_in_flight_state`.
 - `tests/test_public_surface_additive.py` now declares one frozenset per shipped minor and per shipped patch (Framework v2.0 section 7.6). Until v1.2.3 the file pinned only `V1_2_0_SURFACE`, so v1.2.1 and v1.2.2 had no named boundary. The new constants `V1_2_1_SURFACE`, `V1_2_2_SURFACE`, `V1_2_3_SURFACE` are aliases of `V1_2_0_SURFACE` because none of those releases changed `__all__`. Three new subset tests run alongside the existing one.
 
 ### Internal

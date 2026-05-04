@@ -1310,6 +1310,190 @@ h2 em { font-style: italic; color: var(--lamp); }
   .install-block { font-size: 0.78rem; padding: 0.85rem 1rem; }
 }
 
+/* ===========================================================
+   § 02 APPLICATIONS - industry tabs
+   =========================================================== */
+.cases {
+  margin: 1.6rem 0 0.5rem;
+}
+.case-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0;
+  margin: 0 0 1rem;
+  list-style: none;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.6rem;
+}
+.case-tab {
+  appearance: none;
+  background: rgba(22, 26, 33, 0.55);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  color: var(--ink-2);
+  font-family: var(--fm);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+.case-tab:hover {
+  color: var(--ink);
+  border-color: var(--rule-2);
+}
+.case-tab[aria-selected="true"] {
+  color: var(--lamp);
+  border-color: var(--lamp);
+  background: var(--lamp-soft);
+  box-shadow: inset 0 -2px 0 0 var(--lamp);
+}
+.case-tab:focus-visible {
+  outline: 2px solid var(--lamp);
+  outline-offset: 2px;
+}
+.case-tab .tab-num {
+  color: var(--ink-2);
+  margin-right: 0.5rem;
+  opacity: 0.7;
+}
+.case-tab[aria-selected="true"] .tab-num {
+  color: var(--lamp);
+  opacity: 0.85;
+}
+.case-panel {
+  background: rgba(22, 26, 33, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--lamp);
+  border-radius: 3px;
+  padding: 1.6rem 1.6rem 1.4rem;
+  display: none;
+  animation: case-fade 160ms ease;
+}
+.case-panel[data-active="true"] {
+  display: block;
+}
+@keyframes case-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.case-headline {
+  font-family: var(--fm);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lamp);
+  margin: 0 0 0.4rem;
+}
+.case-title {
+  font-size: 1.35rem;
+  line-height: 1.25;
+  color: var(--ink);
+  margin: 0 0 0.9rem;
+}
+.case-title em {
+  font-style: italic;
+  color: var(--lamp);
+}
+.case-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 0.85rem 0;
+  margin: 0 0 1rem;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--fm);
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+.case-stats .stat-k {
+  color: var(--ink-2);
+  opacity: 0.7;
+  margin-right: 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.7rem;
+}
+.case-stats .stat-v {
+  color: var(--ink);
+}
+.case-block {
+  margin: 1.1rem 0;
+}
+.case-block-h {
+  font-family: var(--fm);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0 0 0.45rem;
+}
+.case-block p {
+  margin: 0.45rem 0;
+  color: var(--ink);
+  line-height: 1.65;
+}
+.case-block p + p {
+  margin-top: 0.55rem;
+}
+.case-block code {
+  background: var(--bg-3);
+  border: 1px solid var(--rule);
+  padding: 0.05rem 0.35rem;
+  border-radius: 2px;
+  font-size: 0.84em;
+  color: var(--lamp);
+}
+.case-cites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--rule);
+}
+.case-cite {
+  display: inline-block;
+  font-family: var(--fm);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  background: var(--bg-3);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0.25rem 0.55rem;
+  text-decoration: none;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+.case-cite:hover {
+  color: var(--lamp);
+  border-color: var(--lamp);
+}
+.case-cite::before {
+  content: "→ ";
+  opacity: 0.55;
+}
+.case-coda {
+  margin: 1.6rem 0 0;
+  padding: 1rem 1.15rem;
+  background: var(--bg-2);
+  border-left: 2px solid var(--rule-2);
+  font-size: 0.95rem;
+  color: var(--ink-2);
+  line-height: 1.65;
+}
+@media (max-width: 720px) {
+  .case-panel { padding: 1.15rem 1.05rem; }
+  .case-title { font-size: 1.15rem; }
+  .case-stats { gap: 0.95rem; font-size: 0.72rem; padding: 0.7rem 0; }
+  .case-tab { font-size: 0.68rem; padding: 0.45rem 0.65rem; }
+}
+
 /* ===== § 09 RESEARCH ===== */
 .research-layer {
   margin-top: 2.4rem;
@@ -1558,15 +1742,16 @@ h2 em { font-style: italic; color: var(--lamp); }
 
     <nav class="toc">
       <a href="#hero"><span class="num">01</span>Premise</a>
-      <a href="#scan"><span class="num">02</span>Scan</a>
-      <a href="#exam"><span class="num">03</span>Examination</a>
-      <a href="#facts"><span class="num">04</span>Three Facts</a>
-      <a href="#convergence"><span class="num">05</span>Why Now</a>
-      <a href="#baseline"><span class="num">06</span>Honest Baseline</a>
-      <a href="#discipline"><span class="num">07</span>Discipline</a>
-      <a href="#install"><span class="num">08</span>Install</a>
-      <a href="#research"><span class="num">09</span>Research</a>
-      <a href="#waitlist"><span class="num">10</span>Waitlist</a>
+      <a href="#applications"><span class="num">02</span>Applications</a>
+      <a href="#scan"><span class="num">03</span>Scan</a>
+      <a href="#exam"><span class="num">04</span>Examination</a>
+      <a href="#facts"><span class="num">05</span>Three Facts</a>
+      <a href="#convergence"><span class="num">06</span>Why Now</a>
+      <a href="#baseline"><span class="num">07</span>Honest Baseline</a>
+      <a href="#discipline"><span class="num">08</span>Discipline</a>
+      <a href="#install"><span class="num">09</span>Install</a>
+      <a href="#research"><span class="num">10</span>Research</a>
+      <a href="#waitlist"><span class="num">11</span>Waitlist</a>
     </nav>
 
     <div class="footer-sig">
@@ -1632,9 +1817,196 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 02 SCAN =========== -->
+    <!-- =========== § 02 APPLICATIONS =========== -->
+    <section class="section" id="applications">
+      <span class="section-num">02 · Applications</span>
+      <h2>Five domains. <em>One failure mode.</em></h2>
+      <p class="lede">Every disaster below has the same structural shape: a system claimed to do X (safe flight, correct dose, alarm notification, verified balance, current throttle position) but its substrate did Y. The surface contradicted the substrate. Nobody checked. Pick a domain. The cost is on the record.</p>
+
+      <div class="cases" id="cases">
+
+        <ul class="case-tabs" role="tablist" aria-label="Industry case studies">
+          <li role="presentation"><button role="tab" id="tab-aviation"   aria-controls="panel-aviation"   aria-selected="true"  data-case="aviation"   class="case-tab"><span class="tab-num">01</span>Aviation</button></li>
+          <li role="presentation"><button role="tab" id="tab-healthcare" aria-controls="panel-healthcare" aria-selected="false" data-case="healthcare" class="case-tab" tabindex="-1"><span class="tab-num">02</span>Healthcare</button></li>
+          <li role="presentation"><button role="tab" id="tab-grid"       aria-controls="panel-grid"       aria-selected="false" data-case="grid"       class="case-tab" tabindex="-1"><span class="tab-num">03</span>Power Grid</button></li>
+          <li role="presentation"><button role="tab" id="tab-automotive" aria-controls="panel-automotive" aria-selected="false" data-case="automotive" class="case-tab" tabindex="-1"><span class="tab-num">04</span>Automotive</button></li>
+          <li role="presentation"><button role="tab" id="tab-financial"  aria-controls="panel-financial"  aria-selected="false" data-case="financial"  class="case-tab" tabindex="-1"><span class="tab-num">05</span>Financial</button></li>
+        </ul>
+
+        <!-- AVIATION -->
+        <article role="tabpanel" id="panel-aviation" aria-labelledby="tab-aviation" class="case-panel" data-active="true" data-case="aviation" tabindex="0">
+          <p class="case-headline">Aviation · Boeing 737 MAX MCAS</p>
+          <h3 class="case-title">A document said <em>"safe flight envelope."</em> The substrate was a single sensor.</h3>
+
+          <div class="case-stats" aria-label="Case statistics">
+            <div><span class="stat-k">Years</span><span class="stat-v">2018-2019</span></div>
+            <div><span class="stat-k">Lives lost</span><span class="stat-v">346</span></div>
+            <div><span class="stat-k">Direct cost</span><span class="stat-v">$20B+</span></div>
+            <div><span class="stat-k">Grounding</span><span class="stat-v">20 months</span></div>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What broke</h4>
+            <p>MCAS relied on a single angle-of-attack sensor to determine an impending stall. The design choice introduced a single point of failure into the system. When the sensor provided erroneous data, MCAS was triggered inappropriately, leading to repeated nose-down commands. Boeing's marketing materials said "safe." The substrate was a single-sensor dependency. The safety feature that should have caught the failure was optional, not structural.</p>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What the framework catches</h4>
+            <p>The single-sensor dependency would be documented as a limitation with a fixture, a pinning test, a <code>CHANGELOG</code> entry, and a <code>README</code> bullet. The severity rubric classifies "single point of failure in safety-critical path" as <code>CRITICAL</code>. The additive-only invariant would have flagged the removal of the AOA Disagree feature as a public-surface removal requiring a breaking-change procedure. The validator-by-different-instance protocol would have caught that the system's claim ("prevents stalls") contradicts its substrate (single sensor, no cross-check).</p>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What the absence cost</h4>
+            <p>Two crashes, 346 lives, a 20-month grounding, and over $20 billion in settlements, compensation, and lost orders. The single-sensor dependency was knowable from the design documents. No published, auditable detector required it to surface in four places before flight.</p>
+          </div>
+
+          <div class="case-cites">
+            <a class="case-cite" href="https://www.congress.gov/116/meeting/house/110304/witnesses/HHRG-116-PW00-Wstate-DicksonS-20191211.pdf">FAA Congressional testimony 2019</a>
+            <a class="case-cite" href="https://transportation.house.gov/imo/media/doc/2020.09.15%20FINAL%20737%20MAX%20Report%20for%20Public%20Release.pdf">House T&amp;I 737 MAX final report</a>
+          </div>
+        </article>
+
+        <!-- HEALTHCARE -->
+        <article role="tabpanel" id="panel-healthcare" aria-labelledby="tab-healthcare" class="case-panel" data-case="healthcare" tabindex="0" hidden>
+          <p class="case-headline">Healthcare · Therac-25 radiation overdoses</p>
+          <h3 class="case-title">The display said <em>"no dose delivered."</em> The substrate was a lethal one.</h3>
+
+          <div class="case-stats" aria-label="Case statistics">
+            <div><span class="stat-k">Years</span><span class="stat-v">1985-1987</span></div>
+            <div><span class="stat-k">Patients overdosed</span><span class="stat-v">6 (3+ killed)</span></div>
+            <div><span class="stat-k">Mode</span><span class="stat-v">Race condition</span></div>
+            <div><span class="stat-k">Detectability</span><span class="stat-v">Logged "treatment not applied"</span></div>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What broke</h4>
+            <p>Concurrent programming errors (race conditions) caused the machine to deliver radiation doses many times greater than normal, resulting in death or serious injury. A shared variable was used both for analyzing input values and for tracking turntable position. When the operator interface showed "dose delivered: 0" the machine had actually delivered a lethal overdose. The system's return value ("treatment not applied, retry") contradicted its substrate. Overdoses occurred primarily because of errors in the Therac-25's software and because the manufacturer did not follow proper software engineering practices.</p>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What the framework catches</h4>
+            <p>This is Section 8.1 (surface-vs-substrate gap) at its most lethal. The display claimed one thing; the machine did another. The predicate-helper contract violation (Section 8.2) applies directly: the "safe to fire" predicate accepted inputs where the beam-positioning helper was in the wrong state. The framework's reproducer-first discipline would have required constructing the "type-quickly enough" input during testing. The race condition is a boundary-condition crash (Section 8.3) on the timing dimension. The framework's anti-pattern "all tests pass, ship it" applies exactly: the tests never exercised the fast-typing path.</p>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What the absence cost</h4>
+            <p>At least four bugs were found in the Therac-25 software that could cause radiation overdose. The bugs meant that, for example, if the radiographer changed the beam type from x-ray to electron beam within eight seconds, the machine would give the dose but display a message that the dose had not been given. At least three patients died. The structural pattern was knowable from the source code and the operator logs. No published detector required it to be reproduced before clinical use.</p>
+          </div>
+
+          <div class="case-cites">
+            <a class="case-cite" href="https://www.computer.org/csdl/magazine/co/1993/07/r7018/13rRUx0gerC">Leveson &amp; Turner, IEEE Computer 1993</a>
+            <a class="case-cite" href="https://web.stanford.edu/class/cs240/old/sp2014/readings/therac-25.pdf">Therac-25 case file (Stanford CS240)</a>
+          </div>
+        </article>
+
+        <!-- POWER GRID -->
+        <article role="tabpanel" id="panel-grid" aria-labelledby="tab-grid" class="case-panel" data-case="grid" tabindex="0" hidden>
+          <p class="case-headline">Power Grid · 2003 Northeast Blackout</p>
+          <h3 class="case-title">The alarm system said <em>"I will notify you of problems."</em> The substrate stayed silent.</h3>
+
+          <div class="case-stats" aria-label="Case statistics">
+            <div><span class="stat-k">Date</span><span class="stat-v">Aug 14, 2003</span></div>
+            <div><span class="stat-k">People affected</span><span class="stat-v">~55 million</span></div>
+            <div><span class="stat-k">Lives lost</span><span class="stat-v">~100</span></div>
+            <div><span class="stat-k">Damages</span><span class="stat-v">$6B</span></div>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What broke</h4>
+            <p>A software bug known as a race condition existed in General Electric Energy's Unix-based XA/21 energy management system. Once triggered, the bug stalled FirstEnergy's control room alarm system for over an hour. The software bug cost power customers an estimated six billion dollars. Operators saw a quiet console and assumed the grid was healthy. An infinite loop lockup from a race condition disabled the alarm, but there was no indication of the problem. The alarm system declared "I will notify you of problems" (its public API contract) but silently stopped fulfilling that contract. The surface (quiet alarm console) matched neither the substrate (grid overloading) nor the system's own contract.</p>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What the framework catches</h4>
+            <p>This is the exact pattern <code>furqan-lint</code>'s D11 checker detects: a function that can fail (alarm generation) consumed by a system that assumes it will always succeed (operator dashboard). The function's error path (race condition deadlock) was silently swallowed. The four-place pattern would have documented the race condition risk. The test coverage shape gap (Section 8.6) applies: GE likely had tests for "alarm fires when threshold exceeded" but no test for "alarm system itself fails silently under concurrent load."</p>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What the absence cost</h4>
+            <p>Fifty-five million people without power for up to four days; approximately one hundred deaths attributed to the cascading failure; six billion dollars in damages. The race-condition deadlock pattern was knowable from the code review stage. No structural-honesty discipline forced it to surface fifty-five million blackout-hours later.</p>
+          </div>
+
+          <div class="case-cites">
+            <a class="case-cite" href="https://www.energy.gov/sites/default/files/oeprod/DocumentsandMedia/BlackoutFinal-Web.pdf">US-Canada Power System Outage Task Force Final Report</a>
+            <a class="case-cite" href="https://spectrum.ieee.org/the-2003-northeast-blackout--five-years-later">IEEE Spectrum: Five Years Later (2008)</a>
+          </div>
+        </article>
+
+        <!-- AUTOMOTIVE -->
+        <article role="tabpanel" id="panel-automotive" aria-labelledby="tab-automotive" class="case-panel" data-case="automotive" tabindex="0" hidden>
+          <p class="case-headline">Automotive · Toyota unintended acceleration</p>
+          <h3 class="case-title">Functions returned <em>silent stale data</em> when the system was under memory pressure.</h3>
+
+          <div class="case-stats" aria-label="Case statistics">
+            <div><span class="stat-k">Years</span><span class="stat-v">2009-2011</span></div>
+            <div><span class="stat-k">Deaths attributed</span><span class="stat-v">89</span></div>
+            <div><span class="stat-k">Criminal penalty</span><span class="stat-v">$1.2B</span></div>
+            <div><span class="stat-k">Global variables</span><span class="stat-v">10,000+</span></div>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What broke</h4>
+            <p>NASA and independent experts found that Toyota's engine control software contained over 10,000 global variables, deeply nested function calls, and inadequate error handling. The throttle control system had functions that could fail silently, returning stale values when the system was in an error state. The stack could overflow under specific conditions, corrupting memory and causing the throttle to stick open. Functions that declared "return the current throttle position" could silently return stale data when the system was under memory pressure. The software's API contract (return current position) contradicted its substrate behavior (return whatever was in memory, which might be a previous value).</p>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What the framework catches</h4>
+            <p>D24 (all-paths-return) would have flagged functions with code paths that did not return a value. D11 (status coverage) would have flagged callers that consumed throttle-position values without checking the error case. The cyclomatic complexity baseline (Section 7.1, per-function &lt;= 10 in 95 percent of functions) would have flagged the deeply nested control flow. The framework's "every claim has a substrate" principle applies: Toyota's safety claims about the software had no corresponding test evidence that the claims were true under memory-pressure conditions.</p>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What the absence cost</h4>
+            <p>Eighty-nine deaths attributed; $1.2 billion criminal penalty; the largest such penalty against a carmaker at the time. The structural pattern (silent stale returns, unchecked error paths, untested complexity) was knowable from the code review stage. No published structural-honesty discipline required it to surface before deployment.</p>
+          </div>
+
+          <div class="case-cites">
+            <a class="case-cite" href="https://www.nhtsa.gov/sites/nhtsa.gov/files/nasa-nesc_tr-10-00618.pdf">NASA NESC Toyota UA technical report (2011)</a>
+            <a class="case-cite" href="https://www.justice.gov/opa/pr/toyota-motor-corporation-agrees-pay-12-billion-criminal-penalty">DOJ: $1.2B criminal penalty (2014)</a>
+          </div>
+        </article>
+
+        <!-- FINANCIAL -->
+        <article role="tabpanel" id="panel-financial" aria-labelledby="tab-financial" class="case-panel" data-case="financial" tabindex="0" hidden>
+          <p class="case-headline">Financial · Wirecard fraud</p>
+          <h3 class="case-title">Bank statements claimed <em>$1.9B in cash.</em> The substrate was nothing.</h3>
+
+          <div class="case-stats" aria-label="Case statistics">
+            <div><span class="stat-k">Years</span><span class="stat-v">2015-2020</span></div>
+            <div><span class="stat-k">Fabricated cash</span><span class="stat-v">€1.9B</span></div>
+            <div><span class="stat-k">Auditor</span><span class="stat-v">EY (10+ years)</span></div>
+            <div><span class="stat-k">Investor losses</span><span class="stat-v">Billions</span></div>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What broke</h4>
+            <p>Wirecard's long-time auditor EY failed to verify the existence of cash reserves in what appeared to be fraudulent bank statements. For three consecutive years, EY may have failed, for three years running, to confirm money Wirecard said was in a Singapore bank account actually existed. EY accepted Wirecard officers who were architects of fake transactions and corroborated from third parties who were in the ring of the accounting fraud. The auditor accepted screenshots and documents provided by the company itself as evidence that bank balances existed, rather than independently verifying with the banks. The audit's surface ("clean audit opinion, no material misstatements") contradicted the substrate (€1.9 billion euros did not exist).</p>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What the framework catches</h4>
+            <p>This is Section 8.6 (test coverage shape gap) applied to financial audit. EY performed the structural test ("documents exist that claim the money is there") but not the functional test ("the money is actually there"). The framework's Section 2.2 says explicitly: "An audit is not a rubber-stamp. Every claim verified or contradicted; nothing left as presumed clean." The validator-by-different-instance protocol would have required independent verification from a party not in the same conversation as the audited company. The reciprocal contract (Section 14) requires reproducers for every claim. <code>Bayyinah Integrity Scanner</code> is the direct application here. A document (bank statement, financial filing) claims to contain certain information. Bayyinah scans the document's structural integrity: concealed layers, hidden JavaScript, metadata inconsistencies, auto-execute actions. A bank statement PDF with a concealed layer showing different numbers than the visible layer would receive a <code>mushtabih</code> verdict. <code>Al-Mutaffifin</code> extends to the reporting pipeline: a financial reporting system that shows one set of numbers to regulators and a different set to internal management is a Mutaffifin violation.</p>
+          </div>
+
+          <div class="case-block">
+            <h4 class="case-block-h">What the absence cost</h4>
+            <p>€1.9 billion in non-existent cash; investor losses in the billions; one of the largest accounting fraud cases in European history. Structural anomalies in the documents (metadata showing the PDF was created by a different tool than the bank's standard system, embedded fonts inconsistent with the bank's letterhead, creation timestamps that do not match the bank's business hours, concealed layers showing different numbers than the visible layer) were knowable from forensic examination. No structural-honesty scanner ran on the artifacts as they were accepted as evidence.</p>
+          </div>
+
+          <div class="case-cites">
+            <a class="case-cite" href="https://www.bafin.de/SharedDocs/Veroeffentlichungen/EN/Pressemitteilung/2020/pm_200625_wirecard_en.html">BaFin Wirecard statement (2020)</a>
+            <a class="case-cite" href="https://www.ft.com/wirecard">Financial Times Wirecard investigation</a>
+            <a class="case-cite" href="https://doi.org/10.5281/zenodo.19894724">Al-Mutaffifin paper</a>
+          </div>
+        </article>
+
+      </div>
+
+      <p class="case-coda">Five cases. Over $30 billion in direct losses. Over 500 lives. The framework does not claim it would have prevented every dollar or every death. Boeing's decision to use a single sensor was a business decision, not a code bug. The framework catches the code-level and documentation-level consequences of that decision, not the decision itself. The discipline is simple: every claim has a substrate, every limitation is documented, every safety-critical path has a reproducer. The cases above are the cost of not having that discipline.</p>
+    </section>
+
+    <!-- =========== § 03 SCAN =========== -->
     <section class="section" id="scan">
-      <span class="section-num">02 · Scan</span>
+      <span class="section-num">03 · Scan</span>
       <h2>Drop your <em>own file.</em></h2>
       <p class="lede">No account. No tracking. The scanner runs stateless content analysis and returns a verdict in under five seconds for most file kinds.</p>
 
@@ -1652,9 +2024,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 03 EXAMINATION =========== -->
+    <!-- =========== § 04 EXAMINATION =========== -->
     <section class="section" id="exam">
-      <span class="section-num">03 · Examination</span>
+      <span class="section-num">04 · Examination</span>
       <h2>Three files. Three verdicts. <em>Thirty seconds.</em></h2>
       <p class="lede">Pre-recorded examinations of three real fixtures. No upload, no friction. Click to watch the analyzer read both layers.</p>
 
@@ -1693,9 +2065,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 04 THREE FACTS =========== -->
+    <!-- =========== § 05 THREE FACTS =========== -->
     <section class="section" id="facts">
-      <span class="section-num">04 · Three Facts</span>
+      <span class="section-num">05 · Three Facts</span>
       <h2>The product, in <em>three terms.</em></h2>
 
       <div class="facts">
@@ -1714,9 +2086,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 05 CONVERGENCE =========== -->
+    <!-- =========== § 06 CONVERGENCE =========== -->
     <section class="section" id="convergence">
-      <span class="section-num">05 · Why Now</span>
+      <span class="section-num">06 · Why Now</span>
       <h2>Four prerequisites. <em>One convergence.</em></h2>
       <p class="lede">Bayyinah is not a clever idea waiting on engineering. It is the first work that became possible after four independent threads landed. The case below shows the cost of the detector's absence; the four prerequisites that follow show why it could not have been built sooner.</p>
 
@@ -1761,9 +2133,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 06 BASELINE =========== -->
+    <!-- =========== § 07 BASELINE =========== -->
     <section class="section" id="baseline">
-      <span class="section-num">06 · Honest Baseline</span>
+      <span class="section-num">07 · Honest Baseline</span>
       <h2>We publish <em>what we miss.</em></h2>
       <p class="lede">50 adversarial fixtures across 7 formats. Every hit and every miss disclosed. The 38 closed-format fixtures are caught at full payload recovery; the CSV/JSON gauntlet was extended to 12 fixtures in v1.1.2 F2 and stands at 8 of 12 catch-by-payload-recovery, 10 of 12 catch-by-finding-fire after the v1.1.8 F2 calibration round. The detector set is unchanged through v1.2.x; the 4 remaining gaps are documented with named root causes.</p>
 
@@ -1789,9 +2161,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 07 DISCIPLINE =========== -->
+    <!-- =========== § 08 DISCIPLINE =========== -->
     <section class="section" id="discipline">
-      <span class="section-num">07 · Discipline</span>
+      <span class="section-num">08 · Discipline</span>
       <h2>The product is the <em>discipline.</em></h2>
       <p class="lede">Bayyinah is not a clever heuristic. It is a verification practice applied to itself first, and to files second. Three rules. Each one cost us claims we wanted to keep.</p>
 
@@ -1815,9 +2187,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 08 INSTALL =========== -->
+    <!-- =========== § 09 INSTALL =========== -->
     <section class="section" id="install">
-      <span class="section-num">08 · Install</span>
+      <span class="section-num">09 · Install</span>
       <h2>One <em>pip install</em>, no surprises.</h2>
       <p class="lede">The scanner is on PyPI. Pure Python, two PDF parsers, three optional metadata libraries. No model in the loop, no network call at scan time.</p>
 
@@ -1842,9 +2214,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 09 RESEARCH =========== -->
+    <!-- =========== § 10 RESEARCH =========== -->
     <section class="section" id="research">
-      <span class="section-num">09 · The Published Record</span>
+      <span class="section-num">10 · The Published Record</span>
       <h2>The corpus is <em>open.</em></h2>
       <p class="lede">Eleven technical papers, every claim auditable against its named null hypothesis, every paper linked by permanent DOI. The research reads in three layers: the protocol that names the failure mode, the architecture built on the protocol, and the input-layer applications that put the protocol into production.</p>
 
@@ -1933,9 +2305,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 10 WAITLIST =========== -->
+    <!-- =========== § 11 WAITLIST =========== -->
     <section class="section" id="waitlist">
-      <span class="section-num">10 · Waitlist</span>
+      <span class="section-num">11 · Waitlist</span>
       <h2>Get the next <em>release report.</em></h2>
       <p class="lede">v1.2.3 just shipped: a corrective release closing three audit items from round 10 (requirements-dev manifest sync, a claim_next_job return-value mismatch, per-version public-surface snapshots) on top of the v1.2.x hardening line. v1.2.0 broke parity with v0/v0.1 to expose scan completion in the JSON output; v1.2.1 added a subprocess-isolated 30-second scan timeout and pinned the public surface at 58 names with an additive-only enforcement test; v1.2.2 moved demo summarization onto a SQLite-backed queue that survives a cable pull. 1,837 of 1,837 tests pass. The detector set is unchanged from v1.1.8; the four CSV/JSON gauntlet gaps remain documented in the public corpus. Subscribe for the release report when it ships, plus the periodic Munafiq Protocol notes that document what we miss.</p>
 
@@ -2277,6 +2649,81 @@ function renderResult(report) {
   resultEl.innerHTML = html;
   resultEl.hidden = false;
 }
+
+// ============================================================
+// § 02 Applications - tab switching
+// ============================================================
+(function initCaseTabs() {
+  var tablist = document.querySelector('.case-tabs');
+  if (!tablist) return;
+  var tabs = Array.prototype.slice.call(tablist.querySelectorAll('[role="tab"]'));
+  var panels = Array.prototype.slice.call(document.querySelectorAll('.case-panel'));
+  if (tabs.length === 0 || panels.length === 0) return;
+
+  function selectByCase(name, opts) {
+    opts = opts || {};
+    var found = false;
+    tabs.forEach(function (tab) {
+      var isMatch = tab.getAttribute('data-case') === name;
+      tab.setAttribute('aria-selected', isMatch ? 'true' : 'false');
+      tab.setAttribute('tabindex', isMatch ? '0' : '-1');
+      if (isMatch) found = true;
+    });
+    panels.forEach(function (panel) {
+      var isMatch = panel.getAttribute('data-case') === name;
+      if (isMatch) {
+        panel.setAttribute('data-active', 'true');
+        panel.removeAttribute('hidden');
+      } else {
+        panel.setAttribute('data-active', 'false');
+        panel.setAttribute('hidden', '');
+      }
+    });
+    if (!found) return false;
+    if (opts.focus) {
+      var active = tabs.filter(function (t) { return t.getAttribute('aria-selected') === 'true'; })[0];
+      if (active) active.focus();
+    }
+    if (opts.updateUrl) {
+      try {
+        var url = new URL(window.location.href);
+        url.searchParams.set('case', name);
+        history.replaceState(null, '', url.toString());
+      } catch (e) { /* old browser; ignore */ }
+    }
+    return true;
+  }
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      selectByCase(tab.getAttribute('data-case'), { updateUrl: true });
+    });
+  });
+
+  tablist.addEventListener('keydown', function (e) {
+    var idx = tabs.indexOf(document.activeElement);
+    if (idx === -1) return;
+    var next = -1;
+    switch (e.key) {
+      case 'ArrowRight': next = (idx + 1) % tabs.length; break;
+      case 'ArrowLeft':  next = (idx - 1 + tabs.length) % tabs.length; break;
+      case 'Home':       next = 0; break;
+      case 'End':        next = tabs.length - 1; break;
+      default: return;
+    }
+    e.preventDefault();
+    selectByCase(tabs[next].getAttribute('data-case'), { focus: true, updateUrl: true });
+  });
+
+  // Initial selection from ?case= query string, fallback to first tab
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var initial = params.get('case');
+    if (initial && !selectByCase(initial)) {
+      // unknown value - leave default
+    }
+  } catch (e) { /* ignore */ }
+})();
 </script>
 
 </body>

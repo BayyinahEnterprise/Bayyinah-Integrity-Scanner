@@ -708,6 +708,52 @@ def index() -> HTMLResponse:
     return HTMLResponse(content=html)
 
 
+def _serve_landing_for_case() -> HTMLResponse:
+    """Return the v2 landing page HTML, used by every Applications case route.
+
+    The five case study paths (/aviation, /healthcare, /grid, /automotive,
+    /financial) all serve the same landing page. The client-side JS reads
+    window.location.pathname on load, selects the matching tab, and scrolls
+    the Applications section into view. The legacy ?case=<name> query
+    string remains honored for any URLs already in the wild.
+    """
+    if _LANDING_INDEX.is_file():
+        try:
+            html = _LANDING_INDEX.read_text(encoding="utf-8")
+            return HTMLResponse(content=html)
+        except OSError:
+            pass
+    html = _INDEX_HTML.replace(
+        "__VERSION__", getattr(bayyinah, "__version__", "1.1.4")
+    )
+    return HTMLResponse(content=html)
+
+
+@app.get("/aviation", response_class=HTMLResponse)
+def applications_aviation() -> HTMLResponse:
+    return _serve_landing_for_case()
+
+
+@app.get("/healthcare", response_class=HTMLResponse)
+def applications_healthcare() -> HTMLResponse:
+    return _serve_landing_for_case()
+
+
+@app.get("/grid", response_class=HTMLResponse)
+def applications_grid() -> HTMLResponse:
+    return _serve_landing_for_case()
+
+
+@app.get("/automotive", response_class=HTMLResponse)
+def applications_automotive() -> HTMLResponse:
+    return _serve_landing_for_case()
+
+
+@app.get("/financial", response_class=HTMLResponse)
+def applications_financial() -> HTMLResponse:
+    return _serve_landing_for_case()
+
+
 @app.get("/scan", response_class=HTMLResponse)
 def scan_form_legacy() -> HTMLResponse:
     """Keep the legacy upload form reachable at /scan.

@@ -1276,7 +1276,41 @@ h2 em { font-style: italic; color: var(--lamp); }
   .litpage-frame::before { opacity: 0.6; }
 }
 
-/* ===== § 08 RESEARCH ===== */
+/* ===========================================================
+   § 08 INSTALL
+   =========================================================== */
+.install-block {
+  background: var(--bg-2);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--lamp);
+  border-radius: 3px;
+  padding: 1rem 1.15rem;
+  margin: 1.75rem 0 1.25rem;
+  font-family: var(--fm);
+  font-size: 0.86rem;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.6;
+}
+.install-block .prompt { color: var(--muted); user-select: none; }
+.install-block .comment { color: var(--muted); }
+.install-meta {
+  display: flex; gap: 1.5rem; flex-wrap: wrap;
+  margin-top: 1.25rem;
+  font-family: var(--fm);
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.install-meta strong { color: var(--ink-2); font-weight: 500; }
+.install-meta a { color: var(--lamp); text-decoration: none; }
+.install-meta a:hover { color: var(--vellum); }
+@media (max-width: 720px) {
+  .install-block { font-size: 0.78rem; padding: 0.85rem 1rem; }
+}
+
+/* ===== § 09 RESEARCH ===== */
 .research-layer {
   margin-top: 2.4rem;
 }
@@ -1530,8 +1564,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       <a href="#convergence"><span class="num">05</span>Why Now</a>
       <a href="#baseline"><span class="num">06</span>Honest Baseline</a>
       <a href="#discipline"><span class="num">07</span>Discipline</a>
-      <a href="#research"><span class="num">08</span>Research</a>
-      <a href="#waitlist"><span class="num">09</span>Waitlist</a>
+      <a href="#install"><span class="num">08</span>Install</a>
+      <a href="#research"><span class="num">09</span>Research</a>
+      <a href="#waitlist"><span class="num">10</span>Waitlist</a>
     </nav>
 
     <div class="footer-sig">
@@ -1772,9 +1807,36 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 08 RESEARCH =========== -->
+    <!-- =========== § 08 INSTALL =========== -->
+    <section class="section" id="install">
+      <span class="section-num">08 · Install</span>
+      <h2>One <em>pip install</em>, no surprises.</h2>
+      <p class="lede">The scanner is on PyPI. Pure Python, two PDF parsers, three optional metadata libraries. No model in the loop, no network call at scan time.</p>
+
+      <!--email_off--><div class="install-block"><span class="prompt">$ </span>pip install bayyinah
+
+<span class="comment"># scan a file</span>
+<span class="prompt">$ </span>bayyinah scan contract.pdf
+<span class="prompt">$ </span>bayyinah scan invoice.docx
+<span class="prompt">$ </span>bayyinah scan dashboard.xlsx --json
+
+<span class="comment"># or from Python</span>
+<span class="prompt">&gt;&gt;&gt; </span>from bayyinah import ScanService
+<span class="prompt">&gt;&gt;&gt; </span>report = ScanService().scan("contract.pdf")
+<span class="prompt">&gt;&gt;&gt; </span>report.findings</div><!--/email_off-->
+
+      <div class="install-meta">
+        <span><strong>Latest:</strong> v1.2.3</span>
+        <span><strong>Python:</strong> 3.10+</span>
+        <span><strong>License:</strong> Apache-2.0</span>
+        <span><a href="https://pypi.org/project/bayyinah/" target="_blank" rel="noopener">View on PyPI &rarr;</a></span>
+        <span><a href="https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner" target="_blank" rel="noopener">View on GitHub &rarr;</a></span>
+      </div>
+    </section>
+
+    <!-- =========== § 09 RESEARCH =========== -->
     <section class="section" id="research">
-      <span class="section-num">08 · The Published Record</span>
+      <span class="section-num">09 · The Published Record</span>
       <h2>The corpus is <em>open.</em></h2>
       <p class="lede">Eleven technical papers, every claim auditable against its named null hypothesis, every paper linked by permanent DOI. The research reads in three layers: the protocol that names the failure mode, the architecture built on the protocol, and the input-layer applications that put the protocol into production.</p>
 
@@ -1863,9 +1925,9 @@ h2 em { font-style: italic; color: var(--lamp); }
       </div>
     </section>
 
-    <!-- =========== § 09 WAITLIST =========== -->
+    <!-- =========== § 10 WAITLIST =========== -->
     <section class="section" id="waitlist">
-      <span class="section-num">09 · Waitlist</span>
+      <span class="section-num">10 · Waitlist</span>
       <h2>Get the next <em>release report.</em></h2>
       <p class="lede">v1.2.3 just shipped: a corrective release closing three audit items from round 10 (requirements-dev manifest sync, a claim_next_job return-value mismatch, per-version public-surface snapshots) on top of the v1.2.x hardening line. v1.2.0 broke parity with v0/v0.1 to expose scan completion in the JSON output; v1.2.1 added a subprocess-isolated 30-second scan timeout and pinned the public surface at 58 names with an additive-only enforcement test; v1.2.2 moved demo summarization onto a SQLite-backed queue that survives a cable pull. 1,837 of 1,837 tests pass. The detector set is unchanged from v1.1.8; the four CSV/JSON gauntlet gaps remain documented in the public corpus. Subscribe for the release report when it ships, plus the periodic Munafiq Protocol notes that document what we miss.</p>
 

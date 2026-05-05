@@ -1250,7 +1250,7 @@ h2 em { font-style: italic; color: var(--lamp); }
   .tl-row { grid-template-columns: 70px 1fr; gap: 1rem; }
   .exam { min-width: 0; }
   .exam > * { min-width: 0; max-width: 100%; }
-  .exam-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  .exam-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
   .exam-result, .exam-bar, .findings, .exam-empty { min-width: 0; max-width: 100%; word-break: break-word; overflow-wrap: anywhere; }
   .exam-bar .meta { font-size: 0.7rem; word-break: break-all; }
   .exam-tab { flex: none; min-width: 0; padding: 0.65rem 0.4rem; overflow: hidden; }
@@ -2027,8 +2027,8 @@ h2 em { font-style: italic; color: var(--lamp); }
     <!-- =========== § 04 EXAMINATION =========== -->
     <section class="section" id="exam">
       <span class="section-num">04 · Examination</span>
-      <h2>Three files. Three verdicts. <em>Thirty seconds.</em></h2>
-      <p class="lede">Pre-recorded examinations of three real fixtures. No upload, no friction. Click to watch the analyzer read both layers.</p>
+      <h2>Four files. Four verdicts. <em>Thirty seconds.</em></h2>
+      <p class="lede">Pre-recorded examinations of four real fixtures, one per verdict in the ladder. No upload, no friction. Click to watch the analyzer read both layers.</p>
 
       <div class="exam">
         <div class="exam-tabs">
@@ -2042,8 +2042,13 @@ h2 em { font-style: italic; color: var(--lamp); }
             <span class="name">Adversarial PDF</span>
             <span class="desc">Sixteen substrate findings.</span>
           </button>
-          <button class="exam-tab" data-fixture="encrypted">
+          <button class="exam-tab" data-fixture="ambiguous">
             <span class="num">iii.</span>
+            <span class="name">Ambiguous PNG</span>
+            <span class="desc">Two interpretive findings.</span>
+          </button>
+          <button class="exam-tab" data-fixture="encrypted">
+            <span class="num">iv.</span>
             <span class="name">Encrypted PDF</span>
             <span class="desc">Substrate not readable.</span>
           </button>

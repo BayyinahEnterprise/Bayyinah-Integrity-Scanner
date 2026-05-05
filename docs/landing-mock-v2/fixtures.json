@@ -7,9 +7,9 @@
     "scan_incomplete": false,
     "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
     "tier_legend": {
-      "1": "Verified \u2014 unambiguous concealment",
-      "2": "Structural \u2014 pattern of concealment, context may justify",
-      "3": "Interpretive \u2014 suspicious, context-dependent"
+      "1": "Verified — unambiguous concealment",
+      "2": "Structural — pattern of concealment, context may justify",
+      "3": "Interpretive — suspicious, context-dependent"
     },
     "findings": [],
     "error": null,
@@ -23,9 +23,9 @@
     "scan_incomplete": false,
     "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
     "tier_legend": {
-      "1": "Verified \u2014 unambiguous concealment",
-      "2": "Structural \u2014 pattern of concealment, context may justify",
-      "3": "Interpretive \u2014 suspicious, context-dependent"
+      "1": "Verified — unambiguous concealment",
+      "2": "Structural — pattern of concealment, context may justify",
+      "3": "Interpretive — suspicious, context-dependent"
     },
     "findings": [
       {
@@ -48,7 +48,7 @@
         "description": "1 content-stream region(s) contain bidirectional control character(s). These can reorder displayed text without changing its underlying byte order.",
         "location": "page 1, raw content stream",
         "inversion_recovery": {
-          "surface": "/ActualText hex: invoice_\u202efdp.exe",
+          "surface": "/ActualText hex: invoice_‮fdp.exe",
           "concealed": "U+202E"
         }
       },
@@ -57,7 +57,7 @@
         "tier": 1,
         "confidence": 0.99,
         "severity": 0.3,
-        "description": "1 content-stream region(s) contain Unicode TAG character(s) (U+E0000-U+E007F). TAG characters do not render but carry ASCII payloads preserved through text extraction \u2014 a known prompt-injection vector.",
+        "description": "1 content-stream region(s) contain Unicode TAG character(s) (U+E0000-U+E007F). TAG characters do not render but carry ASCII payloads preserved through text extraction — a known prompt-injection vector.",
         "location": "page 1, raw content stream",
         "inversion_recovery": {
           "surface": "/ActualText hex: Caption",
@@ -72,8 +72,8 @@
         "description": "1 word(s) contain characters from non-Latin Unicode blocks that visually impersonate Latin letters (Cyrillic/Greek/Armenian/Cherokee/fullwidth/mathematical). Common in phishing spoofs and prompt-injection label swaps.",
         "location": "page 2, bbox (72.0, 95.33000183105469, 254.74203491210938, 110.9540023803711)",
         "inversion_recovery": {
-          "surface": "p\u0430ypal",
-          "concealed": "'p\u0430ypal': U+0430(looks like 'a')"
+          "surface": "pаypal",
+          "concealed": "'pаypal': U+0430(looks like 'a')"
         }
       },
       {
@@ -141,7 +141,7 @@
         "tier": 2,
         "confidence": 0.9,
         "severity": 0.15,
-        "description": "Document declares /OpenAction \u2014 action triggered on document open. Action subtype: /JavaScript.",
+        "description": "Document declares /OpenAction — action triggered on document open. Action subtype: /JavaScript.",
         "location": "catalog /OpenAction",
         "inversion_recovery": {
           "surface": "(no visible indication on open)",
@@ -153,7 +153,7 @@
         "tier": 2,
         "confidence": 0.85,
         "severity": 0.15,
-        "description": "Document declares /AA \u2014 additional actions triggered by document events (open, close, save, print, etc.).",
+        "description": "Document declares /AA — additional actions triggered by document events (open, close, save, print, etc.).",
         "location": "catalog /AA",
         "inversion_recovery": {
           "surface": "(no visible indication)",
@@ -217,12 +217,53 @@
         "location": "page 1, font /Fadv, /ToUnicode",
         "inversion_recovery": {
           "surface": "(rendered glyphs look legitimate)",
-          "concealed": "CID<65> \u2192 '\u0435'  [homoglyph U+0435 (looks like 'e')]; CID<6F> \u2192 '\u043e'  [homoglyph U+043E (looks like 'o')]"
+          "concealed": "CID<65> → 'е'  [homoglyph U+0435 (looks like 'e')]; CID<6F> → 'о'  [homoglyph U+043E (looks like 'o')]"
         }
       }
     ],
     "error": null,
     "scanner_version": "1.1.9"
+  },
+  "ambiguous": {
+    "tool": "bayyinah",
+    "version": "0.1.0",
+    "file_path": "ambiguous_image.png",
+    "integrity_score": 0.94,
+    "scan_incomplete": false,
+    "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
+    "tier_legend": {
+      "1": "Verified — unambiguous concealment",
+      "2": "Structural — pattern of concealment, context may justify",
+      "3": "Interpretive — suspicious, context-dependent"
+    },
+    "findings": [
+      {
+        "mechanism": "image_text_metadata",
+        "tier": 3,
+        "confidence": 0.6,
+        "severity": 0.05,
+        "description": "Human-readable text found in PNG tEXt chunk keyword='audited_total': '$99,000,000.00'. Text in image metadata is routine; surfaced so the reader can judge whether the content is expected.",
+        "location": "PNG tEXt chunk @ byte 149",
+        "inversion_recovery": {
+          "surface": "(not visible in the rendered image)",
+          "concealed": "metadata text (14 chars)"
+        }
+      },
+      {
+        "mechanism": "image_text_metadata",
+        "tier": 3,
+        "confidence": 0.6,
+        "severity": 0.05,
+        "description": "Human-readable text found in PNG iTXt chunk keyword='invoice_total': '$99,000,000.00 USD'. Text in image metadata is routine; surfaced so the reader can judge whether the content is expected.",
+        "location": "PNG iTXt chunk @ byte 189",
+        "inversion_recovery": {
+          "surface": "(not visible in the rendered image)",
+          "concealed": "metadata text (18 chars)"
+        }
+      }
+    ],
+    "error": null,
+    "scanner_version": "1.2.3"
   },
   "encrypted": {
     "tool": "bayyinah",
@@ -232,9 +273,9 @@
     "scan_incomplete": true,
     "verdict_disclaimer": "This report presents observed mechanisms and their validity tiers. It does NOT self-validate a moral or malicious verdict. The scanner makes the invisible visible; the reader performs the recognition.",
     "tier_legend": {
-      "1": "Verified \u2014 unambiguous concealment",
-      "2": "Structural \u2014 pattern of concealment, context may justify",
-      "3": "Interpretive \u2014 suspicious, context-dependent"
+      "1": "Verified — unambiguous concealment",
+      "2": "Structural — pattern of concealment, context may justify",
+      "3": "Interpretive — suspicious, context-dependent"
     },
     "findings": [],
     "error": "Text layer scan error: document closed or encrypted; Object layer scan error: File has not been decrypted",

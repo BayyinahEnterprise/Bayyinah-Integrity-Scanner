@@ -1,0 +1,65 @@
+{
+  "fixture_clean_libreoffice_destination_oa.pdf": {
+    "post_fix_v1_2_4": {
+      "fires": [],
+      "integrity_score": 1.0,
+      "n_findings": 0,
+      "verdict": "sahih"
+    },
+    "pre_fix_v1_2_3": {
+      "fires": [
+        "openaction"
+      ],
+      "integrity_score": 0.865,
+      "n_findings": 1,
+      "verdict": null
+    }
+  },
+  "fixture_clean_pdftex_article.pdf": {
+    "post_fix_v1_2_4": {
+      "fires": [],
+      "integrity_score": 1.0,
+      "n_findings": 0,
+      "verdict": "sahih"
+    },
+    "pre_fix_v1_2_3": {
+      "fires": [
+        "tounicode_anomaly"
+      ],
+      "integrity_score": 0.0,
+      "n_findings": 4,
+      "verdict": null
+    }
+  },
+  "fixture_clean_pdftex_with_hyperref.pdf": {
+    "post_fix_v1_2_4": {
+      "fires": [],
+      "integrity_score": 1.0,
+      "n_findings": 0,
+      "verdict": "sahih"
+    },
+    "pre_fix_v1_2_3": {
+      "fires": [
+        "openaction",
+        "tounicode_anomaly"
+      ],
+      "integrity_score": 0.0,
+      "n_findings": 5,
+      "verdict": null
+    }
+  },
+  "fixture_libreoffice_writer_native.pdf": {
+    "post_fix_v1_2_4": {
+      "fires": [],
+      "integrity_score": 1.0,
+      "n_findings": 0,
+      "verdict": "sahih"
+    },
+    "pre_fix_v1_2_3": {
+      "fires": [],
+      "integrity_score": 1.0,
+      "n_findings": 0,
+      "verdict": null
+    }
+  }
+}

@@ -480,10 +480,11 @@
       padding: 1.25rem 1.35rem;
       margin-top: 1rem;
     }
-    .panel.pass    { border-left-color: var(--ok); }
-    .panel.block   { border-left-color: var(--t1); }
-    .panel.mughlaq { border-left-color: var(--t3); }
-    .panel.error   { border-left-color: var(--muted); }
+    .panel.pass      { border-left-color: var(--ok); }
+    .panel.block     { border-left-color: var(--t1); }
+    .panel.mughlaq   { border-left-color: var(--t3); }
+    .panel.mushtabih { border-left-color: var(--t3); }
+    .panel.error     { border-left-color: var(--muted); }
 
     .verdict-badge {
       display: inline-block;
@@ -496,9 +497,50 @@
       margin-bottom: 0.85rem;
       font-weight: 500;
     }
-    .verdict-pass    { background: rgba(143, 191, 149, 0.14); color: var(--ok); }
-    .verdict-block   { background: var(--t1-soft); color: var(--t1); }
-    .verdict-mughlaq { background: rgba(184, 155, 122, 0.18); color: var(--t3); }
+    .verdict-pass      { background: rgba(143, 191, 149, 0.14); color: var(--ok); }
+    .verdict-block     { background: var(--t1-soft); color: var(--t1); }
+    .verdict-mughlaq   { background: rgba(184, 155, 122, 0.18); color: var(--t3); }
+    .verdict-mushtabih { background: rgba(184, 155, 122, 0.18); color: var(--t3); }
+
+    /* Verdict legend, shown above the upload form so reviewers can
+       map the five verdict states to plain-language outcomes before
+       they upload. The five states are exclusive and ordered. */
+    .verdict-legend {
+      margin: 1.25rem 0 1.5rem;
+      padding: 1rem 1.15rem;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      background: var(--bg);
+    }
+    .verdict-legend h3 {
+      font-family: var(--fm);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      margin: 0 0 0.7rem;
+    }
+    .verdict-legend dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 0.45rem 1rem;
+      font-size: 0.86rem;
+    }
+    .verdict-legend dt {
+      font-family: var(--fm);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      align-self: start;
+      padding-top: 0.05rem;
+    }
+    .verdict-legend dd { margin: 0; color: var(--ink-2); line-height: 1.45; }
+    .verdict-legend .v-sahih     { color: var(--ok); }
+    .verdict-legend .v-mukhfi    { color: var(--t1); }
+    .verdict-legend .v-mushtabih { color: var(--t3); }
+    .verdict-legend .v-mughlaq   { color: var(--t3); }
+    .verdict-legend .v-munafiq   { color: var(--t1); }
 
     .panel p { color: var(--ink-2); font-size: 0.95rem; }
     .panel p strong { color: var(--vellum); font-weight: 500; }
@@ -725,6 +767,25 @@
             <div class="exhibit-desc">Password-locked PDF. Expected verdict: mughlaq &rarr; blocked, 0 LLM tokens consumed.</div>
           </button>
         </div>
+      </div>
+
+      <!-- Five-state verdict legend. The scanner returns exactly one
+           of these five labels for every scan; the demo gate forwards
+           sahih and mushtabih to Claude and blocks the other three. -->
+      <div class="verdict-legend" aria-label="Verdict legend">
+        <h3>Verdict ladder</h3>
+        <dl>
+          <dt class="v-sahih">sahih</dt>
+          <dd>Sound. Score 1.0, no findings, scan complete. Document is forwarded to Claude.</dd>
+          <dt class="v-mushtabih">mushtabih</dt>
+          <dd>Doubtful. Scan complete with low-tier signal only (Tier 3); nothing verified. Forwarded with findings attached so a reviewer can judge in context.</dd>
+          <dt class="v-mukhfi">mukhfi</dt>
+          <dd>Concealed. At least one Tier 1 (verified concealment) or Tier 2 (structural anomaly) finding fired. Blocked; document is not forwarded.</dd>
+          <dt class="v-mughlaq">mughlaq</dt>
+          <dd>Closed. Substrate could not be read (encrypted, malformed, unsupported format). The scanner refuses to guess. Blocked.</dd>
+          <dt class="v-munafiq">munafiq</dt>
+          <dd>Verified concealment with low integrity score (&lt; 0.3) and at least one verified Tier 1 mechanism. Blocked.</dd>
+        </dl>
       </div>
 
       <!-- ============== OUTPUT: verdict panels render here ============== -->

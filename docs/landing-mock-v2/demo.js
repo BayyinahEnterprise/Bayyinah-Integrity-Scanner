@@ -135,8 +135,21 @@
       html =
         "<div class='panel mughlaq'>" +
         "<span class='verdict-badge verdict-mughlaq'>mughlaq</span>" +
-        "<p style='margin: 0;'>Document could not be fully scanned. Forwarded? No.</p>" +
+        "<p style='margin: 0;'><strong>Substrate not readable.</strong> The scanner could not complete its analysis (encrypted, malformed, or unsupported format) and refused to issue a verdict rather than guess. Document was not forwarded to Claude.</p>" +
         whatJustHappened(scan, scanMs, true, 0) +
+        "</div>";
+      output.innerHTML = html;
+      return;
+    }
+
+    if (verdict === "mushtabih") {
+      html =
+        "<div class='panel mushtabih'>" +
+        "<span class='verdict-badge verdict-mushtabih'>mushtabih</span>" +
+        "<p style='margin: 0;'><strong>Doubtful.</strong> The scan completed and surfaced low-tier signal (Tier 3 only) without verifying any concealment mechanism. The document is neither cleared nor blocked. By policy, mushtabih documents are forwarded to Claude with the findings shown below so a reviewer can judge in context.</p>" +
+        renderFindings(scan && scan.findings) +
+        (envelope.summary ? ("<p class='summary-text'>" + escapeHtml(envelope.summary) + "</p>") : "") +
+        whatJustHappened(scan, scanMs, false, envelope.llm_input_tokens || 0) +
         "</div>";
       output.innerHTML = html;
       return;

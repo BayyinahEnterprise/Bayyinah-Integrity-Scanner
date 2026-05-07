@@ -326,18 +326,30 @@ class BatinObjectAnalyzer(BaseAnalyzer):
 
         if "/OpenAction" in catalog:
             action = catalog["/OpenAction"]
-            findings.append(Finding(
-                mechanism="openaction",
-                tier=TIER["openaction"],
-                confidence=0.9,
-                description=(
-                    "Document declares /OpenAction — action triggered on document open. "
-                    f"Action subtype: {self._describe_action_subtype(action)}."
-                ),
-                location="catalog /OpenAction",
-                surface="(no visible indication on open)",
-                concealed=self._safe_str(action)[:500],
-            ))
+            # Per ISO 32000-1 section 12.6.3, /OpenAction values that are
+            # bare destination arrays or /GoTo-family wrapped destinations
+            # are navigation hints, not executable content. They are emitted
+            # by every LibreOffice export and by every pdfTeX document using
+            # hyperref. Filter them here so the openaction mechanism fires
+            # only on executable subtypes (/JavaScript, /Launch, /URI, etc.).
+            # The description text below is preserved verbatim from v0.1 to
+            # maintain finding-tuple parity with bayyinah_v0.scan_pdf on
+            # surviving emissions; the calibration is in the emission gate
+            # alone, not in the surface text. See Round 12 corrective in
+            # CHANGELOG.
+            if not self._is_benign_navigation_openaction(action):
+                findings.append(Finding(
+                    mechanism="openaction",
+                    tier=TIER["openaction"],
+                    confidence=0.9,
+                    description=(
+                        "Document declares /OpenAction — action triggered on document open. "
+                        f"Action subtype: {self._describe_action_subtype(action)}."
+                    ),
+                    location="catalog /OpenAction",
+                    surface="(no visible indication on open)",
+                    concealed=self._safe_str(action)[:500],
+                ))
 
         if "/AA" in catalog:
             findings.append(Finding(
@@ -422,6 +434,54 @@ class BatinObjectAnalyzer(BaseAnalyzer):
         except Exception:
             pass
         return "unknown"
+
+    @staticmethod
+    def _is_benign_navigation_openaction(action: Any) -> bool:
+        """True iff a catalog ``/OpenAction`` value is a navigation-only
+        hint per ISO 32000-1 section 12.6.3, not executable content.
+
+        Two PDF-spec cases produce a non-action /OpenAction:
+
+          1. A bare destination array such as
+             ``[page_ref /XYZ left top zoom]`` — the spec's most common
+             OpenAction form. Tells the viewer where to open. No
+             executable content. Emitted by every LibreOffice export and
+             by Word's "Restore last view" feature.
+
+          2. A ``/GoTo`` / ``/GoToR`` / ``/GoToE`` action wrapping a
+             destination — same semantics as case 1, just action-typed
+             sugar around it. Emitted by pdfTeX with hyperref and most
+             other LaTeX packages that set pdfstartview.
+
+        Surviving cases (handled by the openaction mechanism's existing
+        emission path) include /JavaScript, /Launch, /URI, /SubmitForm,
+        /ImportData, /ResetForm, /Hide, /Sound, /Movie, /Rendition,
+        /Trans, /Thread, and /Named (some). Each of these has executable
+        semantics and warrants surfacing.
+
+        Reference: ISO 32000-1 section 12.6.3 (Document-level
+        navigation), section 12.6.4 (Action types).
+        """
+        try:
+            obj = action.get_object() if hasattr(action, "get_object") else action
+        except Exception:
+            return False
+        # Case 1: bare destination array. List-likes without /S subtype
+        # are destinations; pypdf uses ArrayObject which inherits from list.
+        if isinstance(obj, list):
+            return True
+        # Case 2: dict-shaped action with /S in the navigation-only set.
+        if hasattr(obj, "get"):
+            try:
+                subtype = obj.get("/S")
+            except Exception:
+                subtype = None
+            if subtype is not None and str(subtype) in {
+                "/GoTo", "/GoToR", "/GoToE",
+            }:
+                return True
+        return False
+
 
     # ==================================================================
     # Mechanism 3: metadata (/Info /CreationDate vs /ModDate)

@@ -426,7 +426,11 @@
       background: #C7BFA7;
     }
 
-    /* Three exhibit cards for one-click fixture demo */
+    /* Three exhibit cards for one-click fixture demo. Each card now
+       opens with a rendered page-1 thumbnail so users see the actual
+       document substrate (or, for the encrypted exhibit, an inline
+       "locked page" illustration that mirrors the substrate-not-
+       readable verdict) before they click. */
     .exhibits {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -436,16 +440,66 @@
       background: #DAD4C2;
       border: 1px solid #C7BFA7;
       border-radius: 3px;
-      padding: 0.95rem 0.85rem;
+      padding: 0;
       cursor: pointer;
       text-align: left;
       font: inherit;
       color: inherit;
       transition: background 200ms var(--ease), border-color 200ms var(--ease);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
     .exhibit:hover {
       background: #CFC8B5;
       border-color: #A89F84;
+    }
+    /* Thumbnail well: a rendered page-1 image of each fixture, framed
+       so the page edges read as a document, not a screenshot. Aspect
+       ratio matches US Letter (8.5:11) so the framing stays consistent
+       across the three cards. */
+    .exhibit-thumb {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 8.5 / 11;
+      background: #F4F1E8;
+      border-bottom: 1px solid #C7BFA7;
+      overflow: hidden;
+    }
+    .exhibit-thumb img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+    }
+    .exhibit-thumb svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    /* Verdict badge layered on the thumbnail's bottom-left corner so
+       the expected verdict path is visible at a glance. Three colour
+       variants follow the framework's tier palette. */
+    .exhibit-verdict-badge {
+      position: absolute;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      font-family: var(--fm);
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.55rem;
+      border-radius: 2px;
+      font-weight: 500;
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+    .exhibit-verdict-badge.sahih   { background: rgba(143, 191, 149, 0.85); color: #2C4A33; }
+    .exhibit-verdict-badge.munafiq { background: rgba(184, 87, 66, 0.85);   color: #FFFFFF; }
+    .exhibit-verdict-badge.mughlaq { background: rgba(138, 107, 77, 0.85);  color: #FFFFFF; }
+    .exhibit-body {
+      padding: 0.85rem 0.85rem 0.95rem;
     }
     .exhibit-mark {
       font-family: var(--fm);
@@ -459,7 +513,7 @@
       font-weight: 500;
       font-size: 0.92rem;
       color: #1a1a1a;
-      margin-bottom: 0.2rem;
+      margin-bottom: 0.25rem;
     }
     .exhibit-desc {
       font-family: var(--fd);
@@ -722,21 +776,55 @@
 
         <div class="exhibits">
           <button class="exhibit" type="button" data-fixture="clean_q3_report.pdf">
-            <div class="exhibit-mark">Exhibit A</div>
-            <div class="exhibit-title">Q3 Financial Report</div>
-            <div class="exhibit-desc">Clean native-text PDF. Expected verdict: sahih &rarr; Sonnet summarizes, ~93 input tokens, 2.28s.</div>
+            <div class="exhibit-thumb">
+              <img src="/demo/exhibit-thumbnails/clean_q3_report.jpg" alt="Page 1 of a Q3 financial summary with revenue and margin tables" loading="lazy">
+              <span class="exhibit-verdict-badge sahih">sahih</span>
+            </div>
+            <div class="exhibit-body">
+              <div class="exhibit-mark">Exhibit A</div>
+              <div class="exhibit-title">Q3 Financial Report</div>
+              <div class="exhibit-desc">Clean native-text PDF. Expected verdict: sahih &rarr; Sonnet summarizes, ~93 input tokens, 2.28s.</div>
+            </div>
           </button>
 
           <button class="exhibit" type="button" data-fixture="adversarial_invisible_text.pdf">
-            <div class="exhibit-mark">Exhibit B</div>
-            <div class="exhibit-title">Concealment Sample</div>
-            <div class="exhibit-desc">16 mechanisms across substrate. Expected verdict: munafiq &rarr; blocked, 0 LLM tokens consumed.</div>
+            <div class="exhibit-thumb">
+              <img src="/demo/exhibit-thumbnails/adversarial_invisible_text.jpg" alt="Page 1 of a near-empty document showing only Hello, Caption, and invoice_pdf.exe; 16 concealment mechanisms are present but invisible" loading="lazy">
+              <span class="exhibit-verdict-badge munafiq">munafiq</span>
+            </div>
+            <div class="exhibit-body">
+              <div class="exhibit-mark">Exhibit B</div>
+              <div class="exhibit-title">Concealment Sample</div>
+              <div class="exhibit-desc">What you see is three lines. What the scanner finds is 16 concealment mechanisms across substrate. Expected verdict: munafiq &rarr; blocked, 0 LLM tokens consumed.</div>
+            </div>
           </button>
 
           <button class="exhibit" type="button" data-fixture="encrypted_locked.pdf">
-            <div class="exhibit-mark">Exhibit C</div>
-            <div class="exhibit-title">Encrypted Document</div>
-            <div class="exhibit-desc">Password-locked PDF. Expected verdict: mughlaq &rarr; blocked, 0 LLM tokens consumed.</div>
+            <div class="exhibit-thumb">
+              <!-- Encrypted PDFs cannot be rendered, which is the point.
+                   This inline illustration mirrors the mughlaq verdict:
+                   substrate sealed, scanner refuses to guess. -->
+              <svg viewBox="0 0 170 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Locked document illustration">
+                <rect x="15" y="15" width="140" height="190" rx="2" fill="#F4F1E8" stroke="#C7BFA7" stroke-width="1"/>
+                <line x1="30" y1="40" x2="140" y2="40" stroke="#D4CDB8" stroke-width="1" stroke-dasharray="3 2"/>
+                <line x1="30" y1="55" x2="120" y2="55" stroke="#D4CDB8" stroke-width="1" stroke-dasharray="3 2"/>
+                <line x1="30" y1="70" x2="135" y2="70" stroke="#D4CDB8" stroke-width="1" stroke-dasharray="3 2"/>
+                <line x1="30" y1="85" x2="100" y2="85" stroke="#D4CDB8" stroke-width="1" stroke-dasharray="3 2"/>
+                <!-- Padlock body -->
+                <rect x="68" y="125" width="34" height="30" rx="3" fill="#8A6B4D"/>
+                <!-- Padlock shackle -->
+                <path d="M 75 125 L 75 115 a 10 10 0 0 1 20 0 L 95 125" fill="none" stroke="#8A6B4D" stroke-width="4" stroke-linecap="round"/>
+                <!-- Keyhole -->
+                <circle cx="85" cy="137" r="3" fill="#F4F1E8"/>
+                <rect x="83.5" y="137" width="3" height="7" fill="#F4F1E8"/>
+              </svg>
+              <span class="exhibit-verdict-badge mughlaq">mughlaq</span>
+            </div>
+            <div class="exhibit-body">
+              <div class="exhibit-mark">Exhibit C</div>
+              <div class="exhibit-title">Encrypted Document</div>
+              <div class="exhibit-desc">Password-locked PDF. The scanner cannot read the substrate and refuses to guess. Expected verdict: mughlaq &rarr; blocked, 0 LLM tokens consumed.</div>
+            </div>
           </button>
         </div>
       </div>

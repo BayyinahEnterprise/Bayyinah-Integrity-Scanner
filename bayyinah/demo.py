@@ -54,6 +54,17 @@ _DEMO_FIXTURE_WHITELIST = {
     "adversarial_invisible_text.pdf",
     "encrypted_locked.pdf",
 }
+# Thumbnail whitelist for the exhibit cards. Same defence-in-depth as
+# the fixture whitelist: only exact-match names served. Encrypted
+# fixture has no thumbnail because its substrate cannot be rendered;
+# the card uses an inline SVG "locked page" illustration instead.
+_DEMO_THUMBNAIL_DIR = (
+    Path(__file__).resolve().parent.parent / "docs" / "landing-mock-v2" / "exhibit-thumbnails"
+)
+_DEMO_THUMBNAIL_WHITELIST = {
+    "clean_q3_report.jpg",
+    "adversarial_invisible_text.jpg",
+}
 _ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 _ANTHROPIC_TIMEOUT_S = 30.0
 _ANTHROPIC_MAX_TOKENS = 300
@@ -260,6 +271,24 @@ def demo_js() -> FileResponse:
     if not p.is_file():
         raise HTTPException(status_code=404, detail="demo.js not built.")
     return FileResponse(path=str(p), media_type="application/javascript")
+
+
+@router.get("/demo/exhibit-thumbnails/{name}")
+def demo_exhibit_thumbnail(name: str) -> FileResponse:
+    """Serve a whitelisted exhibit thumbnail JPG.
+
+    The exhibit cards on the demo page show a rendered page-1
+    thumbnail of each fixture so users see what the document looks
+    like before clicking. Thumbnails are pre-rendered at build time
+    by tools/render_exhibit_thumbnails.py; this route only serves
+    them. Whitelist enforced for the same reason as fixture serving.
+    """
+    if name not in _DEMO_THUMBNAIL_WHITELIST:
+        raise HTTPException(status_code=404, detail="Thumbnail not found.")
+    p = _DEMO_THUMBNAIL_DIR / name
+    if not p.is_file():
+        raise HTTPException(status_code=404, detail="Thumbnail not found.")
+    return FileResponse(path=str(p), media_type="image/jpeg")
 
 
 @router.get("/demo/fixtures/{name}")

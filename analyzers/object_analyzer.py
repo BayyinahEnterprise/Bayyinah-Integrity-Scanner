@@ -727,6 +727,12 @@ class BatinObjectAnalyzer(BaseAnalyzer):
         findings: list[Finding] = []
         seen_xrefs: set[int] = set()
 
+        # Extract /Info /Producer once. Used by _parse_tounicode_cmap to
+        # suppress canonical TeX anomalies (Round 12 HIGH 2 closure).
+        # Necessary-but-not-sufficient: the producer string can be forged.
+        # The structural _is_tex_canonical_anomaly check pairs with this.
+        producer = self._get_info_producer(reader)
+
         idx = get_current_content_index()
         if (
             idx is not None
@@ -742,7 +748,7 @@ class BatinObjectAnalyzer(BaseAnalyzer):
                     cmap_text = fi.cmap_bytes.decode(
                         "latin-1", errors="ignore"
                     )
-                    anomalies = self._parse_tounicode_cmap(cmap_text)
+                    anomalies = self._parse_tounicode_cmap(cmap_text, producer)
                     if anomalies:
                         previews = anomalies[:6]
                         findings.append(Finding(
@@ -803,7 +809,7 @@ class BatinObjectAnalyzer(BaseAnalyzer):
                     except Exception:
                         continue
                     cmap_text = cmap_bytes.decode("latin-1", errors="ignore")
-                    anomalies = self._parse_tounicode_cmap(cmap_text)
+                    anomalies = self._parse_tounicode_cmap(cmap_text, producer)
                     if anomalies:
                         previews = anomalies[:6]
                         findings.append(Finding(
@@ -827,11 +833,95 @@ class BatinObjectAnalyzer(BaseAnalyzer):
                     continue
         return findings
 
+    # Producer signatures for the TeX stack. The TeX system generates
+    # ToUnicode CMaps from font encoding tables, not from user-controlled
+    # content; producer matching is necessary-but-not-sufficient (the
+    # producer string can be forged). See _is_tex_canonical_anomaly for the
+    # complementary structural check that scopes suppression to the actual
+    # canonical patterns.
+    _TEX_PRODUCER_SIGNATURES: ClassVar[tuple[str, ...]] = (
+        "pdfTeX",     # pdfTeX (any version)
+        "XeTeX",      # XeLaTeX
+        "LuaTeX",     # LuaLaTeX
+        "dvips",      # PostScript-routed TeX
+        "dvipdfm",    # also matches dvipdfmx
+    )
+
     @staticmethod
-    def _parse_tounicode_cmap(cmap_text: str) -> list[str]:
+    def _is_tex_stack_producer(producer: str | None) -> bool:
+        """True if /Info /Producer indicates a TeX-stack producer.
+
+        The TeX stack (pdfTeX, XeTeX, LuaTeX, dvips, dvipdfmx) emits
+        ToUnicode CMaps from font encoding tables that legitimately
+        contain Greek letters in math fonts (CMSY, CMMI) and ZWNJ at
+        slot 0x17 in OT1 encoding. The base anomaly check flags these
+        as adversarial; this predicate gates the canonical-pattern
+        suppression that pairs with the producer match.
+        """
+        if not producer:
+            return False
+        return any(
+            sig in producer
+            for sig in BatinObjectAnalyzer._TEX_PRODUCER_SIGNATURES
+        )
+
+    @staticmethod
+    def _is_tex_canonical_anomaly(
+        src_label: str, tgt_text: str, reason: str
+    ) -> bool:
+        """True iff a flagged bfchar / bfrange entry is a known-canonical
+        TeX-stack mapping that the base anomaly check flags but is in
+        fact benign for documents produced by the TeX stack.
+
+        Three canonical patterns:
+
+          1. ZWNJ (U+200C) at OT1 slot 0x17: documented pdfTeX
+             placeholder for a glyph with no canonical Unicode
+             equivalent. Bilal's Round 12 incident report cites this
+             entry. Also accepts the equivalent for slot 0x17 in T1
+             encoding when a TeX producer is detected.
+
+          2. Greek-letter targets (U+0370 to U+03FF) in math fonts:
+             CMSY and CMMI emit Greek capitals (Gamma, Delta, Theta,
+             Pi, Sigma, Psi, Omega) and lowercase Greek letters (alpha,
+             beta, ...) that the analyzer flags as Latin homoglyphs
+             (Greek capital Gamma U+0393 resembles Latin capital
+             gamma). These are legitimate math symbols, not
+             concealment.
+
+          3. Other potentially-suspicious targets (Cyrillic, Armenian,
+             non-OT1-slot ZWNJ, ZWJ, bidi control, TAG) are NOT
+             canonical for the TeX stack and remain flagged.
+        """
+        if not tgt_text:
+            return False
+        # Pattern 1: OT1 / T1 ZWNJ at slot 0x17 (CID<17>).
+        if "<17>" in src_label and tgt_text == "‌":
+            return True
+        # Pattern 2: Greek-block targets when the reason is homoglyph.
+        # Allow whitespace and the Greek block (U+0370 - U+03FF).
+        if "homoglyph" in reason:
+            if all(
+                c.isspace() or 0x0370 <= ord(c) <= 0x03FF
+                for c in tgt_text
+            ):
+                return True
+        return False
+
+    @staticmethod
+    def _parse_tounicode_cmap(
+        cmap_text: str, producer: str = ""
+    ) -> list[str]:
         """Walk a ToUnicode CMap's bfchar/bfrange blocks and return a
         list of human-readable descriptions of each entry whose target
-        Unicode is adversarial (zero-width, bidi, TAG, homoglyph)."""
+        Unicode is adversarial (zero-width, bidi, TAG, homoglyph).
+
+        When ``producer`` indicates a TeX-stack producer, anomalies that
+        match the canonical TeX patterns (Greek-block targets in math
+        fonts, ZWNJ at OT1 slot 0x17) are suppressed; this closes the
+        Round 12 false-positive class without weakening detection on
+        non-TeX inputs.
+        """
         def hex_to_text(h: str) -> str:
             h = re.sub(r"\s+", "", h)
             if not h or len(h) % 2 != 0:
@@ -873,9 +963,16 @@ class BatinObjectAnalyzer(BaseAnalyzer):
                 tgt_text = hex_to_text(tgt_hex)
                 bad, reason = is_anomalous(tgt_text)
                 if bad:
-                    anomalies.append(
-                        f"CID<{src_hex}> → {tgt_text!r}  [{reason}]"
-                    )
+                    label = f"CID<{src_hex}> → {tgt_text!r}  [{reason}]"
+                    src_label = f"<{src_hex}>"
+                    if (
+                        BatinObjectAnalyzer._is_tex_stack_producer(producer)
+                        and BatinObjectAnalyzer._is_tex_canonical_anomaly(
+                            src_label, tgt_text, reason
+                        )
+                    ):
+                        continue
+                    anomalies.append(label)
 
         for m in re.finditer(
             r"beginbfrange(.*?)endbfrange", cmap_text, re.DOTALL,
@@ -893,24 +990,67 @@ class BatinObjectAnalyzer(BaseAnalyzer):
                     tgt_text = hex_to_text(tgt_part.strip("<> \t\n\r"))
                     bad, reason = is_anomalous(tgt_text)
                     if bad:
-                        anomalies.append(
+                        label = (
                             f"CIDs<{src_lo_hex}>-<{src_hi_hex}> start→ {tgt_text!r}  "
                             f"[{reason}]"
                         )
+                        src_label = f"<{src_lo_hex}>-<{src_hi_hex}>"
+                        if (
+                            BatinObjectAnalyzer._is_tex_stack_producer(producer)
+                            and BatinObjectAnalyzer._is_tex_canonical_anomaly(
+                                src_label, tgt_text, reason
+                            )
+                        ):
+                            continue
+                        anomalies.append(label)
                 else:
                     for tm in re.finditer(r"<\s*([0-9A-Fa-f]+)\s*>", tgt_part):
                         tgt_text = hex_to_text(tm.group(1))
                         bad, reason = is_anomalous(tgt_text)
                         if bad:
-                            anomalies.append(
+                            label = (
                                 f"CIDs<{src_lo_hex}>-<{src_hi_hex}> entry→ "
                                 f"{tgt_text!r}  [{reason}]"
                             )
+                            src_label = f"<{src_lo_hex}>-<{src_hi_hex}>"
+                            if (
+                                BatinObjectAnalyzer._is_tex_stack_producer(producer)
+                                and BatinObjectAnalyzer._is_tex_canonical_anomaly(
+                                    src_label, tgt_text, reason
+                                )
+                            ):
+                                continue
+                            anomalies.append(label)
         return anomalies
 
     # ==================================================================
     # Shared helpers
     # ==================================================================
+
+    @staticmethod
+    def _get_info_producer(reader: Any) -> str:
+        """Read /Info /Producer for the open document, returning the
+        empty string if absent or unreadable. Used by tounicode_anomaly
+        suppression to detect TeX-stack producers (Round 12 HIGH 2
+        closure)."""
+        try:
+            idx = get_current_content_index()
+            if (
+                idx is not None
+                and not idx.build_failed
+                and "info_dict" in idx.catalog
+            ):
+                info_dict = idx.catalog.get("info_dict") or {}
+                value = info_dict.get("/Producer")
+                if value:
+                    return str(value)
+            metadata = reader.metadata if hasattr(reader, "metadata") else None
+            if metadata is None:
+                return ""
+            value = metadata.get("/Producer")
+            return str(value) if value else ""
+        except Exception:
+            return ""
 
     def _walk_names_tree(self, node: Any) -> list[tuple[str, Any]]:
         """Walk a PDF Names tree and collect ``(name, value)`` pairs

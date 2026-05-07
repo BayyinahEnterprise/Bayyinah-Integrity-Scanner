@@ -124,8 +124,19 @@ V1_2_1_SURFACE: frozenset[str] = V1_2_0_SURFACE
 V1_2_2_SURFACE: frozenset[str] = V1_2_0_SURFACE
 
 
-# v1.2.3 corrective release (Fraz round 10): no surface delta.
+# v1.2.3 corrective release (Round 10 audit-of-self by Bilal):
+# no surface delta. The "Fraz round 10" attribution in v1.2.3 commit
+# messages was imprecise; the v1.2.4 attribution-discipline note
+# corrects the framing going forward (Bilal is the auditor on the
+# Bayyinah chain; Fraz is acknowledged for the audit framework's
+# engineering approach contribution per v3 §27).
 V1_2_3_SURFACE: frozenset[str] = V1_2_0_SURFACE
+
+
+# v1.2.4 Round 12 false-positive corrective: no surface delta. The
+# openaction destination filter and tounicode_anomaly TeX-stack
+# suppression are calibrations, not public-surface changes.
+V1_2_4_SURFACE: frozenset[str] = V1_2_0_SURFACE
 
 
 # ---------------------------------------------------------------------------
@@ -183,6 +194,18 @@ def test_v1_2_3_surface_is_subset_of_current():
     missing = set(V1_2_3_SURFACE) - current
     assert not missing, (
         f"Additive-only violation: names from v1.2.3 missing in the "
+        f"current surface: {sorted(missing)}. If the removal is "
+        f"intentional, follow the procedure in PARITY.md. Otherwise "
+        f"the offending commit must be reverted."
+    )
+
+
+def test_v1_2_4_surface_is_subset_of_current():
+    """Every name in the v1.2.4 surface must still be exported."""
+    current = _current_surface()
+    missing = set(V1_2_4_SURFACE) - current
+    assert not missing, (
+        f"Additive-only violation: names from v1.2.4 missing in the "
         f"current surface: {sorted(missing)}. If the removal is "
         f"intentional, follow the procedure in PARITY.md. Otherwise "
         f"the offending commit must be reverted."

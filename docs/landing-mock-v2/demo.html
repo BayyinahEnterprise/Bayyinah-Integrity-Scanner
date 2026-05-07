@@ -371,7 +371,7 @@
     }
     .verdict-row {
       display: grid;
-      grid-template-columns: 8.5rem 5.5rem 1fr;
+      grid-template-columns: 10rem 5.5rem 1fr;
       gap: 0.85rem;
       align-items: baseline;
       padding: 0.42rem 0;
@@ -385,9 +385,11 @@
       font-weight: 500;
       letter-spacing: 0.04em;
     }
-    .verdict-tag.sahih   { color: #5C8262; }
-    .verdict-tag.munafiq { color: #B85742; }
-    .verdict-tag.mughlaq { color: #8A6B4D; }
+    .verdict-tag.sahih     { color: #5C8262; }
+    .verdict-tag.mushtabih { color: #8A6B4D; }
+    .verdict-tag.mukhfi    { color: #B85742; }
+    .verdict-tag.munafiq   { color: #B85742; }
+    .verdict-tag.mughlaq   { color: #8A6B4D; }
     .verdict-arrow {
       color: #8A8474;
       font-family: var(--fs);
@@ -501,46 +503,6 @@
     .verdict-block     { background: var(--t1-soft); color: var(--t1); }
     .verdict-mughlaq   { background: rgba(184, 155, 122, 0.18); color: var(--t3); }
     .verdict-mushtabih { background: rgba(184, 155, 122, 0.18); color: var(--t3); }
-
-    /* Verdict legend, shown above the upload form so reviewers can
-       map the five verdict states to plain-language outcomes before
-       they upload. The five states are exclusive and ordered. */
-    .verdict-legend {
-      margin: 1.25rem 0 1.5rem;
-      padding: 1rem 1.15rem;
-      border: 1px solid var(--rule);
-      border-radius: 2px;
-      background: var(--bg);
-    }
-    .verdict-legend h3 {
-      font-family: var(--fm);
-      font-size: 0.72rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-weight: 500;
-      margin: 0 0 0.7rem;
-    }
-    .verdict-legend dl {
-      margin: 0;
-      display: grid;
-      grid-template-columns: max-content 1fr;
-      gap: 0.45rem 1rem;
-      font-size: 0.86rem;
-    }
-    .verdict-legend dt {
-      font-family: var(--fm);
-      font-size: 0.78rem;
-      letter-spacing: 0.06em;
-      align-self: start;
-      padding-top: 0.05rem;
-    }
-    .verdict-legend dd { margin: 0; color: var(--ink-2); line-height: 1.45; }
-    .verdict-legend .v-sahih     { color: var(--ok); }
-    .verdict-legend .v-mukhfi    { color: var(--t1); }
-    .verdict-legend .v-mushtabih { color: var(--t3); }
-    .verdict-legend .v-mughlaq   { color: var(--t3); }
-    .verdict-legend .v-munafiq   { color: var(--t1); }
 
     .panel p { color: var(--ink-2); font-size: 0.95rem; }
     .panel p strong { color: var(--vellum); font-weight: 500; }
@@ -682,10 +644,10 @@
 
       <p class="lede">
         Upload a PDF. The scanner runs the same 159 mechanisms that power
-        bayyinah.dev. If the firewall verdict is sahih (clean), Anthropic's
-        Sonnet 4.6 summarizes the document. If it is munafiq (concealed) or
-        mughlaq (locked), the model never sees the file, and zero LLM tokens
-        are consumed.
+        bayyinah.dev and returns one of five verdicts. If the verdict is
+        sahih (clean) or mushtabih (doubtful), Anthropic's Sonnet 4.6
+        summarizes the document. If it is mukhfi, munafiq, or mughlaq,
+        the model never sees the file, and zero LLM tokens are consumed.
       </p>
 
       <div class="body-copy">
@@ -728,9 +690,19 @@
             <span class="verdict-action"><strong>Sonnet 4.6 reads the file</strong> and returns a summary. Token count is the actual Anthropic billing unit.</span>
           </div>
           <div class="verdict-row">
-            <span class="verdict-tag munafiq">MUNAFIQ (concealed)</span>
+            <span class="verdict-tag mushtabih">MUSHTABIH (doubtful)</span>
             <span class="verdict-arrow">&rarr;</span>
-            <span class="verdict-action"><strong>Blocked. The model never sees the file.</strong> Zero LLM tokens consumed. Findings are reported from deterministic mechanisms only.</span>
+            <span class="verdict-action"><strong>Sonnet 4.6 reads the file with findings attached.</strong> Scan complete; only low-tier signal (Tier 3) surfaced and nothing was verified, so the document is forwarded with the findings shown so a reviewer can judge in context.</span>
+          </div>
+          <div class="verdict-row">
+            <span class="verdict-tag mukhfi">MUKHFI (concealed)</span>
+            <span class="verdict-arrow">&rarr;</span>
+            <span class="verdict-action"><strong>Blocked. The model never sees the file.</strong> Zero LLM tokens consumed. At least one Tier 1 (verified concealment) or Tier 2 (structural anomaly) finding fired.</span>
+          </div>
+          <div class="verdict-row">
+            <span class="verdict-tag munafiq">MUNAFIQ (verified)</span>
+            <span class="verdict-arrow">&rarr;</span>
+            <span class="verdict-action"><strong>Blocked. The model never sees the file.</strong> Zero LLM tokens consumed. Verified concealment with low integrity score (&lt; 0.3) and at least one Tier 1 mechanism.</span>
           </div>
           <div class="verdict-row">
             <span class="verdict-tag mughlaq">MUGHLAQ (locked)</span>
@@ -767,25 +739,6 @@
             <div class="exhibit-desc">Password-locked PDF. Expected verdict: mughlaq &rarr; blocked, 0 LLM tokens consumed.</div>
           </button>
         </div>
-      </div>
-
-      <!-- Five-state verdict legend. The scanner returns exactly one
-           of these five labels for every scan; the demo gate forwards
-           sahih and mushtabih to Claude and blocks the other three. -->
-      <div class="verdict-legend" aria-label="Verdict legend">
-        <h3>Verdict ladder</h3>
-        <dl>
-          <dt class="v-sahih">sahih</dt>
-          <dd>Sound. Score 1.0, no findings, scan complete. Document is forwarded to Claude.</dd>
-          <dt class="v-mushtabih">mushtabih</dt>
-          <dd>Doubtful. Scan complete with low-tier signal only (Tier 3); nothing verified. Forwarded with findings attached so a reviewer can judge in context.</dd>
-          <dt class="v-mukhfi">mukhfi</dt>
-          <dd>Concealed. At least one Tier 1 (verified concealment) or Tier 2 (structural anomaly) finding fired. Blocked; document is not forwarded.</dd>
-          <dt class="v-mughlaq">mughlaq</dt>
-          <dd>Closed. Substrate could not be read (encrypted, malformed, unsupported format). The scanner refuses to guess. Blocked.</dd>
-          <dt class="v-munafiq">munafiq</dt>
-          <dd>Verified concealment with low integrity score (&lt; 0.3) and at least one verified Tier 1 mechanism. Blocked.</dd>
-        </dl>
       </div>
 
       <!-- ============== OUTPUT: verdict panels render here ============== -->

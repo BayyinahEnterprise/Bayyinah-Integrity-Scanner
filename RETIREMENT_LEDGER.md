@@ -291,6 +291,56 @@ assertions pass at v1.6.0 import. bayyinah.__version__ bumped 1.5.0
 -> 1.6.0 to match pyproject.toml (per TestReleaseReadiness
 test_pyproject_version_matches_package_version invariant).
 
+### Round 17 (audit-of-self by Bilal, retired in v1.7.0)
+
+- MEDIUM: silent-default-flip risk class for the Phase 25+
+  `CrossModalCorrelationEngine`. A future release that wires the
+  engine into `ScanService.scan()` or `ScanService.scan_batch()`
+  without invoking the PARITY-break ceremony would change finding
+  counts on every multi-modal fixture (each gains at least one
+  `cross_stem_inventory` finding) and silently shift downstream-
+  consumer expectations. Closed by authoring `docs/cross_modal.md`
+  (188 lines) declaring the substrate-actual policy: Phase 12
+  default-on, Phase 25+ opt-in. Structural defense:
+  `tests/contracts/test_cross_modal_policy.py::TestPhase12DefaultOn`
+  + `TestPhase25PlusDefaultOff` (8 test functions) pin the policy.
+  A legitimate future flip must remove these tests as part of the
+  PARITY-break ceremony, making the change visible in the diff.
+
+- LOW: Q5 disambiguation risk class. The original Q5 question
+  framing in QUESTIONS.md treated "cross-modal correlation" as a
+  single opt-in surface; the substrate actually ships two surfaces
+  (Phase 12 and Phase 25+) with different policies. Closed by the
+  Q5 closure-log data point #1 disambiguating which engine the
+  question refers to and documenting both surfaces in
+  `docs/cross_modal.md` §1.
+
+- LOW: future-work rule name accountability. Five rule names
+  reserved in `domain/config.py` comments
+  (`cross_stem_text_inconsistency`, `cross_stem_metadata_clash`,
+  `embedded_media_recursive_scan`, `cross_stem_coordinated_concealment`,
+  `cross_file_media_divergence`) have been on the books since
+  Phase 25+ session 1. The v1.7.0 closure documents these as the
+  conditions for a default-on flip in `docs/cross_modal.md` §5,
+  binding future work to either shipping the detectors or closing
+  the names explicitly before the default flips.
+
+The release is additive. No analyzer modifications, no
+MECHANISM_REGISTRY changes, no ScanService.scan() / scan_batch()
+behavior changes, no tier reclassifications. Per CODING_STRATEGY
+§6 v1.7.0 audit-intensity STANDARD + Cow Episode anchor: documents
+existing substrate, pins boundary, defers PARITY-break to a future
+dedicated round.
+
+PARITY contract holds unchanged. The v1.3.0 tounicode_anomaly tier
+remapper continues to apply per its v1.3.0 PARITY.md ledger entry;
+no new remappers added at v1.7.0.
+
+Mechanism count unchanged at 159. MECHANISM_REGISTRY coherence
+assertions pass at v1.7.0 import. bayyinah.__version__ bumped 1.6.0
+-> 1.7.0 to match pyproject.toml (per TestReleaseReadiness
+test_pyproject_version_matches_package_version invariant).
+
 ## Mechanically prevented from this version forward
 
 The structural defenses that close each ledger entry are
@@ -309,3 +359,9 @@ themselves preserved in the codebase and run on CI:
 - BudgetPlan partition-coverage invariant: __post_init__ enforces that
   `in_budget | out_of_budget == MECHANISM_REGISTRY` exactly (since
   v1.6.0).
+- Cross-modal policy default-on/default-off pin: ScanService default
+  has Phase 12 CorrelationEngine attached and explicitly NOT a Phase
+  25+ CrossModalCorrelationEngine (since v1.7.0).
+- Phase 25+ post-processor isolation: CrossModalCorrelationEngine is
+  NOT a BaseAnalyzer subclass, blocking AnalyzerRegistry from
+  dispatching it as a side effect of a scan (since v1.7.0).

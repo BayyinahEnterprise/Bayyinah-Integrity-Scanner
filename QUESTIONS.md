@@ -103,6 +103,29 @@ parity-break ceremony per PARITY.md. Cross-reference: docs/score.md
 
 Cross-modal correlation (subtitle/audio/metadata divergence) is listed as a supported mechanism but is opt-in and not wired into `ScanService().scan(path)` by default. The README and the report header now disclose this in v1.2; the question is whether default-off is the right policy long-term or whether v1.3 should make cross-modal default-on once the rule set stabilizes. Default-off preserves backward compatibility; default-on matches what the README's mechanism table implies.
 
+**v1.7.0 closure-log data point #1 (Round 17, 2026-06-23):** Q5
+disambiguated and substrate-actual policy documented in
+`docs/cross_modal.md`. Bayyinah ships TWO correlation surfaces, not
+one. Phase 12 `CorrelationEngine` (verse 2:282, two-witness) is
+DEFAULT-ON: every `ScanService.scan()` invocation runs
+`intra_file_correlate` and every `ScanService.scan_batch()` runs
+`cross_file_correlate`. Phase 25+ `CrossModalCorrelationEngine`
+(verse 2:164, stem-level) is OPT-IN: invoked explicitly via
+`CrossModalCorrelationEngine().correlate(report)`. The v1.7.0
+decision is to KEEP Phase 25+ opt-in pending three conditions:
+(a) all five reserved future-work rule names ship detectors or close
+explicitly; (b) a PARITY-break ceremony per `PARITY.md` is invoked
+with calibration evidence on video/audio fixture corpus;
+(c) `MIGRATION.md` documents downstream consumer impact. Verse 2:148
+anchor: the scanner faces one default direction (Phase 12 default-on
+cross-layer correlation); a second direction (Phase 25+ stem-level
+correlation) is reserved opt-in. The v1.7.0 release pins this policy
+via P1-P4 in `tests/contracts/test_cross_modal_policy.py` so a future
+silent flip to default-on becomes a regression rather than a quiet
+behavior change. Cross-reference: `docs/cross_modal.md` (canonical
+policy) + `tests/contracts/test_cross_modal_policy.py` (regression
+pin) + CHANGELOG [1.7.0].
+
 ### Q7. The demo counter is obfuscated, not anonymized
 
 SHA-256 of IPv4 over a daily-rotating salt is brute-forceable by enumeration in seconds on commodity hardware once the salt is known. The README's claim that "cross-day correlation is impossible without the per-instance secret" is true only as long as the secret is never logged, leaked, or rotated in a way that retains the prior value. v1.2 corrects the language to "obfuscated, not anonymized." The structural fix is HyperLogLog or a Bloom filter -- counts without identifiers -- and is committed for v1.2. Q7 stays open until that lands.

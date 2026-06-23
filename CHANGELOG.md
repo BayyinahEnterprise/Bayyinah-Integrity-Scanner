@@ -12,6 +12,101 @@ held across every phase.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-06-23 - Round 17 Q5 cross-modal correlation policy closure
+
+Round 17 is an audit-of-self round dispatched per CODING_STRATEGY_
+v1_2_4_to_v2_0.md §6 v1.7.0 Fatiha session (verse al-Baqarah 2:148:
+"And for each is a direction toward which it faces. So race to [all
+that is] good"). STANDARD audit-intensity per CODING_STRATEGY §6
+v1.7.0 (policy clarification + contract pinning; no PARITY-breaking
+change at this release).
+
+Per Cow Episode anchor: v1.7.0 documents the substrate-actual policy
+that Bayyinah ships TWO correlation surfaces (Phase 12 default-on,
+Phase 25+ opt-in) and pins that boundary via contract tests. The
+release does NOT modify ScanService.scan() behavior or wire the
+Phase 25+ engine into the default path.
+
+### Added
+
+- **`docs/cross_modal.md`** -- canonical policy document for the two
+  correlation surfaces (188 lines). Pins four properties P1-P4:
+  Phase 12 default-on invariant, Phase 25+ default-off invariant,
+  public-surface invariant, mechanism-registry stability. Documents
+  the three conditions required for a future default-on flip
+  (calibrated rule set, PARITY-break ceremony with video/audio
+  fixture evidence, MIGRATION.md downstream-impact note).
+- **`tests/contracts/test_cross_modal_policy.py`** -- contract pin
+  tests for P1-P4 plus opt-in composition invariant. Total: 18 test
+  functions across 5 test classes.
+
+### Changed
+
+- **`bayyinah.__version__`** bumped 1.6.0 -> 1.7.0.
+- **`pyproject.toml`** version bumped 1.6.0 -> 1.7.0.
+- **`QUESTIONS.md`** -- Q5 closure-log data point #1 authored citing
+  `docs/cross_modal.md`. Q5 disambiguated: the question's original
+  framing referred to the Phase 25+ engine specifically, NOT to all
+  cross-layer correlation; Phase 12 has been default-on since its
+  introduction.
+
+### Q5 closure (cross-modal correlation default policy)
+
+QUESTIONS.md Q5 closure-log data point #1 filed: Bayyinah's
+correlation surface consists of two engines with different
+composition policies. The Phase 12 `CorrelationEngine` (verse 2:282)
+is default-on and runs on every ScanService.scan() and
+ScanService.scan_batch() invocation. The Phase 25+
+`CrossModalCorrelationEngine` (verse 2:164) is opt-in and consumed
+by callers explicitly via `CrossModalCorrelationEngine().correlate(report)`.
+The v1.7.0 decision is to KEEP Phase 25+ opt-in pending three
+conditions: (a) all five reserved future-work rule names ship
+detectors or close explicitly; (b) PARITY-break ceremony per
+PARITY.md with calibration evidence; (c) MIGRATION.md downstream-
+consumer impact note. The verse 2:148 anchor: the scanner faces one
+default direction; a second direction is reserved opt-in until the
+rule set stabilizes.
+
+### Out of scope (per CODING_STRATEGY §6 v1.7.0)
+
+- ScanService.scan() / scan_batch() behavior change (no Phase 25+
+  wiring at v1.7.0; deferred to a later release with PARITY-break
+  ceremony per PARITY.md).
+- New cross-modal mechanisms in MECHANISM_REGISTRY (the five
+  existing entries remain: audio_cross_stem_divergence,
+  cross_format_payload_match, cross_stem_inventory,
+  cross_stem_undeclared_text, video_cross_stem_divergence).
+- Future-work rule name removals (the five reserved names in
+  domain/config.py comments continue to mark the rollout path).
+- README narrative changes (callers continue to invoke
+  `ScanService().scan(path)` exactly as before).
+- Round 11 closure mechanism work (still queued for v1.2.6 bridge-
+  tag pending project-lead provision of 2026-05-04 red-team probe
+  document).
+
+### PARITY contract
+
+PARITY is unaffected by this release. No analyzer is added or
+modified; no mechanism enters or leaves MECHANISM_REGISTRY; no
+score-function behavior changes. `bayyinah.scan_pdf(path).to_dict()
+== bayyinah_v0.scan_pdf(path).to_dict()` continues to hold byte-
+identically on every Phase 0 fixture.
+
+### Round 17 retirement
+
+Q5 silent-default-flip risk class retired: a future release that
+silently wires `CrossModalCorrelationEngine` into the default scan
+path would change finding counts on every multi-modal fixture
+without invoking the PARITY-break ceremony. Retirement is
+structural: P1 + P2 in
+`tests/contracts/test_cross_modal_policy.py::TestPhase12DefaultOn`
+and `TestPhase25PlusDefaultOff` fail any modification that puts a
+`CrossModalCorrelationEngine` instance into
+`ScanService.correlation_engine` or that subclasses
+`CrossModalCorrelationEngine` from `BaseAnalyzer`. A future legitimate
+flip must remove these tests as part of the PARITY-break ceremony,
+making the change visible in the diff rather than silent.
+
 ## [1.6.0] - 2026-06-23 - Round 16 Q-PRO-3 honest budget controller + Q-PRO-4 supply-chain disposition
 
 Round 16 is an audit-of-self round dispatched per CODING_STRATEGY_

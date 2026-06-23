@@ -163,6 +163,32 @@ CHANGELOG [1.8.0].
 
 "Eight sessions, eight closing audits, zero open findings under the Munafiq Protocol cross-verification across three AI collaborators (Anthropic Claude, xAI Grok, Perplexity Computer)." Current LLMs share substantial failure modes (sycophancy, anchoring on prompt framing, agreement under social pressure). Three of them auditing the same artifact under the same framework reduces single-model variance but does not address shared bias. Q9 is whether the project should claim "audit-cleanness" at all in the absence of a human audit by someone paid to find holes, who does not accept the framework's premises.
 
+**v2.0.0 closure-log data point #1 (Round 20, 2026-06-23):** Q9
+answer is NO: the cross-model AI audit chain through Round 19 is
+the project's internal audit-of-self; it does NOT substitute for the
+external human audit Q9 requires. The v2.0.0 release authors
+`docs/v2_gate.md` as the commercialization gate. §2.1 of that
+document declares four criteria the external human audit must
+satisfy: (1) auditor independence, (2) framework-free engagement
+against `docs/principles.md` rather than the framework-anchored
+README, (3) hostile mandate (reward structure pays for findings,
+not sign-off), (4) findings disposition via the same parity-break
+ceremony per `PARITY.md`. Until those four criteria are satisfied
+and the auditor's commission is paid in full, the project's
+published claim shape is "audit-of-self complete through Round 19
+across four AI vendors (Anthropic, OpenAI, Google, Perplexity);
+external human audit pending Q9 closure." NOT "audit-clean."
+The §2.2 recursive self-verification harness ships at v2.0.0 at
+`tests/recursive_self_verification/test_self_scan.py` applying
+Bayyinah's own thesis to its own release deliverables (verse
+2:281 self-compensation discipline). The v2.0.0 release is the
+GATE EVENT in the major-version arc; "commercially-ready scanner"
+language remains reserved per `docs/v2_gate.md` §2.3 until all
+three commercialization-ready signals are present. Cross-reference:
+`docs/v2_gate.md` (canonical Q9 closure document) +
+`tests/recursive_self_verification/test_self_scan.py` (CI-enforced
+recursive self-verification) + CHANGELOG [2.0.0].
+
 ### Q10. Strategic coupling of framework and engineering
 
 The Quranic-principles section is load-bearing in the README. For Apache-2.0 OSS aiming at adoption in security teams, regulated industries, and academic citation, this couples adoption to acceptance of the framework. The engineering principles (deterministic byte-level checks, fail-closed defaults, additive-only invariants, fixture-pinned tests) stand without the framework -- the framework explains *why* these principles were chosen, not *whether* they hold. Q10 is whether a framework-free statement of the engineering principles should appear somewhere in `docs/`, alongside the framework-anchored README, for readers whose adoption is gated on it.

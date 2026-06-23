@@ -126,7 +126,8 @@ Per CODING_STRATEGY §10 successor work + ROADMAP_TO_V5 arcs:
 - v1.7.0: §2 default-pipeline capability disclosure (Q5) is disposed per cross-modal default analysis.
 - v1.8.0: §4 test-count-vs-test-quality (Q8 partial) is closed by the differential testing matrix.
 - v1.9.0: §6 strategic coupling (Q10) is closed by docs/principles.md authoring.
-- v2.0.0: §5 cross-model audit shared failure modes (Q9) is closed by external human audit.
+- v2.0.0: §5 cross-model audit shared failure modes (Q9) is closed by external human audit (gate criteria authored at docs/v2_gate.md §2.1).
+- v2.0.0: §10 NAMING.md FileRouter calibration (NEW): NAMING.md (~12 KB of markdown prose with comma-laden lines) is mis-routed by FileRouter's magic-byte sniff as CSV, producing 126 false-positive CSV findings (csv_comment_row, csv_inconsistent_columns, csv_formula_injection on bullet lines starting with '=', csv_column_type_drift, csv_encoding_divergence on UTF-8 arrows). Caught by the v2.0.0 recursive self-verification harness at tests/recursive_self_verification/test_self_scan.py. Calibration target: Round 21 FileRouter extension-vs-magic-byte reconciliation for .md files. Structural defense pending fix: TestPendingCalibrationDiagnostic::test_pending_doc_currently_produces_findings asserts the doc currently fires findings; when the FileRouter is calibrated and the doc scans clean, the diagnostic fails and forces re-promotion to _TOP_LEVEL_DOCS.
 - v3.0+: §7 format-coverage holes (audio/video signal-level) open per ROADMAP_TO_V5.
 - v4.0+: source-code substrate concealment per furqan-lint companion provisional.
 

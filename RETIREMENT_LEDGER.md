@@ -440,6 +440,78 @@ assertions pass at v1.9.0 import. bayyinah.__version__ bumped 1.8.0
 -> 1.9.0 to match pyproject.toml (per TestReleaseReadiness
 test_pyproject_version_matches_package_version invariant).
 
+### Round 20 (audit-of-self by Bilal, retired in v2.0.0)
+
+- HIGH: NAMING.md FileRouter mis-routing false-positive. Caught by
+  the v2.0.0 recursive self-verification harness on its first run.
+  NAMING.md (~12 KB markdown prose with comma-laden lines) is
+  routed by FileRouter's magic-byte sniff as CSV, producing 126
+  false-positive CSV findings: format_routing_divergence (tier 0
+  routing finding), extension_mismatch, csv_comment_row,
+  csv_inconsistent_columns, csv_formula_injection on
+  `=`-prefixed bullets, csv_column_type_drift, csv_encoding_divergence
+  on UTF-8 arrows. Closed by documenting in `KNOWN_LIMITS.md` §10
+  + Round 21 calibration target + structural defense at
+  `tests/recursive_self_verification/test_self_scan.py::TestPendingCalibrationDiagnostic`
+  which fails when the FileRouter is calibrated and NAMING.md scans
+  clean (forcing maintainer to promote it from
+  `_PENDING_CALIBRATION_DOCS` to `_TOP_LEVEL_DOCS` and remove the
+  KNOWN_LIMITS.md entry). Verse 2:281 anchor: the false-positive is
+  published, not silently excluded.
+
+- MEDIUM: cross-model AI audit substitution risk class. A scanner
+  whose only audit chain is AI-vendor cross-verification can
+  inherit shared LLM failure modes (sycophancy, framing-anchor
+  bias, social-pressure agreement). Closed by Q9 closure-log
+  declaring the cross-model chain does NOT substitute for the
+  external human audit, plus the four-criterion gate at
+  `docs/v2_gate.md` §2.1: auditor independence, framework-free
+  engagement, hostile mandate, parity-break findings disposition.
+
+- MEDIUM: research-preview to commercial-offering boundary drift.
+  A project at v2.0.0 could marketing-creep into "commercially-
+  ready" language without satisfying the external audit gate.
+  Closed by `docs/v2_gate.md` §2.3 commercialization-ready signal
+  triplet: external audit complete + recursive self-verification
+  CI green + ROADMAP_TO_V5 v2.0 gate row marked CLOSED. Until all
+  three are present, the published marketing language remains
+  "research preview at v2.0.0 with external audit pending."
+
+- LOW: recursive self-verification false-positive class. A
+  scanner's harness scanning its own deliverables CAN catch
+  analyzer false-positives (per the NAMING.md case above). The
+  structural-defense pattern (pending-calibration diagnostic
+  asserts current failure; pivots to forcing re-promotion when
+  fix lands) treats false-positives honestly without silently
+  excluding them.
+
+- LOW: major-version-bump removal-license risk class. v2.0.0 is
+  the first major-version bump in the v1.x to v2.x arc. The
+  additive-only invariant per `docs/principles.md` §3 says
+  removals require a major-version bump; v2.0.0 itself removes
+  NOTHING. The version bump is the gate marker, not the removal.
+  Future v2.x releases may remove items via PARITY ceremony +
+  MIGRATION.md note.
+
+The release is additive at the substrate level. No analyzer
+modifications, no MECHANISM_REGISTRY changes, no
+ScanService.scan() / scan_batch() behavior changes, no tier
+reclassifications, no score-function semantic changes, no new
+dependencies. Per CODING_STRATEGY §6 v2.0.0 audit-intensity
+HEAVY + Cow Episode anchor: ship the gate document + the harness
++ Q9 closure + version bump; defer the external audit + Round 21
+calibration to dedicated rounds.
+
+PARITY contract holds unchanged. The major-version bump does NOT
+waive the PARITY-break ceremony per `PARITY.md`. Any future v2.x
+modification of analyzer behavior continues to go through the
+five-step procedure.
+
+Mechanism count unchanged at 159. MECHANISM_REGISTRY coherence
+assertions pass at v2.0.0 import. bayyinah.__version__ bumped
+1.9.0 -> 2.0.0 to match pyproject.toml (per TestReleaseReadiness
+test_pyproject_version_matches_package_version invariant).
+
 ## Mechanically prevented from this version forward
 
 The structural defenses that close each ledger entry are
@@ -472,3 +544,10 @@ themselves preserved in the codebase and run on CI:
   enforces the three-kind partition (solo_bayyinah / solo_witness /
   distinct_locus); witnesses must return [] not raise; witnesses
   must declare an install hint (since v1.8.0).
+- Recursive self-verification: every release document at the repo
+  root + docs/ is scanned by Bayyinah on every CI run; findings on
+  release documents are structural failures requiring either
+  document edit (genuine concealment) or analyzer calibration
+  (false-positive); pending-calibration docs carry a diagnostic
+  test that fails when the fix lands, forcing maintainer re-
+  promotion (since v2.0.0).

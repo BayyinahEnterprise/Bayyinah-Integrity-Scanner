@@ -244,6 +244,53 @@ assertions pass at v1.5.0 import. bayyinah.__version__ bumped 1.4.0
 -> 1.5.0 to match pyproject.toml (per TestReleaseReadiness
 test_pyproject_version_matches_package_version invariant).
 
+### Round 16 (audit-of-self by Bilal, retired in v1.6.0)
+
+- MEDIUM: silent-skip risk class for any budget controller bolted onto
+  the scan path. Bayyinah ships at v1.6.0 with a pure projection layer
+  at `application/budget_controller.py` (203 lines) that partitions
+  MECHANISM_REGISTRY against a cost ceiling and surfaces
+  `scan_incomplete_implied` whenever truncation would occur. The
+  Verse 2:188 honest-accounting reading is structurally enforced by
+  the `BudgetPlan.__post_init__` invariant + four contract tests at
+  `tests/contracts/test_budget_controller.py::TestHonestScanIncomplete`.
+  Per Q-PRO-3 closure (`docs/budget.md`).
+
+- MEDIUM: supply-chain scope drift risk. Without explicit disposition,
+  a content scanner could accumulate provenance-verification analyzers
+  (SBOM ingestion, in-toto attestation reading, Sigstore signature
+  consumption) and quietly subsume a separate threat model. Closed by
+  authoring `docs/supply_chain_disposition.md` (139 lines) declaring
+  supply-chain detection OUT OF SCOPE for v1.x and v2.x with a three-
+  part rationale (different witnesses, mature external ecosystem,
+  patent-surface boundary). Composition deferred to v3.0+ enterprise
+  tier per ROADMAP_TO_V5.md. Per Q-PRO-4 closure
+  (`docs/supply_chain_disposition.md`).
+
+- LOW: cost-class enumeration drift risk. The taxonomy at
+  `domain/cost_classes.py` is the authoritative source for cost classes
+  A through D. v1.6.0 does NOT add a new cost class; the budget
+  controller consumes the frozen taxonomy as-is. Structural defense:
+  `tests/contracts/test_budget_controller.py::TestPureProjection`
+  pins that `plan_scan_budget` does not mutate
+  `MECHANISM_REGISTRY` or `MECHANISM_COST_CLASS`.
+
+The release is additive. No analyzer modifications, no MECHANISM_REGISTRY
+changes, no tier reclassifications, no test modifications to existing
+test files. Per CODING_STRATEGY §6 v1.6.0 audit-intensity STANDARD +
+Cow Episode anchor: smallest honest contribution; no scope drift into
+ScanService.scan() signature changes or supply-chain detectors.
+
+PARITY contract holds unchanged. The v1.3.0 tounicode_anomaly tier
+remapper in tests/test_integration.py + tests/analyzers/test_object_
+analyzer.py + tests/application/test_scan_service.py continues to apply
+per its v1.3.0 PARITY.md ledger entry; no new remappers added at v1.6.0.
+
+Mechanism count unchanged at 159. MECHANISM_REGISTRY coherence
+assertions pass at v1.6.0 import. bayyinah.__version__ bumped 1.5.0
+-> 1.6.0 to match pyproject.toml (per TestReleaseReadiness
+test_pyproject_version_matches_package_version invariant).
+
 ## Mechanically prevented from this version forward
 
 The structural defenses that close each ledger entry are
@@ -256,3 +303,9 @@ themselves preserved in the codebase and run on CI:
 - tounicode_anomaly TeX-stack producer suppression (since v1.2.4).
 - Producer-family corpus coverage (since v1.2.4).
 - v3.0 framework PDF self-scan regression pin (since v1.2.4).
+- BudgetPlan honest-accounting invariant: __post_init__ enforces that
+  `scan_incomplete_implied` cannot be False whenever `out_of_budget`
+  is non-empty (since v1.6.0).
+- BudgetPlan partition-coverage invariant: __post_init__ enforces that
+  `in_budget | out_of_budget == MECHANISM_REGISTRY` exactly (since
+  v1.6.0).

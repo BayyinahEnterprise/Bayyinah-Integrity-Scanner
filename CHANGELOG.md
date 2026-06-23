@@ -12,6 +12,124 @@ held across every phase.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-06-23 - Round 16 Q-PRO-3 honest budget controller + Q-PRO-4 supply-chain disposition
+
+Round 16 is an audit-of-self round dispatched per CODING_STRATEGY_
+v1_2_4_to_v2_0.md §6 v1.6.0 Fatiha session (verse al-Baqarah 2:188:
+"And do not consume one another's wealth unjustly"). STANDARD audit-
+intensity per CODING_STRATEGY §6 v1.6.0 (additive pure-projection
+layer + scope disposition documents; no PARITY-breaking change at
+this release).
+
+Per Cow Episode anchor: the budget controller ships at v1.6.0 as a
+pure projection function over the frozen MECHANISM_REGISTRY +
+MECHANISM_COST_CLASS taxonomy. It does NOT modify ScanService.scan()
+signature or call path. Wiring the budget plan into the scan call
+path is deferred to a later release with explicit PARITY-break
+ceremony per PARITY.md.
+
+### Added
+
+- **`application/budget_controller.py`** -- Q-PRO-3 honest budget
+  controller module (203 lines). Exports `BudgetPlan` frozen dataclass,
+  `CostCeiling` alias of `domain.cost_classes.CostClass`, and
+  `plan_scan_budget(ceiling)` pure function. The function partitions
+  MECHANISM_REGISTRY into `in_budget` + `out_of_budget` against the
+  ceiling, with `scan_incomplete_implied` True whenever any registered
+  mechanism falls above the ceiling. Honest accounting per Verse 2:188:
+  callers that run only the in_budget subset MUST pass
+  `scan_incomplete_implied` to `apply_scan_incomplete_clamp` so the
+  score reflects truncation.
+- **`docs/budget.md`** -- canonical contract document for the budget
+  controller (151 lines). Pins five properties P1-P5: pure projection,
+  honest scan_incomplete, monotonicity in ceiling, idempotence, registry
+  exhaustiveness echo. Documents the v1.6.0 scope boundary (no scan-
+  service signature change; no wall-clock budget; no supply-chain
+  budget; no new cost classes).
+- **`docs/supply_chain_disposition.md`** -- Q-PRO-4 scope disposition
+  document (139 lines). Supply-chain detection (SBOM, in-toto, Sigstore,
+  SLSA) is OUT OF SCOPE for v1.x and v2.x. Three-part rationale:
+  different witnesses (content vs. provenance), mature external
+  ecosystem (ISO 5962:2021 SPDX, OWASP CycloneDX, CNCF in-toto, LF
+  Sigstore), patent-surface boundary (the five immutable surfaces
+  describe content witnesses; provenance witnesses would escalate to
+  counsel). Composition deferred to v3.0+ enterprise tier per
+  ROADMAP_TO_V5.md.
+- **`tests/contracts/test_budget_controller.py`** -- contract pin
+  tests for the budget controller (P1 pure projection, P2 honest
+  scan_incomplete, P3 monotonicity, P4 idempotence, P5 registry
+  exhaustiveness, plus type/signature pinning). Total: 17 test
+  functions across 6 test classes.
+
+### Changed
+
+- **`bayyinah.__version__`** bumped 1.5.0 -> 1.6.0.
+- **`pyproject.toml`** version bumped 1.5.0 -> 1.6.0.
+- **`QUESTIONS.md`** -- Q-PRO-3 entry authored with v1.6.0 closure-log
+  data point #1 citing `docs/budget.md`. Q-PRO-4 entry authored with
+  v1.6.0 closure-log data point #1 citing `docs/supply_chain_disposition.md`.
+  Both questions remain in the "Open" section as projection-layer
+  closures; future releases may move them to Resolved once the scan-
+  service wiring (Q-PRO-3) lands or composition tier (Q-PRO-4) ships.
+
+### Q-PRO-3 closure (honest budget controller)
+
+QUESTIONS.md Q-PRO-3 closure-log data point #1 filed: pure projection
+layer authored at `application/budget_controller.py` with five honest-
+accounting properties pinned by `tests/contracts/test_budget_controller.py`.
+The Q-PRO-3 honest-accounting answer: a budget controller reports
+honestly when (a) it does not silently mutate the frozen taxonomy,
+(b) it surfaces `scan_incomplete_implied` whenever truncation would
+occur, (c) it remains a read-only plan that downstream consumers
+choose to act on. The v1.6.0 release authors the layer; future
+parity-break ceremony wires it into ScanService.scan() as a runtime
+gate.
+
+### Q-PRO-4 closure (supply-chain disposition)
+
+QUESTIONS.md Q-PRO-4 closure-log data point #1 filed: supply-chain
+detection is OUT OF SCOPE for v1.x and v2.x per
+`docs/supply_chain_disposition.md`. The Q-PRO-4 honest-scope answer:
+Bayyinah's witnesses inspect file content; supply-chain witnesses
+inspect provenance anchored outside the file. The mature external
+ecosystem (SPDX, CycloneDX, in-toto, Sigstore, SLSA) is the right
+home for provenance verification; Bayyinah composes with it at v3.0+
+enterprise tier per ROADMAP_TO_V5.md, not via in-pipeline detectors.
+
+### Out of scope (per CODING_STRATEGY §6 v1.6.0)
+
+- ScanService.scan() signature change (deferred to a later release
+  with explicit parity-break ceremony per PARITY.md).
+- Wall-clock or memory budget enforcement (handled by v1.2.1 Q6
+  closure: subprocess timeout + isolation).
+- Per-batch cross-file budget accounting (deferred to v3.0+ per
+  ROADMAP_TO_V5.md).
+- Supply-chain detectors (out of scope per Q-PRO-4 disposition).
+- New cost classes (taxonomy at domain/cost_classes.py frozen at
+  A/B/C/D).
+- Round 11 closure mechanism work (still queued for v1.2.6 bridge-tag
+  pending project-lead provision of 2026-05-04 red-team probe document).
+
+### PARITY contract
+
+PARITY is unaffected by this release. No analyzer is added or modified;
+no mechanism enters or leaves MECHANISM_REGISTRY; no score-function
+behavior changes. `bayyinah.scan_pdf(path).to_dict() ==
+bayyinah_v0.scan_pdf(path).to_dict()` continues to hold byte-identically
+on every Phase 0 fixture.
+
+### Round 16 retirement
+
+Q-PRO-3 silent-skip risk class retired: a budget controller that
+silently skips mechanisms without informing the caller would have been
+the Verse 2:188 anti-pattern. The retirement is structural: the
+`scan_incomplete_implied` field on `BudgetPlan` is required by the
+dataclass `__post_init__` invariant and pin-tested at
+`tests/contracts/test_budget_controller.py::TestHonestScanIncomplete`.
+A future modification that decouples `scan_incomplete_implied` from
+`out_of_budget` cardinality fails the dataclass invariant check and
+the contract test, blocking the regression.
+
 ## [1.5.0] - 2026-06-22 - Round 15 KNOWN_LIMITS authoring (Q1 closure)
 
 Round 15 is an audit-of-self round dispatched per CODING_STRATEGY_

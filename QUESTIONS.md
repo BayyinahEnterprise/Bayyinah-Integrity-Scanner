@@ -121,6 +121,61 @@ The Quranic-principles section is load-bearing in the README. For Apache-2.0 OSS
 
 This is not a question about removing the framework. It is a question about whether the project's adoption ceiling is the framework's audience, and whether that is the intended ceiling.
 
+### Q-PRO-3. Honest budget controller
+
+The cost-class taxonomy at `domain/cost_classes.py` describes the
+algorithmic shape of every mechanism with respect to one document
+(class A structural address, class B indexed content walk, class C
+cross-correlation, class D full re-parse). A budget-conscious caller
+wants to set a ceiling on the cost class they will admit and know
+honestly which mechanisms run and which are skipped. Q-PRO-3 is
+whether a budget controller can be authored that reports honestly,
+without redesigning the existing production / forensic scan modes or
+silently skipping mechanisms.
+
+**v1.6.0 closure-log data point #1 (Round 16, 2026-06-23):** Q-PRO-3
+ships at v1.6.0 as a pure projection layer per `docs/budget.md`.
+`application.budget_controller.plan_scan_budget(ceiling)` computes a
+`BudgetPlan` partitioning `MECHANISM_REGISTRY` into `in_budget` and
+`out_of_budget` against the ceiling, with `scan_incomplete_implied`
+True whenever any mechanism is excluded. The honest accounting
+property (Verse 2:188): a downstream caller that runs only the
+in_budget subset MUST pass `scan_incomplete_implied` to
+`apply_scan_incomplete_clamp` per `docs/score.md` §2.1, so the score
+reflects truncation. The v1.6.0 release does NOT modify
+`ScanService.scan()` signature; wiring the budget plan into the scan
+call path is deferred to a later release with explicit parity-break
+ceremony per `PARITY.md`. Cross-reference: `docs/budget.md` (canonical
+contract) + `tests/contracts/test_budget_controller.py` (regression
+pin) + CHANGELOG [1.6.0].
+
+### Q-PRO-4. Supply-chain integrity is a different threat model
+
+Supply-chain attacks compromise the pipeline by which a file or
+binary came to exist (dependency substitution, build-system tampering,
+provenance forgery, signing-key compromise). The ecosystem for that
+threat model is mature: SPDX SBOM, CycloneDX SBOM, in-toto attestations,
+Sigstore signing, SLSA framework levels. Q-PRO-4 is whether Bayyinah
+should ingest these artifacts as primary witnesses, compose with them
+at an operator workflow tier, or decline to address the supply-chain
+question altogether.
+
+**v1.6.0 closure-log data point #1 (Round 16, 2026-06-23):** Q-PRO-4
+ships at v1.6.0 as a scope disposition per
+`docs/supply_chain_disposition.md`. Supply-chain detection is OUT OF
+SCOPE for v1.x and v2.x. The three-part rationale: (a) Bayyinah's
+witnesses inspect file content; supply-chain witnesses inspect
+provenance anchored outside the file. (b) The supply-chain ecosystem
+is mature (ISO 5962:2021 SPDX, OWASP CycloneDX, CNCF in-toto, Linux
+Foundation Sigstore, SLSA framework); the honest engineering decision
+is composition not reimplementation. (c) The five immutable patent
+surfaces describe content witnesses; extending them to provenance
+witnesses would escalate to patent counsel before merge. v3.0+
+enterprise tier per `ROADMAP_TO_V5.md` defines the composition
+interface; that release would author its own disposition document
+superseding this one. Cross-reference:
+`docs/supply_chain_disposition.md` + CHANGELOG [1.6.0].
+
 ## Resolved
 
 ### Q6. The parser is the attack surface (Resolved in v1.2.1)

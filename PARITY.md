@@ -20,7 +20,7 @@ A guarantee that always reproduces v0 is also a guarantee that ships every defec
 
 ## The conditional invariant
 
-**The parity invariant is conditional on the correctness of the reference implementation.** When a v0 finding, score, error message, or output shape is demonstrated to be incorrect — by an external corpus, a security advisory, an end-user report, or an internal review — the parity baseline is updated.
+**The parity invariant is conditional on the correctness of the reference implementation.** When a v0 finding, score, error message, or output shape is demonstrated to be incorrect -- by an external corpus, a security advisory, an end-user report, or an internal review -- the parity baseline is updated.
 
 The procedure:
 
@@ -37,6 +37,64 @@ A parity break is not a license to drift. The default remains identical-output. 
 ## What a parity break is
 
 A parity break is the discipline that lets the codebase honor the structural-honesty thesis recursively: the project's own claim that "we never silently change behavior" is conditional on the project never silently failing to fix things. The conditional invariant is what makes the parity claim load-bearing instead of a trap.
+
+## Parity-break ledger
+
+The parity-break ceremony per the procedure above records each invariant
+modification with rationale, scope, and downstream-consumer migration
+notes. Per FRAMEWORK.md, parity breaks are reviewed, version-bumped, and
+publicly declared events; this ledger is the canonical record.
+
+### v1.3.0 (Round 13) -- tounicode_anomaly tier reclassification 1 -> 2
+
+**Date:** 2026-06-22.
+**Driving cycle:** Round 13 audit-of-self per RETIREMENT_LEDGER.md;
+deferred from v1.2.4 Round 12 calibration corrective with the proper
+PARITY.md procedure (issue tag, fixture update, test update, minor bump,
+CHANGELOG Parity-break heading).
+**Mechanism:** `tounicode_anomaly`.
+**Locus:** `domain/config.py` TIER table.
+**Old (v0/v0_1 reference) tier:** 1.
+**New (v1.3.0+ modular) tier:** 2.
+**Rationale:** v1.2.4's Round 12 corrective established that legitimate
+TeX-stack ToUnicode CMaps (OT1/T1 fonts with Greek/math glyph targets at
+unusual slots, ZWNJ at slot 0x17, etc.) produce ToUnicode shape that the
+heuristic legitimately classifies as anomalous, even when no concealment
+is present. The pdfTeX hyperref/GoTo and LibreOffice destination-array
+calibration corrections shipped at v1.2.4 reduced the false-positive
+rate but did not eliminate the structural-pattern-vs-intent ambiguity.
+Tier 1 implies high-confidence concealment; tier 2 implies structural
+pattern with intent-ambiguity. Tier 2 is the substrate-honest
+classification for tounicode_anomaly given the Round 12 calibration
+evidence.
+**Affected fixtures:** any Phase 0 fixture exercising tounicode_anomaly
+emission; explicitly `tests/fixtures/_fonts/tounicode_cmap.pdf` and any
+PDF fixture with a non-canonical ToUnicode CMap. The pre-v1.3.0
+expected output had tier=1; post-v1.3.0 emits tier=2. Old expected
+output retained as the v0/v0_1 reference baseline; new expected output
+is the v1.3.0+ canonical.
+**Test update:** `tests/test_integration.py::test_scan_pdf_parity_with_v0`
+and `test_scan_pdf_parity_with_v01` apply a documented v1.3.0
+parity-break remapper to the v0/v0_1 theirs_tuples list, coercing
+tounicode_anomaly findings' tier from 1 to 2 before equality comparison.
+The remapper is named `_v1_3_0_tounicode_tier_remap` and is documented
+in test_integration.py with cross-reference to this ledger entry.
+**Migration note for downstream consumers:** consumers pinned to
+v1.2.x tounicode_anomaly tier=1 must update to tier=2 at the v1.3.0
+upgrade. Triage workflows that partition by tier route tounicode_anomaly
+to the tier-2 (structural-pattern) workflow rather than tier-1
+(high-confidence concealment) starting at v1.3.0. The mechanism's
+detection logic is unchanged; only the tier classification of its
+output changes.
+**Version bump:** 1.2.4 -> 1.3.0 (minor, per PARITY.md procedure step
+5: parity break is a behavior change even when the new behavior is
+more correct than the old).
+**Q2 closure data point #1:** this parity break is the first empirical
+data point for QUESTIONS.md Q2 (Is the parity-with-v0 invariant
+load-bearing or contingent?). The discipline answer materializes as:
+the invariant is contingent on v0 correctness; the ceremony exists
+precisely for this case. Q2 accumulates evidence across subsequent
+parity breaks; v1.3.0 is data point 1.
 
 ## Maintainer
 

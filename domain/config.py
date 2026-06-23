@@ -2480,7 +2480,7 @@ TIER: Final[dict[str, int]] = {
     "incremental_update":    3,
     "metadata_anomaly":      3,
     "hidden_ocg":            2,
-    "tounicode_anomaly":     1,
+    "tounicode_anomaly":     2,
     # Phase 9 — structural concealment in non-PDF formats.
     "duplicate_keys":        2,
     "excessive_nesting":     3,

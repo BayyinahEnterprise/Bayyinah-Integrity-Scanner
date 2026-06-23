@@ -12,6 +12,342 @@ held across every phase.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-06-22 - Round 15 KNOWN_LIMITS authoring (Q1 closure)
+
+Round 15 is an audit-of-self round dispatched per CODING_STRATEGY_
+v1_2_4_to_v2_0.md §6 v1.5.0 Fatiha session (verse al-Baqarah 2:32
+"Exalted are You; we have no knowledge except what You have taught us").
+LIGHT audit-intensity per CODING_STRATEGY §6 v1.5.0 (documentation-only;
+no Tier 1 claim per CODING_STRATEGY §M.3.4 §0.3 boundary exemption).
+
+Per Cow Episode anchor: KNOWN_LIMITS.md enumerates ONLY limitations
+backed by CHANGELOG / QUESTIONS / RETIREMENT_LEDGER references; no
+hypothetical padding.
+
+### Added
+
+- **`KNOWN_LIMITS.md`** -- canonical blind-spot publication document
+  (216 lines, repo root). Enumerates 9 limitation classes per
+  QUESTIONS.md Q1 closure target: score-function blind spot (§1),
+  default-pipeline capability disclosure / Q5 carry-forward (§2),
+  demo telemetry obfuscation / Q7 carry-forward (§3), test count
+  vs test quality / Q8 carry-forward (§4), cross-model audit failure
+  modes / Q9 carry-forward (§5), strategic coupling / Q10 carry-
+  forward (§6), format-coverage holes (§7), Round 11 detector-gap
+  carry-forward (§8), PARITY-break ledger gaps (§9).
+- **`docs/principles.md`** -- STUB (structure only). Full framework-
+  free engineering principles content is the v1.9.0 Round 19
+  deliverable per CODING_STRATEGY §6 v1.9.0.
+
+### Q1 closure (adversarial document the score function cannot detect)
+
+QUESTIONS.md Q1 closure-log data point #1 filed: BLIND-SPOT GENERAL
+FORM published in KNOWN_LIMITS.md §1. The honest publication of the
+blind spot is the v1.5.0 Q1 closure per the Q1 thesis (a scanner that
+publishes its blind spots is harder to attack than one claiming
+completeness). Construction of a specific adversarial fixture queued
+for later releases as substrate matures.
+
+### Out of scope (per CODING_STRATEGY §6 v1.5.0)
+
+- New substrate or detectors (LIGHT-tier documentation-only release).
+- Round 11 closure mechanism work (still queued for v1.2.6 bridge-tag
+  pending project-lead provision of 2026-05-04 red-team probe document).
+- docs/principles.md full content (v1.9.0 Round 19 deliverable).
+- Adversarial fixture construction demonstrating score=1.0 on concealed
+  payload (queued v1.6.0 -- v1.8.0).
+
+### PARITY contract
+
+Holds unchanged at v1.5.0. No score function modification; no clamp
+modification; no MECHANISM_REGISTRY change (still 159). The v1.3.0
+tounicode_anomaly tier remapper continues to apply per its v1.3.0
+PARITY.md ledger entry; no new remappers introduced.
+
+### Version bump
+
+- **pyproject.toml + bayyinah/__init__.py:** 1.4.0 -> 1.5.0 (minor
+  bump per documentation-only release adding KNOWN_LIMITS + principles
+  stub).
+
+### Release-gate per CODING_STRATEGY §6 v1.5.0 LIGHT tier
+
+- [x] empirical detector-gap classes enumerated from RETIREMENT_LEDGER
+- [x] format-coverage holes enumerated from FileKind enum + CHANGELOG
+- [x] audit-class boundaries enumerated from QUESTIONS.md open items
+- [x] KNOWN_LIMITS.md authored
+- [x] Q1 closure log
+- [x] docs/principles.md stub
+- [x] CHANGELOG.md v1.5.0 entry
+- [x] RETIREMENT_LEDGER.md Round 15 entry
+- [x] minor version bumped 1.4.0 -> 1.5.0 in BOTH pyproject + __init__
+- [x] no analyzer modifications; no MECHANISM_REGISTRY changes
+- [x] em-dash sweep clean across all modified prose files
+
+### Falsification block
+
+Per CODING_STRATEGY §M.3.4: v1.5.0 makes NO Tier 1 import claim; the
+release is descriptive documentation declaring honest knowledge bounds
+per PMD v1.8 §3A.4 boundary distinction. No falsification block
+required per PMD v1.8 §0.3 ship-blocker rule scope.
+
+## [1.4.0] - 2026-06-22 - Round 14 score function + clamp contract pin (Q3 + Q4 closure)
+
+Round 14 is an audit-of-self round dispatched per CODING_STRATEGY_
+v1_2_4_to_v2_0.md §6 v1.4.0 Fatiha session (verse al-Baqarah 2:286
+"Allah does not charge a soul except [with that within] its capacity").
+The release PINS existing behavior of `compute_muwazana_score` and
+`apply_scan_incomplete_clamp` via documentation contract + regression
+tests. No code modification; no redesign.
+
+Per CODING_STRATEGY §6 v1.4.0 Cow Episode anchor: contract documents
+WHAT the function currently does; it does NOT redesign. Future
+modifications require the parity-break ceremony per PARITY.md.
+
+### Added
+
+- **`docs/score.md`** -- canonical contract document for
+  `compute_muwazana_score`, `apply_scan_incomplete_clamp`, and
+  `tamyiz_verdict`. Pins shape, boundary conditions, monotonicity,
+  order independence, rounding tolerance, clamp truth table, purity,
+  and the five-verdict decision table.
+- **`tests/contracts/test_muwazana_score_shape.py`** -- regression
+  guards for docs/score.md §1 (boundary conditions, monotonicity,
+  order independence, rounding, purity).
+- **`tests/contracts/test_scan_incomplete_clamp.py`** -- regression
+  guards for docs/score.md §2 (truth table, purity, idempotence,
+  constant pinning, keyword-only signature).
+- **`tests/contracts/__init__.py`** -- new test package directory.
+
+### Q3 closure (score function collapses heterogeneous risk)
+
+QUESTIONS.md Q3 closure-log data point #1 filed: continuous-and-
+saturating shape PINNED at v1.4.0. The decision is NOT to split into
+score-and-finding-count axes; consumers needing higher resolution
+access the IntegrityReport.findings list directly. Future split-
+redesign requires parity-break ceremony.
+
+### Q4 closure (`0.5` clamp lives inside continuous distribution)
+
+QUESTIONS.md Q4 closure-log data point #1 filed: `SCAN_INCOMPLETE_CLAMP
+= 0.5` PINNED at v1.4.0. The decision is NOT to switch to `score=None`
+for incomplete scans; the `scan_incomplete: bool` companion field on
+IntegrityReport remains the type-safe disambiguation channel. Future
+null-on-incomplete redesign requires parity-break ceremony.
+
+### Patent invariant clause
+
+The verdict aggregator's five-verdict structure (component 150 per
+CODING_STRATEGY §7) is PINNED at v1.4.0 via the `tamyiz_verdict`
+decision-table contract in docs/score.md §3. The decision logic and
+threshold values (0.3 for munafiq, 0.7 for mukhfi) are immutable
+without counsel review.
+
+### PARITY contract
+
+Holds unchanged at v1.4.0. No score function modification; no clamp
+modification; no MECHANISM_REGISTRY change (still 159). The v1.3.0
+tounicode_anomaly tier remapper in tests/test_integration.py continues
+to apply per its v1.3.0 PARITY.md ledger entry; no new remappers
+introduced.
+
+### Falsification block per CODING_STRATEGY §11 v1.4.0
+
+Per PMD v1.8 §0.3 + CODING_STRATEGY §M+1 §M.3.3 (full quintuple-plus-
+verdict): the claim is that compute_muwazana_score shape is stable
+across all subsequent rounds going forward; the falsifier is any
+subsequent release v1.5.0 -> v2.0.0 modifying compute_muwazana_score
+or apply_scan_incomplete_clamp body without (a) contract tests failing
+in CI on the modifying PR AND (b) explicit parity-break ceremony in
+PARITY.md. Threshold: zero silent modifications.
+
+### Release-gate per CODING_STRATEGY §6 v1.4.0 STANDARD tier
+
+- [x] `compute_muwazana_score` current behavior empirically mapped
+- [x] docs/score.md authored describing mapped contract
+- [x] tests/contracts/test_muwazana_score_shape.py pinning contract
+- [x] same loop completed for `apply_scan_incomplete_clamp`
+- [x] tests/contracts/test_scan_incomplete_clamp.py pinning clamp
+- [x] Q3 + Q4 closure logs in QUESTIONS.md
+- [x] CHANGELOG.md v1.4.0 entry
+- [x] RETIREMENT_LEDGER.md Round 14 entry
+- [x] minor version bumped 1.3.0 -> 1.4.0
+- [x] inline verification: contract tests PASS on current implementation
+- [x] no analyzer modifications; no MECHANISM_REGISTRY changes (159 unchanged)
+
+## [1.3.0] - 2026-06-22 - Round 13 PARITY-break ceremony (tounicode_anomaly tier 1 -> 2)
+
+Round 13 is an audit-of-self round dispatched per CODING_STRATEGY_
+v1_2_4_to_v2_0.md §6 v1.3.0 Fatiha session (verse al-Baqarah 2:159
+"those who conceal what We sent down of clear proofs... are cursed").
+The release executes the parity-break ceremony deferred from v1.2.4
+Round 12 per RETIREMENT_LEDGER.md, reclassifying tounicode_anomaly
+from tier 1 (high-confidence concealment) to tier 2 (structural
+pattern with intent-ambiguity) per PARITY.md procedure.
+
+### Parity-break (per PARITY.md ledger v1.3.0 entry)
+
+- **Mechanism:** tounicode_anomaly
+- **Old tier (v0/v0_1 reference baseline):** 1
+- **New tier (v1.3.0+ modular):** 2
+- **Locus:** `domain/config.py` TIER table; single-line change.
+- **Rationale:** Round 12 calibration evidence established that
+  legitimate TeX-stack ToUnicode CMaps (OT1/T1 fonts with Greek/math
+  glyph targets at unusual slots, ZWNJ at slot 0x17, pdfTeX hyperref/
+  GoTo navigation patterns) produce ToUnicode shapes the heuristic
+  legitimately classifies as anomalous without concealment intent.
+  Tier 2 is the substrate-honest classification.
+
+### Test update (PARITY.md procedure step 4)
+
+- **`tests/test_integration.py`:** added `_v1_3_0_tounicode_tier_remap`
+  function applied to v0/v0_1 theirs_tuples before equality comparison
+  in `test_scan_pdf_parity_with_v0` and `test_scan_pdf_parity_with_v01`.
+  Remapper coerces v0/v0_1 tier=1 -> tier=2 for tounicode_anomaly
+  findings ONLY; all other mechanism comparisons unchanged.
+
+### Added
+
+- PARITY.md "Parity-break ledger" section with v1.3.0 entry as the
+  canonical record of this ceremony. The ledger will accumulate
+  entries for subsequent parity-breaks; v1.3.0 is entry #1.
+- QUESTIONS.md Q2 closure log data point #1: the parity invariant is
+  contingent on v0 correctness; the ceremony exists precisely for
+  this case. Q2 accumulates evidence across subsequent parity breaks.
+
+### Version bump
+
+- **pyproject.toml:** 1.2.4 -> 1.3.0 (minor bump per PARITY.md
+  procedure step 5: parity break is a behavior change).
+
+### Migration note for downstream consumers
+
+Consumers pinned to v1.2.x tounicode_anomaly tier=1 must update to
+tier=2 at the v1.3.0 upgrade. Triage workflows partitioning by tier
+now route tounicode_anomaly to the tier-2 (structural-pattern)
+workflow rather than tier-1 (high-confidence concealment). The
+mechanism's detection logic is unchanged; only the tier
+classification of its output changes. See PARITY.md "Parity-break
+ledger" v1.3.0 entry for full rationale.
+
+### Out of scope (per CODING_STRATEGY §6 v1.3.0)
+
+- Reclassifying mechanisms other than tounicode_anomaly during this
+  release (each parity-break is its own release per discipline).
+- New substrate kinds.
+- New analyzer modules.
+- Round 11 closure (in-progress as v1.2.5 scaffold; pending project-
+  lead provision of 2026-05-04 red-team probe document; defers to
+  v1.2.6 bridge-tag per slip discipline).
+
+### PARITY contract
+
+PARITY invariant remains LOAD-BEARING under the conditional clause
+in PARITY.md: byte-identity between v0/v0_1 reference scanners holds
+unchanged; the modular bayyinah.scan_pdf diverges ONLY on
+tounicode_anomaly tier per the documented v1.3.0 parity-break ledger
+entry. No other mechanism's output shape changes at v1.3.0.
+
+### Release-gate per CODING_STRATEGY §6 v1.3.0 HEAVY tier
+
+- [x] tounicode_anomaly current tier and locus verified in pre-flight
+- [x] parity-break declared in PARITY.md ledger with rationale
+- [x] tier table updated; analyzer detection logic UNCHANGED
+- [x] Phase 0 snapshot expectations admit the documented divergence
+      via remapper; no other divergences introduced
+- [x] QUESTIONS.md Q2 closure log entry filed
+- [x] CHANGELOG.md v1.3.0 entry with Parity-break heading filed
+- [x] Migration note in CHANGELOG + PARITY.md
+- [x] minor version bumped 1.2.4 -> 1.3.0
+- [ ] full pytest suite passes (project-lead runs post-patch-apply
+      since the working-copy execution does not have the full PDF
+      fixture-generation dependency chain available)
+
+### Falsification block per CODING_STRATEGY §11 v1.3.0
+
+Per PMD v1.8 §0.3 + CODING_STRATEGY §M+1 §M.3.2 (full quintuple-plus-
+verdict): the claim is that the parity-break ceremony updates the
+reference snapshots equivalently and publicly with all divergences
+documented; the falsifier is any undocumented Phase 0 `to_dict()`
+divergence between v1.2.5 and v1.3.0; the threshold is zero
+undocumented divergences. This v1.3.0 entry documents the only
+divergence (tounicode_anomaly tier 1 -> 2); the parity-test remapper
+admits exactly this divergence and no other.
+
+## [1.2.5] - in progress - Round 11 closure scaffold (multi-layer integrity traps)
+
+Round 11 is an audit-of-self round queued at v1.2.4 per
+RETIREMENT_LEDGER.md and dispatched as a v1.2.5 release session under
+CODING_STRATEGY_v1_2_4_to_v2_0.md (with §M + §M+1 + §M+2 corrigenda
+appended; cycle-1+P+P+R termination REACHED 2026-06-10). The Fatiha
+session anchor verse is al-Baqarah 2:11-12 -- documents that surface-
+claim integrity while substrate-carrying concealment.
+
+### v1.2.5 status (2026-06-22)
+
+The Round 11 specific trap classes are NOT enumerated in
+RETIREMENT_LEDGER.md or CHANGELOG.md at v1.2.4; the canonical source
+is the 2026-05-04 red-team probe document held by the project-lead.
+v1.2.5 scaffolds the corpus structure pending project-lead provision
+of the document.
+
+### Added (scaffold-only)
+
+- `tests/fixtures/round11/` directory created with README.md
+  documenting fixture convention, five-place documentation pattern,
+  and best-judgement trap-class hypotheses (NOT canonical; awaiting
+  red-team probe document for substrate confirmation).
+- `tests/round11/` directory created (empty; pinning tests added when
+  fixtures land).
+
+### Pending project-lead disposition
+
+Per Cow Episode anchor (CODING_STRATEGY §6 v1.2.5): the closure
+mechanisms are NOT pre-specified. Each trap is reproduced empirically
+against a fixture first, then the minimal mechanism catching it is
+written. v1.2.5 awaits the 2026-05-04 red-team probe document or
+equivalent substrate-of-record before:
+
+- 4 CRITICAL silent-pass mechanism additions to MECHANISM_REGISTRY
+- 5 HIGH partial-catch tier reclassifications (additive entries)
+- 9 fixture files in tests/fixtures/round11/
+- 9 pinning tests in tests/round11/
+- RETIREMENT_LEDGER Round 11 final-closure update
+
+Best-judgement trap-class hypotheses for project-lead review (see
+`tests/fixtures/round11/README.md` for full rationale):
+
+  - CRITICAL candidates: pdf_objstm_concealed_text +
+    cross_format_payload_pairing + html_inline_event_handler_payload +
+    xlsx_worksheet_xml_comment_payload
+  - HIGH candidates (tier reclassifications): svg_defs_unreferenced_text
+    + csv_payload_in_adjacent_cell + eml_header_continuation_payload +
+    json_nested_payload + xlsx_defined_name_payload
+
+### Slip discipline
+
+Per CODING_STRATEGY §6 v1.2.5 Maliki Yawm ad-Din: if the red-team
+probe document is not supplied within the v1.2.5 dispatch budget
+(16 hours dispatch-budget per PMD v1.8 §8 75% inflation), the
+remaining round closures defer to v1.2.6 bridge-tag work. The major
+version target v1.3.0 (Round 13 parity-break ceremony per
+PARITY.md) is unaffected by this slip.
+
+### PARITY contract
+
+Additive-only per PARITY.md at this scaffold stage. No
+MECHANISM_REGISTRY entries added; no tier modifications applied;
+no analyzer code touched. The v0 / v0_1 / current three-way
+`to_dict()` byte-identity contract is preserved unchanged from
+v1.2.4.
+
+### Findings absorbed in this scaffold cycle
+
+- F-CS-V125-001 (MEDIUM, audit-of-self): Round 11 trap enumeration not
+  in v1.2.4 substrate-of-record. Disposition: scaffold corpus
+  structure pending project-lead provision of the red-team probe
+  document. Recorded in RETIREMENT_LEDGER Round 11 in-progress entry.
+
 ## [1.2.4] - 2026-05-07 - Round 12 false-positive corrective (LaTeX and LibreOffice)
 
 Round 12 was an audit-of-self round triggered by Bilal's

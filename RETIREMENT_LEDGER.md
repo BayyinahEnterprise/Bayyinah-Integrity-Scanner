@@ -63,7 +63,7 @@ across v0.3 through v1.2.2)
   cadence. Closed by adding `V1_2_1_SURFACE`, `V1_2_2_SURFACE`,
   `V1_2_3_SURFACE` aliases plus subset tests (commit 54942b0).
 
-### Round 11 (audit-of-self by Bilal, queued for v1.2.5)
+### Round 11 (audit-of-self by Bilal, in-progress at v1.2.5)
 
 The red-team probe of bayyinah.dev v1.2.3 on 2026-05-04 surfaced
 4 CRITICAL silent-pass findings and 5 HIGH partial-catches against
@@ -72,6 +72,42 @@ the v3 depth-before-scope discipline; the Round 12 calibration
 corrective ships first because the Round 12 false positives were
 visible to every demo visitor while the Round 11 silent-passes
 were not.
+
+v1.2.5 status (2026-06-22, CODING_STRATEGY cycle-1+P+P+R termination
+substrate; Fatiha session per CODING_STRATEGY §5 + verse 2:11-12):
+
+- `tests/fixtures/round11/` directory scaffolded with corpus README
+  documenting fixture convention and best-judgement trap-class
+  hypotheses. Per Iyyaka Na'budu Step 5 orientation check and Cow
+  Episode anchor: the actual 4 CRITICAL + 5 HIGH trap classes are not
+  enumerated in this ledger or in CHANGELOG.md at v1.2.4; the canonical
+  source is the 2026-05-04 red-team probe document held by the
+  project-lead.
+
+- F-CS-V125-001 (MEDIUM, audit-of-self): Round 11 trap enumeration not
+  in v1.2.4 substrate-of-record. Disposition: scaffold corpus structure
+  + RETIREMENT_LEDGER + CHANGELOG entries pending project-lead provision
+  of the red-team probe document. Closure mechanism work resumes when
+  the document is supplied.
+
+- Best-judgement trap-class hypotheses (NOT canonical) documented in
+  `tests/fixtures/round11/README.md`:
+  * 4 CRITICAL candidates: pdf_objstm_concealed_text +
+    cross_format_payload_pairing + html_inline_event_handler_payload +
+    xlsx_worksheet_xml_comment_payload
+  * 5 HIGH candidates (tier reclassifications): svg_defs_unreferenced_text
+    + csv_payload_in_adjacent_cell + eml_header_continuation_payload +
+    json_nested_payload + xlsx_defined_name_payload
+
+- PARITY contract: additive-only per PARITY.md. New mechanisms add to
+  MECHANISM_REGISTRY; tier reclassifications go through the parity-break
+  ceremony at v1.3.0 if any Phase 0 fixture's to_dict() byte-changes.
+
+- Slip discipline per CODING_STRATEGY §6 v1.2.5 Maliki Yawm ad-Din: if
+  the red-team probe document is not supplied within the v1.2.5 dispatch
+  budget, the round closures defer to v1.2.6 bridge-tag per release-gate
+  slip discipline; the major version target remains v1.3.0 ceremony at
+  whatever the post-round-11 substrate state is.
 
 ### Round 12 (audit-of-self by Bilal, retired in v1.2.4)
 
@@ -103,6 +139,110 @@ were not.
   patch; the tier downgrade has been deferred to v1.3.0 with the
   proper PARITY.md procedure (issue tag, fixture update, test
   update, minor bump, CHANGELOG Parity-break heading).
+
+### Round 13 (audit-of-self by Bilal, retired in v1.3.0)
+
+- HIGH: tounicode_anomaly tier 1 -> 2 reclassification. The mechanism
+  was filed at tier 1 (high-confidence concealment) before Round 12's
+  calibration evidence established that legitimate TeX-stack ToUnicode
+  CMaps (OT1/T1 fonts, Greek/math glyph targets, pdfTeX hyperref,
+  LibreOffice destination arrays, ZWNJ at slot 0x17) produce shapes
+  the heuristic correctly classifies as anomalous without concealment
+  intent. Tier 2 (structural pattern with intent-ambiguity) is the
+  substrate-honest classification. The single-line tier change in
+  `domain/config.py` is the entire mechanism modification; the
+  analyzer detection logic is unchanged.
+
+The parity-break ceremony per PARITY.md procedure: (1) issue tagged
+parity-break with calibration-evidence cross-reference; (2) CHANGELOG
+v1.3.0 entry under `Parity-break` heading; (3) Phase 0 fixture
+expected outputs admit the tier=1 -> tier=2 divergence via the
+`_v1_3_0_tounicode_tier_remap` function in `tests/test_integration.py`;
+(4) `test_scan_pdf_parity_with_v0` + `test_scan_pdf_parity_with_v01`
+updated to apply the remapper; (5) minor version bumped 1.2.4 ->
+1.3.0.
+
+The v0 + v0_1 reference scanners are UNCHANGED. They continue
+emitting tier=1 for tounicode_anomaly per their frozen reference
+behavior. The modular `bayyinah.scan_pdf` public API emits tier=2
+starting at v1.3.0. The asymmetric parity is admitted in the test
+infrastructure via the documented remapper; PARITY.md ledger
+records the ceremony.
+
+Q2 (Is the parity-with-v0 invariant load-bearing or contingent?)
+its first data point at Round 13: the invariant is contingent
+on v0 correctness; the ceremony exists precisely for this case.
+Future parity-breaks accumulate Q2 evidence.
+
+Mechanism count unchanged at 159 (tier value modification is not
+mechanism addition or removal). MECHANISM_REGISTRY coherence
+assertions pass at v1.3.0 import.
+
+### Round 14 (audit-of-self by Bilal, retired in v1.4.0)
+
+- HIGH: `compute_muwazana_score` shape pinned. Existing continuous-
+  and-saturating semantics documented in docs/score.md §1 and pinned
+  by regression tests in tests/contracts/test_muwazana_score_shape.py.
+  No redesign; no behavior change. The shape is byte-identical to
+  bayyinah_v0.compute_integrity_score. Q3 (score function collapses
+  heterogeneous risk) closure-log data point #1 filed.
+
+- HIGH: `apply_scan_incomplete_clamp` semantics pinned. Existing
+  `SCAN_INCOMPLETE_CLAMP = 0.5` clamp value documented in docs/score.md
+  §2 with truth-table and pinned by regression tests in tests/
+  contracts/test_scan_incomplete_clamp.py. No redesign; no behavior
+  change. The semantics are byte-identical to bayyinah_v0_1 inline
+  clamp logic. Q4 (`0.5` clamp lives inside continuous distribution)
+  closure-log data point #1 filed.
+
+- MEDIUM: `tamyiz_verdict` decision-table pinned per docs/score.md §3.
+  No code change; the existing rule-order (Tier 0 routing -> scan_
+  incomplete -> sahih -> munafiq -> mukhfi -> mushtabih) is documented
+  canonically for the first time. Future modifications require parity-
+  break ceremony per PARITY.md.
+
+The release is documentation + regression-test additions. No analyzer
+modifications, no MECHANISM_REGISTRY changes, no tier reclassifications.
+The patent invariant clause (CODING_STRATEGY §7: analyzer registry 130,
+layer-classification 132/136, producer-signature calibration 134,
+verdict aggregator 150 with five-verdict structure, witness emitter 160)
+is preserved unchanged.
+
+PARITY contract holds: byte-identity between v0/v0_1/current scan
+output is preserved at v1.4.0 (no score function modification; no
+clamp modification). The v1.3.0 tounicode_anomaly tier remapper from
+tests/test_integration.py continues to apply per its v1.3.0 ledger
+entry; no new remappers added at v1.4.0.
+
+Mechanism count unchanged at 159. MECHANISM_REGISTRY coherence
+assertions pass at v1.4.0 import.
+
+### Round 15 (audit-of-self by Bilal, retired in v1.5.0)
+
+- MEDIUM: KNOWN_LIMITS.md authored at repo root (216 lines) per QUESTIONS.md
+  Q1 closure target and CODING_STRATEGY §6 v1.5.0 Fatiha session (al-Baqarah
+  2:32 verse anchor). The document enumerates 9 limitation classes empirically
+  grounded in existing CHANGELOG / QUESTIONS / RETIREMENT_LEDGER references;
+  no hypothetical limitations per Cow Episode anchor.
+
+- LOW: docs/principles.md stub authored (52 lines, structure only). Full
+  framework-free engineering principles content is the v1.9.0 deliverable
+  per CODING_STRATEGY §6 v1.9.0 + QUESTIONS.md Q10 closure target.
+
+The release is documentation-only. No analyzer modifications, no
+MECHANISM_REGISTRY changes, no tier reclassifications, no test
+modifications. Per CODING_STRATEGY §6 v1.5.0 audit-intensity LIGHT
+default + Cow Episode anchor: empirical gaps only; no padding.
+
+PARITY contract holds unchanged. The v1.3.0 tounicode_anomaly tier
+remapper in tests/test_integration.py + tests/analyzers/test_object_
+analyzer.py + tests/application/test_scan_service.py continues to apply
+per its v1.3.0 PARITY.md ledger entry; no new remappers added at v1.5.0.
+
+Mechanism count unchanged at 159. MECHANISM_REGISTRY coherence
+assertions pass at v1.5.0 import. bayyinah.__version__ bumped 1.4.0
+-> 1.5.0 to match pyproject.toml (per TestReleaseReadiness
+test_pyproject_version_matches_package_version invariant).
 
 ## Mechanically prevented from this version forward
 

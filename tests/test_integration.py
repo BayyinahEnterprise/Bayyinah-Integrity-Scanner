@@ -112,6 +112,42 @@ def _finding_tuple(f) -> tuple:
 
 
 # ---------------------------------------------------------------------------
+# v1.3.0 (Round 13) parity-break ledger remapper.
+# ---------------------------------------------------------------------------
+#
+# Per PARITY.md "Parity-break ledger" v1.3.0 entry: tounicode_anomaly tier
+# reclassification 1 -> 2. The modular bayyinah.scan_pdf (which reads TIER
+# from domain/config.py at v1.3.0+ as tier=2) diverges from bayyinah_v0
+# and bayyinah_v0_1 (which carry the pre-Round-13 tier=1 hardcoded) on any
+# fixture exercising the tounicode_anomaly mechanism. The parity test
+# admits this specific divergence by remapping the v0/v0_1 theirs_tuples
+# tier=1 -> tier=2 for tounicode_anomaly findings before equality
+# comparison.
+#
+# This is the canonical PARITY-break pattern: the test does NOT silently
+# change; it adds an explicit, documented mapping that names the parity-
+# break ledger entry. The remapper applies ONLY to tounicode_anomaly
+# findings; every other mechanism's tier comparison is unchanged.
+#
+# Cross-reference: PARITY.md "Parity-break ledger" v1.3.0 entry;
+# RETIREMENT_LEDGER.md Round 12 (deferral note) + Round 13.
+
+def _v1_3_0_tounicode_tier_remap(t: tuple) -> tuple:
+    """Coerce v0/v0_1 tounicode_anomaly tier=1 to v1.3.0+ tier=2.
+
+    Applied to theirs_tuples (the v0/v0_1 reference output) before the
+    equality comparison with ours_tuples (the v1.3.0+ modular output).
+    The remapper is a no-op for any finding whose mechanism is not
+    tounicode_anomaly. For tounicode_anomaly findings, it returns the
+    same tuple with the tier coerced to 2 (the v1.3.0+ canonical tier).
+    """
+    if t[0] != "tounicode_anomaly":
+        return t
+    # Position 1 is tier per _finding_tuple definition above.
+    return (t[0], 2, t[2], t[3], t[4], t[5], t[6])
+
+
+# ---------------------------------------------------------------------------
 # Public API surface — every advertised symbol resolves, is importable,
 # and has the expected type.
 # ---------------------------------------------------------------------------
@@ -163,17 +199,25 @@ class TestPublicSurface:
 )
 def test_scan_pdf_parity_with_v0(pdf_path: Path) -> None:
     """The 0.2 public scan_pdf must emit byte-identical findings to the
-    original monolithic v0.scan_pdf. This is the top-level ratchet."""
+    original monolithic v0.scan_pdf. This is the top-level ratchet.
+
+    v1.3.0 (Round 13) parity-break: tounicode_anomaly tier 1 -> 2 per
+    PARITY.md ledger entry. The remapper coerces v0 theirs_tuples tier=1
+    -> tier=2 for tounicode_anomaly findings before equality comparison.
+    """
     ours = bayyinah.scan_pdf(pdf_path)
     theirs = bayyinah_v0.scan_pdf(pdf_path)
 
     ours_tuples = [_finding_tuple(f) for f in ours.findings]
-    theirs_tuples = [_finding_tuple(f) for f in theirs.findings]
+    theirs_tuples = [
+        _v1_3_0_tounicode_tier_remap(_finding_tuple(f))
+        for f in theirs.findings
+    ]
 
     assert ours_tuples == theirs_tuples, (
         f"Parity diverged with v0 on {pdf_path.name}:\n"
         f"  ours:   {ours_tuples}\n"
-        f"  v0:     {theirs_tuples}"
+        f"  v0 (remapped per v1.3.0 parity-break ledger): {theirs_tuples}"
     )
     assert abs(ours.integrity_score - theirs.integrity_score) < 1e-9
     assert ours.error == theirs.error
@@ -186,12 +230,19 @@ def test_scan_pdf_parity_with_v0(pdf_path: Path) -> None:
     ids=[p.name for p in _all_phase0_fixtures()],
 )
 def test_scan_pdf_parity_with_v01(pdf_path: Path) -> None:
-    """Transitive: bayyinah.scan_pdf == bayyinah_v0_1.scan_pdf too."""
+    """Transitive: bayyinah.scan_pdf == bayyinah_v0_1.scan_pdf too.
+
+    v1.3.0 (Round 13) parity-break: same remapper as test_scan_pdf_parity_
+    with_v0; see PARITY.md ledger entry for v1.3.0.
+    """
     ours = bayyinah.scan_pdf(pdf_path)
     theirs = bayyinah_v0_1.scan_pdf(pdf_path)
 
     ours_tuples = [_finding_tuple(f) for f in ours.findings]
-    theirs_tuples = [_finding_tuple(f) for f in theirs.findings]
+    theirs_tuples = [
+        _v1_3_0_tounicode_tier_remap(_finding_tuple(f))
+        for f in theirs.findings
+    ]
 
     assert ours_tuples == theirs_tuples
     assert abs(ours.integrity_score - theirs.integrity_score) < 1e-9

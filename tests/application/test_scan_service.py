@@ -91,6 +91,25 @@ def _finding_tuple(f: Any) -> tuple:
     )
 
 
+# v1.3.0 (Round 13) parity-break ledger remapper, propagated from
+# tests/test_integration.py to this scan-service-level parity test.
+# Per PARITY.md "Parity-break ledger" v1.3.0 entry, tounicode_anomaly
+# tier was reclassified 1 -> 2. v0/v0_1 reference scanners continue
+# emitting tier=1; the modular ScanService emits tier=2 starting at
+# v1.3.0. The remapper coerces v0_1 theirs_tuples tier=1 -> 2 for
+# tounicode_anomaly findings only; every other comparison is unchanged.
+def _v1_3_0_tounicode_tier_remap(t: tuple) -> tuple:
+    """Coerce v0/v0_1 tounicode_anomaly tier=1 to v1.3.0+ tier=2.
+
+    See tests/test_integration.py for the canonical remapper. This
+    copy applies to ScanService-level parity comparisons against the
+    v0.1 scan_pdf reference.
+    """
+    if t[0] != "tounicode_anomaly":
+        return t
+    return (t[0], 2, t[2], t[3], t[4], t[5], t[6])
+
+
 # ---------------------------------------------------------------------------
 # default_pdf_registry
 # ---------------------------------------------------------------------------
@@ -471,12 +490,14 @@ def test_parity_finding_tuples_with_v01_scan_pdf(pdf_path: Path) -> None:
     theirs = bayyinah_v0_1.scan_pdf(pdf_path)
 
     ours_tuples = [_finding_tuple(f) for f in ours.findings]
-    theirs_tuples = [_finding_tuple(f) for f in theirs.findings]
+    theirs_tuples = [
+        _v1_3_0_tounicode_tier_remap(_finding_tuple(f)) for f in theirs.findings
+    ]
 
     assert ours_tuples == theirs_tuples, (
         f"\nParity diverged on {pdf_path.name}:"
         f"\n  ours  ({len(ours_tuples)}): {ours_tuples}"
-        f"\n  v0.1  ({len(theirs_tuples)}): {theirs_tuples}"
+        f"\n  v0.1 (remapped per v1.3.0 ledger): ({len(theirs_tuples)}): {theirs_tuples}"
     )
 
 
@@ -978,13 +999,18 @@ class TestScanBatchParityIsolation:
 
     def test_scan_after_scan_batch_still_matches_v01(self) -> None:
         """Running scan_batch then scan on a Phase 0 fixture must still
-        parity-match v0.1 exactly — no residue from batching."""
+        parity-match v0.1 exactly — no residue from batching.
+
+        v1.3.0 (Round 13) parity-break ledger: tounicode_anomaly tier 1 -> 2
+        remapper applied to theirs (v0.1 reference) before equality
+        comparison; see PARITY.md "Parity-break ledger" v1.3.0 entry.
+        """
         service = ScanService()
         service.scan_batch([ADVERSARIAL_IMAGES_DIR / "coordinated_pair_a.png"])
         ours = service.scan(POSITIVE_COMBINED)
         theirs = bayyinah_v0_1.scan_pdf(POSITIVE_COMBINED)
         assert [_finding_tuple(f) for f in ours.findings] == [
-            _finding_tuple(f) for f in theirs.findings
+            _v1_3_0_tounicode_tier_remap(_finding_tuple(f)) for f in theirs.findings
         ]
 
     def test_two_separate_services_do_not_share_cross_file_state(

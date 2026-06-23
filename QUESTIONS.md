@@ -2,7 +2,7 @@
 
 A live list of interpretive questions about Bayyinah's own design that the project has not yet resolved. Publishing it is the recursive application of the project's thesis: a tool that detects performed alignment in other artifacts has to surface the gap between its own surface claims and its own substrate, or the tool is itself performing alignment.
 
-This file is appended to, not rewritten. Questions move to a "Resolved" section with the version that resolved them. Questions are not bugs — they are interpretive issues whose right answer is not yet obvious.
+This file is appended to, not rewritten. Questions move to a "Resolved" section with the version that resolved them. Questions are not bugs -- they are interpretive issues whose right answer is not yet obvious.
 
 ## Maintainer
 
@@ -20,17 +20,84 @@ The integrity score is `clamp(1.0 - sum(severity * confidence), 0, 1)`. The scor
 
 This is the project's strongest possible affirmation of its own thesis. A scanner that publishes the shape of the input it cannot see is harder to attack than one that claims completeness.
 
+**v1.5.0 closure-log data point #1 (Round 15, 2026-06-22):** KNOWN_LIMITS.md
+authored at repo root (216 lines) declaring the score-function blind spot
+general form publicly per CODING_STRATEGY §6 v1.5.0 (al-Baqarah 2:32 verse
+anchor: "we have no knowledge except what You have taught us"). The Q1
+thesis-affirmation closure: a scanner that publishes the shape of the input
+it cannot see is harder to attack than one that claims completeness.
+
+The Q1 declaration scope at v1.5.0: BLIND-SPOT GENERAL FORM is published in
+KNOWN_LIMITS.md §1; the construction of a specific adversarial fixture
+demonstrating `score == 1.0` on a concealed-payload document is queued for
+later releases (v1.6.0 -- v1.8.0) as the substrate matures. The honest
+publication of the blind spot IS the v1.5.0 Q1 closure per the Q1 thesis;
+the empirical fixture follows.
+
+Cross-reference: KNOWN_LIMITS.md §1 + docs/score.md §1 + CODING_STRATEGY §6
+v1.5.0 + ROADMAP_TO_V5 §3.0 (audio/video deferred) + ROADMAP_TO_V5 §4.0+
+(source-code substrate deferred). Q1 stays in OPEN-with-closure-data-points
+status: the construction-method publication is data point #1; the empirical
+adversarial fixture, when authored, becomes data point #2.
+
 ### Q2. Is the parity-with-v0 invariant load-bearing or contingent?
 
 `bayyinah.scan_pdf == bayyinah_v0.scan_pdf` on every Phase 0 fixture is asserted as a structural-honesty guarantee. It is also a guarantee that every defect in v0 ships forever, because fixing it breaks the invariant. The parity policy is being made conditional in this release (see `PARITY.md`) but the deeper question remains: at what threshold does v0's correctness become more important than reproduction of v0's behavior?
+
+**v1.3.0 closure-log data point #1 (Round 13, 2026-06-22):** the
+tounicode_anomaly tier 1 -> 2 reclassification is the first empirical
+data point against this question. The parity-break ceremony executed
+per `PARITY.md` produces a documented, version-bumped, ledger-recorded
+event; the test infrastructure admits the divergence via the
+`_v1_3_0_tounicode_tier_remap` remapper in `tests/test_integration.py`.
+
+The discipline answer materialising from this first data point: the
+invariant is **contingent on v0 correctness**; the ceremony exists
+precisely for this case. The threshold at which v0's correctness
+overrides v0's reproduction is the threshold at which calibration
+evidence accumulates against the v0 behavior -- which is what Round
+12 (v1.2.4) established for tounicode_anomaly. The parity-break
+ceremony is the mechanism by which the project converts calibration
+evidence into a version-bumped behavior change while preserving v0
++ v0_1 as historical reference scanners.
+
+Q2 accumulates evidence across subsequent parity breaks. v1.3.0 is
+data point 1. Q3 (compute_muwazana_score shape) and Q4 (scan_incomplete
+clamp semantics) per CODING_STRATEGY §6 v1.4.0 will provide further
+data points; both are pinned at v1.4.0 per the Fatiha session sequence.
 
 ### Q3. The score function collapses heterogeneous risk
 
 A document with five findings and a document with fifty findings both clamp to 0.0. For triage at scale this loses information; for compliance gates it loses more. Q3 is whether the score should remain continuous-and-saturating (current shape) or split into a continuous score plus a separate finding-count and coverage axis, and what the migration path is for downstream consumers who pin to the current shape.
 
+**v1.4.0 closure-log data point #1 (Round 14, 2026-06-22):** the score
+function shape ships at v1.4.0 with continuous-and-saturating shape
+PINNED per docs/score.md §1. The decision is NOT to split into score-
+and-finding-count axes at this release. Rationale: byte-identity with
+bayyinah_v0.compute_integrity_score is preserved; consumers needing
+finding-count or per-tier resolution access the findings list directly
+on IntegrityReport. Future redesigns proposing a split require the
+parity-break ceremony per PARITY.md with calibration evidence.
+Cross-reference: docs/score.md §4 (Q3 closure note) +
+tests/contracts/test_muwazana_score_shape.py (regression pin).
+
 ### Q4. The `0.5` clamp lives inside a continuous distribution
 
 A score of `0.5` in a CI dashboard is ambiguous: half-dirty file, or unscanned? `scan_incomplete=True` exists to disambiguate but the score channel re-introduces the type confusion the flag exists to prevent. v1.2 adds `scan_complete: bool` and a `coverage` field to the report; whether the score itself should be `null` when incomplete (rather than clamped to 0.5) remains open.
+
+**v1.4.0 closure-log data point #1 (Round 14, 2026-06-22):** the clamp
+semantics ship at v1.4.0 with `SCAN_INCOMPLETE_CLAMP = 0.5` PINNED per
+docs/score.md §2. The decision is NOT to switch to `score=None` for
+incomplete scans at this release. Rationale: byte-identity with
+bayyinah_v0_1 clamp behavior is preserved; the `scan_incomplete: bool`
+companion field on IntegrityReport is the type-safe channel for
+disambiguation; consumers requiring null-on-incomplete construct their
+own representation from the bool + score pair. The clamp value `0.5`
+remains intentionally overloaded; the `0.5`-or-null question stays
+open as a future-design candidate. Future redesigns require the
+parity-break ceremony per PARITY.md. Cross-reference: docs/score.md
+§2.4 (Q4 closure note) + tests/contracts/test_scan_incomplete_clamp.py
+(regression pin).
 
 ### Q5. The default pipeline silently lacks documented capabilities
 
@@ -38,7 +105,7 @@ Cross-modal correlation (subtitle/audio/metadata divergence) is listed as a supp
 
 ### Q7. The demo counter is obfuscated, not anonymized
 
-SHA-256 of IPv4 over a daily-rotating salt is brute-forceable by enumeration in seconds on commodity hardware once the salt is known. The README's claim that "cross-day correlation is impossible without the per-instance secret" is true only as long as the secret is never logged, leaked, or rotated in a way that retains the prior value. v1.2 corrects the language to "obfuscated, not anonymized." The structural fix is HyperLogLog or a Bloom filter — counts without identifiers — and is committed for v1.2. Q7 stays open until that lands.
+SHA-256 of IPv4 over a daily-rotating salt is brute-forceable by enumeration in seconds on commodity hardware once the salt is known. The README's claim that "cross-day correlation is impossible without the per-instance secret" is true only as long as the secret is never logged, leaked, or rotated in a way that retains the prior value. v1.2 corrects the language to "obfuscated, not anonymized." The structural fix is HyperLogLog or a Bloom filter -- counts without identifiers -- and is committed for v1.2. Q7 stays open until that lands.
 
 ### Q8. Test count is not test quality
 
@@ -50,7 +117,7 @@ SHA-256 of IPv4 over a daily-rotating salt is brute-forceable by enumeration in 
 
 ### Q10. Strategic coupling of framework and engineering
 
-The Quranic-principles section is load-bearing in the README. For Apache-2.0 OSS aiming at adoption in security teams, regulated industries, and academic citation, this couples adoption to acceptance of the framework. The engineering principles (deterministic byte-level checks, fail-closed defaults, additive-only invariants, fixture-pinned tests) stand without the framework — the framework explains *why* these principles were chosen, not *whether* they hold. Q10 is whether a framework-free statement of the engineering principles should appear somewhere in `docs/`, alongside the framework-anchored README, for readers whose adoption is gated on it.
+The Quranic-principles section is load-bearing in the README. For Apache-2.0 OSS aiming at adoption in security teams, regulated industries, and academic citation, this couples adoption to acceptance of the framework. The engineering principles (deterministic byte-level checks, fail-closed defaults, additive-only invariants, fixture-pinned tests) stand without the framework -- the framework explains *why* these principles were chosen, not *whether* they hold. Q10 is whether a framework-free statement of the engineering principles should appear somewhere in `docs/`, alongside the framework-anchored README, for readers whose adoption is gated on it.
 
 This is not a question about removing the framework. It is a question about whether the project's adoption ceiling is the framework's audience, and whether that is the intended ceiling.
 

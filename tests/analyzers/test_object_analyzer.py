@@ -419,6 +419,25 @@ def _tuple(f) -> tuple:
     )
 
 
+# v1.3.0 (Round 13) parity-break ledger remapper, propagated from
+# tests/test_integration.py to this analyzer-level parity test. Per
+# PARITY.md "Parity-break ledger" v1.3.0 entry, tounicode_anomaly tier
+# was reclassified 1 -> 2. v0/v0_1 reference scanners continue emitting
+# tier=1; the modular BatinObjectAnalyzer emits tier=2 starting at
+# v1.3.0. The remapper coerces v0/v0_1 theirs_tuples tier=1 -> 2 for
+# tounicode_anomaly findings only; every other comparison is unchanged.
+def _v1_3_0_tounicode_tier_remap(t: tuple) -> tuple:
+    """Coerce v0/v0_1 tounicode_anomaly tier=1 to v1.3.0+ tier=2.
+
+    See tests/test_integration.py for the canonical remapper. This
+    copy applies to BatinObjectAnalyzer-level parity comparisons
+    against the v0.1 ObjectLayerAnalyzer reference.
+    """
+    if t[0] != "tounicode_anomaly":
+        return t
+    return (t[0], 2, t[2], t[3], t[4], t[5], t[6])
+
+
 def _all_phase0_fixtures() -> list[Path]:
     pdfs = [CLEAN_PDF]
     pdfs.extend(sorted(TEXT_FIXTURE_DIR.glob("*.pdf")))
@@ -443,12 +462,14 @@ def test_parity_with_v0_1_object_layer_analyzer(pdf_path: Path) -> None:
     theirs = _v01_object_scan(pdf_path)
 
     ours_tuples = [_tuple(f) for f in ours_report.findings]
-    theirs_tuples = [_tuple(f) for f in theirs]
+    theirs_tuples = [
+        _v1_3_0_tounicode_tier_remap(_tuple(f)) for f in theirs
+    ]
 
     assert ours_tuples == theirs_tuples, (
         f"\nParity diverged on {pdf_path.name}:"
         f"\n  ours  ({len(ours_tuples)}): {ours_tuples}"
-        f"\n  v0.1  ({len(theirs_tuples)}): {theirs_tuples}"
+        f"\n  v0.1 (remapped per v1.3.0 ledger): ({len(theirs_tuples)}): {theirs_tuples}"
     )
 
 

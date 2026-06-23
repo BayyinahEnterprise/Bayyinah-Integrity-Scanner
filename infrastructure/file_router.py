@@ -947,7 +947,26 @@ class FileRouter:
         # recognised extension still routes to CsvAnalyzer instead of
         # UNKNOWN. Phase 20 — Al-Baqarah 2:42: the parser and the
         # human reading must not see different things.
-        if _detect_csv(head):
+        #
+        # Round 21 (v2.0.1) calibration. Skip the CSV content sniff
+        # when the extension explicitly names markdown. Long-form
+        # markdown documents whose prose has many comma-laden lines
+        # can satisfy _detect_csv's delimiter-repetition heuristic
+        # (the sniff strips `#`-prefixed lines as comments, which
+        # skips markdown headers, and then matches on prose comma
+        # patterns). Caught by the v2.0.0 recursive self-verification
+        # harness on NAMING.md (~12 KB markdown with comma-rich
+        # prose, 126 false-positive CSV findings before this guard).
+        # Markdown has its own grammar; a .md file with prose is
+        # never honestly a CSV. The guard is extension-specific
+        # (FileKind.MARKDOWN only) so files without an explicit
+        # text-family extension still get the CSV content sniff.
+        # The known trade-off (a CSV deliberately renamed to .md to
+        # evade CSV-specific analyzers) is documented in
+        # KNOWN_LIMITS.md §10 closure as a bounded false-negative
+        # class; the markdown analyzer's own content-shape findings
+        # still apply to the file.
+        if ext_kind is not FileKind.MARKDOWN and _detect_csv(head):
             mismatch = ext_kind not in (FileKind.CSV, FileKind.UNKNOWN)
             return FileTypeDetection(
                 kind=FileKind.CSV,

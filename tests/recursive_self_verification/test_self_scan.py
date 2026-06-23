@@ -50,6 +50,15 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 # Top-level release documents at the repo root.
 # Adding a new release document means appending its filename here.
+#
+# v2.0.1 (Round 21) promotion: NAMING.md promoted from
+# _PENDING_CALIBRATION_DOCS to _TOP_LEVEL_DOCS after the FileRouter
+# calibration corrective at infrastructure/file_router.py (Round 21
+# extension-guard: skip CSV content sniff when ext_kind is
+# FileKind.MARKDOWN). The promotion was forced by the
+# TestPendingCalibrationDiagnostic structural defense raising
+# "PROMOTE NAMING.md" when the doc started scanning clean after
+# calibration. See CHANGELOG [2.0.1] for the calibration absorption.
 _TOP_LEVEL_DOCS: tuple[str, ...] = (
     "README.md",
     "CHANGELOG.md",
@@ -59,6 +68,7 @@ _TOP_LEVEL_DOCS: tuple[str, ...] = (
     "MIGRATION.md",
     "PARITY.md",
     "FRAMEWORK.md",
+    "NAMING.md",
 )
 
 
@@ -69,18 +79,11 @@ _TOP_LEVEL_DOCS: tuple[str, ...] = (
 # (and the doc scans clean), the diagnostic test fails and reminds us
 # to promote the doc to _TOP_LEVEL_DOCS.
 #
-# At v2.0.0:
-#   - NAMING.md (~12 KB of markdown prose with comma-laden lines) is
-#     mis-routed by FileRouter as CSV via magic-byte sniffing, causing
-#     126 false-positive CSV findings (csv_comment_row,
-#     csv_inconsistent_columns, csv_formula_injection on bullet lines
-#     starting with '=', csv_column_type_drift, csv_encoding_divergence
-#     on UTF-8 arrows). Calibration target: Round 21 FileRouter
-#     extension-vs-magic-byte reconciliation for `.md` files. Tracked
-#     in KNOWN_LIMITS.md and queued for v2.0.1 / v2.1.0.
-_PENDING_CALIBRATION_DOCS: tuple[str, ...] = (
-    "NAMING.md",
-)
+# At v2.0.1: empty tuple. Round 21 closed the NAMING.md mis-routing
+# (the only entry at v2.0.0). Future false-positives surfaced by the
+# recursive self-verification harness get added here with a documented
+# calibration target.
+_PENDING_CALIBRATION_DOCS: tuple[str, ...] = ()
 
 
 # docs/ canonical contract documents authored across v1.4.0-v2.0.0.

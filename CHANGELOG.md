@@ -12,6 +12,145 @@ held across every phase.
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-06-23 - Round 21 FileRouter calibration corrective
+
+Round 21 is a calibration corrective per `KNOWN_LIMITS.md` §10
+Round 21 target filed at v2.0.0. Caught by the v2.0.0 recursive
+self-verification harness on its first CI run: NAMING.md (~12 KB
+markdown prose with comma-laden lines) was mis-routed by
+FileRouter's `_detect_csv` content-sniff branch as CSV, producing
+126 false-positive CSV findings on its own release document.
+
+### The catch
+
+The v2.0.0 release shipped the recursive self-verification harness
+at `tests/recursive_self_verification/test_self_scan.py` applying
+Bayyinah's own ScanService to its own release-document corpus
+(verse 2:281 self-compensation discipline). The harness immediately
+surfaced one mis-routing false-positive: NAMING.md routed to
+FileKind.CSV via the delimited-data content sniff. The mis-route
+was honestly documented in KNOWN_LIMITS.md §10 + a structural
+defense in `TestPendingCalibrationDiagnostic` that asserts the
+pending-calibration doc CURRENTLY fires findings (so when the
+FileRouter is fixed and the doc scans clean, the diagnostic FAILS
+with a "PROMOTE NAMING.md" instruction).
+
+### The calibration
+
+`infrastructure/file_router.py::FileRouter.detect` now gates the
+`_detect_csv` call site by an extension guard: when `ext_kind is
+FileKind.MARKDOWN`, the CSV branch is skipped and routing falls
+through to the markdown extension-based fall-through at
+`_TEXT_FAMILY_KINDS`. The guard is specifically extension-keyed so
+files without an explicit text-family extension still get the CSV
+content sniff (CSV files dropped at unrecognised extensions still
+route to CsvAnalyzer).
+
+### Round 12-style closure (not a parity-break ceremony)
+
+Empirical PARITY check before the calibration shipped: all 8 .md
+files under `tests/fixtures/` already routed to FileKind.MARKDOWN
+via the extension fall-through (none of them currently tripped
+the CSV mis-route). The calibration therefore does NOT change any
+Phase 0 fixture's classification — the rule changes for a class of
+inputs (markdown prose with comma-rich content above the CSV
+heuristic threshold) that no Phase 0 fixture currently exhibits.
+This is a Round 12-style calibration corrective per `PARITY.md`,
+not a parity-break ceremony.
+
+### Promotion forced by the structural defense
+
+After applying the calibration, `TestPendingCalibrationDiagnostic`
+failed with the exact message it was designed to emit:
+
+    PROMOTE NAMING.md: pending-calibration doc now scans clean.
+    Move from _PENDING_CALIBRATION_DOCS to _TOP_LEVEL_DOCS and
+    remove the KNOWN_LIMITS.md entry.
+
+NAMING.md was promoted from `_PENDING_CALIBRATION_DOCS` to
+`_TOP_LEVEL_DOCS` in `tests/recursive_self_verification/test_self_scan.py`.
+The pending tuple is now empty.
+
+### Added
+
+- (none).
+
+### Changed
+
+- **`infrastructure/file_router.py`** -- Round 21 calibration: the
+  CSV content-sniff branch in `FileRouter.detect` is gated by
+  `ext_kind is not FileKind.MARKDOWN`. Documented in-source with
+  the v2.0.0 catch context and the bounded trade-off.
+- **`tests/recursive_self_verification/test_self_scan.py`** --
+  NAMING.md promoted from `_PENDING_CALIBRATION_DOCS` to
+  `_TOP_LEVEL_DOCS`. Pending tuple is now `()`.
+- **`KNOWN_LIMITS.md`** -- §10 closure absorbed. NEW bounded
+  false-negative class documented: a CSV deliberately renamed to
+  .md to evade CSV-specific analyzers; the markdown analyzer's
+  own content-shape findings still apply.
+- **`bayyinah.__version__`** bumped 2.0.0 -> 2.0.1.
+- **`pyproject.toml`** version bumped 2.0.0 -> 2.0.1.
+
+### Known bounded trade-off (NEW limitation class at v2.0.1)
+
+A CSV deliberately renamed to `.md` to evade CSV-specific
+analyzers will not trigger the CSV content sniff at the
+FileRouter level. The markdown analyzer's own content-shape
+findings still apply to the file. Documented in
+`KNOWN_LIMITS.md` §10 closure entry. The Q1 thesis (publish
+blind-spots openly) applies; an attacker who relies on this
+evasion is operating against a documented trade-off rather than
+a hidden gap.
+
+### Out of scope (per Cow Episode + Round 21 calibration discipline)
+
+- New analyzer mechanisms (count remains 159).
+- New fixtures specifically pinning the NAMING.md mis-route
+  fix: NAMING.md is already in `_TOP_LEVEL_DOCS` and re-scanned
+  on every CI run; no separate fixture is needed.
+- Restructuring the FileRouter decision tree (the call-site
+  guard is the surgical fix; broader restructuring waits for a
+  future round if needed).
+
+### PARITY contract
+
+PARITY is unaffected by this release. Empirically verified before
+patch generation: all 8 .md fixtures in `tests/fixtures/` continue
+to route to FileKind.MARKDOWN exactly as before.
+`bayyinah.scan_pdf(path).to_dict() == bayyinah_v0.scan_pdf(path).to_dict()`
+continues to hold byte-identically on every Phase 0 fixture.
+
+### Round 21 retirement
+
+- HIGH: NAMING.md FileRouter mis-routing false-positive (caught by
+  v2.0.0 recursive self-verification, queued for Round 21). Closed
+  by the calibration above. Structural defense pattern observed
+  end-to-end: harness catches → KNOWN_LIMITS publishes → pending
+  diagnostic enforces failure → calibration applied → diagnostic
+  flips to PROMOTE → promotion absorbed → KNOWN_LIMITS entry moves
+  to CLOSED. The pattern is itself the Round 21 deliverable.
+
+- LOW: CSV-rename-to-.md evasion class (NEW bounded false-negative
+  documented as a known trade-off of the calibration). Not a
+  regression; an explicit consequence of preferring the extension
+  hint over the content sniff for markdown.
+
+The release is additive at the substrate level. No analyzer
+behavior changes on any existing fixture; only a routing-decision
+calibration that changes behavior for the previously-flagged
+mis-route class. Per CODING_STRATEGY §10 successor work + Cow
+Episode anchor: smallest honest closure of the v2.0.0 structural
+defense's promise.
+
+PARITY contract holds unchanged. The v1.3.0 tounicode_anomaly
+tier remapper continues to apply per its v1.3.0 PARITY.md ledger
+entry; no new remappers added at v2.0.1.
+
+Mechanism count unchanged at 159. MECHANISM_REGISTRY coherence
+assertions pass at v2.0.1 import. bayyinah.__version__ bumped
+2.0.0 -> 2.0.1 to match pyproject.toml (per TestReleaseReadiness
+test_pyproject_version_matches_package_version invariant).
+
 ## [2.0.0] - 2026-06-23 - Round 20 v2.0.0 commercialization gate + recursive self-verification
 
 Round 20 is the v1.x to v2.x major-version commercialization gate

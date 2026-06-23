@@ -512,6 +512,57 @@ assertions pass at v2.0.0 import. bayyinah.__version__ bumped
 1.9.0 -> 2.0.0 to match pyproject.toml (per TestReleaseReadiness
 test_pyproject_version_matches_package_version invariant).
 
+### Round 21 (audit-of-self by Bilal, retired in v2.0.1)
+
+- HIGH: NAMING.md FileRouter mis-routing false-positive (caught by
+  the v2.0.0 recursive self-verification harness on its first CI
+  run). The FileRouter's `_detect_csv` content-sniff branch in
+  `infrastructure/file_router.py::FileRouter.detect` routed
+  NAMING.md (~12 KB markdown prose with comma-laden lines) to
+  FileKind.CSV, producing 126 false-positive CSV findings. Closed
+  by calibrating the CSV call site with an extension guard
+  (`ext_kind is not FileKind.MARKDOWN`). Empirical PARITY check
+  confirmed before the calibration shipped: all 8 .md fixtures in
+  `tests/fixtures/` continue to route to FileKind.MARKDOWN; no
+  Phase 0 fixture exhibits the mis-route. Structural defense
+  end-to-end loop verified: v2.0.0 harness CAUGHT → v2.0.0
+  KNOWN_LIMITS PUBLISHED → v2.0.0 pending diagnostic ENFORCED →
+  v2.0.1 calibration APPLIED → diagnostic flipped to PROMOTE →
+  promotion ABSORBED → KNOWN_LIMITS §10 entry CLOSED.
+
+- LOW: CSV-rename-to-.md evasion (NEW bounded false-negative
+  class introduced as the calibration's known trade-off). A CSV
+  deliberately renamed to .md will not trigger the CSV content
+  sniff at the FileRouter level; the markdown analyzer's own
+  content-shape findings still apply. Documented in
+  `KNOWN_LIMITS.md` §10 closure entry per the Q1 thesis
+  discipline (publish blind-spots openly).
+
+- LOW: structural-defense end-to-end loop validation. The Round
+  21 closure is the first end-to-end exercise of the v2.0.0
+  recursive self-verification harness pattern (catch → publish →
+  enforce → calibrate → promote → close). The loop worked
+  exactly as designed. The pattern itself is the Round 21
+  deliverable per `docs/v2_gate.md` §2.2.
+
+The release is additive at the substrate level. No new analyzers,
+no new mechanisms, no MECHANISM_REGISTRY changes, no
+ScanService.scan() / scan_batch() signature changes, no
+score-function semantic changes, no new dependencies. Per Cow
+Episode anchor: smallest honest closure of the v2.0.0 structural
+defense's promise.
+
+PARITY contract holds unchanged. The calibration is a
+Round 12-style corrective per `PARITY.md`, NOT a parity-break
+ceremony: no Phase 0 fixture's routing decision changes. The
+v1.3.0 tounicode_anomaly tier remapper continues to apply per its
+v1.3.0 PARITY.md ledger entry; no new remappers added at v2.0.1.
+
+Mechanism count unchanged at 159. MECHANISM_REGISTRY coherence
+assertions pass at v2.0.1 import. bayyinah.__version__ bumped
+2.0.0 -> 2.0.1 to match pyproject.toml (per TestReleaseReadiness
+test_pyproject_version_matches_package_version invariant).
+
 ## Mechanically prevented from this version forward
 
 The structural defenses that close each ledger entry are
@@ -551,3 +602,9 @@ themselves preserved in the codebase and run on CI:
   (false-positive); pending-calibration docs carry a diagnostic
   test that fails when the fix lands, forcing maintainer re-
   promotion (since v2.0.0).
+- FileRouter markdown extension guard: when `ext_kind is
+  FileKind.MARKDOWN`, the CSV content sniff is skipped at the
+  call site; .md files with comma-rich prose route to markdown
+  via the extension fall-through instead of being mis-routed to
+  CSV (since v2.0.1; calibrated by Round 21 in response to the
+  v2.0.0 recursive self-verification catch on NAMING.md).

@@ -394,6 +394,52 @@ assertions pass at v1.8.0 import. bayyinah.__version__ bumped 1.7.0
 -> 1.8.0 to match pyproject.toml (per TestReleaseReadiness
 test_pyproject_version_matches_package_version invariant).
 
+### Round 19 (audit-of-self by Bilal, retired in v1.9.0)
+
+- LOW: Q10 framework-coupling adoption-ceiling risk class. A
+  scanner whose engineering claims are only legible through a
+  project-internal framework excludes readers whose adoption is
+  gated on a framework-free statement (security review, regulated-
+  industry compliance review, academic citation). Closed by
+  expanding `docs/principles.md` from the v1.5.0 stub (52 lines) to
+  the full Q10 closure target (244 lines). Structural defense: the
+  document's §7 cross-references summary table pairs each principle
+  with the test or document that enforces it, so a modification
+  that breaks an enforcement breaks the document's internal
+  consistency at the same time it breaks the test suite.
+
+- LOW: structural-defense citation drift. The v1.5.0 stub named
+  five principles by section headers only; v1.9.0 cites the exact
+  test file and contract document that defends each principle.
+  Subsequent releases that add structural defenses (new contract
+  pins, new external witnesses, new sync tests) update the §7
+  table as part of the release that adds the defense, per the §6
+  closure cadence discipline.
+
+- LOW: pre-flight dependency-manifest discipline applied
+  (per [[project-bayyinah-dep-sync-pattern]] memory). v1.9.0 ships
+  zero new dependencies in either `pyproject.toml` or
+  `requirements-dev.txt`; the sync test continues to pass. The
+  pre-flight check was the binding gate before patch generation,
+  preventing the M1.6 codification-cycle drift that hit v1.8.0.
+
+The release is documentation-only. No analyzer modifications, no
+MECHANISM_REGISTRY changes, no ScanService.scan() / scan_batch()
+behavior changes, no tier reclassifications, no score-function
+semantic changes, no new tests, no new dependencies. Per
+CODING_STRATEGY §6 v1.9.0 audit-intensity LIGHT + Cow Episode
+anchor: empirical content for the v1.5.0 stub structure; no
+padding, no scope drift.
+
+PARITY contract holds unchanged. The v1.3.0 tounicode_anomaly tier
+remapper continues to apply per its v1.3.0 PARITY.md ledger entry;
+no new remappers added at v1.9.0.
+
+Mechanism count unchanged at 159. MECHANISM_REGISTRY coherence
+assertions pass at v1.9.0 import. bayyinah.__version__ bumped 1.8.0
+-> 1.9.0 to match pyproject.toml (per TestReleaseReadiness
+test_pyproject_version_matches_package_version invariant).
+
 ## Mechanically prevented from this version forward
 
 The structural defenses that close each ledger entry are

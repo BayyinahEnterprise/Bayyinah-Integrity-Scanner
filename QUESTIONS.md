@@ -169,6 +169,26 @@ The Quranic-principles section is load-bearing in the README. For Apache-2.0 OSS
 
 This is not a question about removing the framework. It is a question about whether the project's adoption ceiling is the framework's audience, and whether that is the intended ceiling.
 
+**v1.9.0 closure-log data point #1 (Round 19, 2026-06-23):** Q10
+closure target authored at `docs/principles.md` (expanded from the
+v1.5.0 stub to full content per CODING_STRATEGY §6 v1.9.0). The
+document states five engineering principles in framework-free
+language: §1 Determinism, §2 Fail-closed defaults, §3 Additive-only
+invariants, §4 Fixture-pinned tests, §5 Honest knowledge bounds.
+Each principle is paired with its structural defense (the file or
+test that enforces the principle) so a downstream consumer can
+verify every claim mechanically against the source tree without
+accepting any vocabulary outside standard software-engineering
+terminology. The framework-anchored `README.md` remains the
+canonical entry-point for readers who accept the framework basis;
+`docs/principles.md` is the parallel entry-point for readers whose
+adoption is gated on a framework-free statement. The Q10 thesis
+verbatim per the document's own §6: "this document is consumable
+without the framework." Verse 2:269 anchor: wisdom holds regardless
+of frame; the engineering principles are wisdom statements verifiable
+against the substrate. Cross-reference: `docs/principles.md`
+(canonical Q10 closure document) + CHANGELOG [1.9.0].
+
 ### Q-PRO-3. Honest budget controller
 
 The cost-class taxonomy at `domain/cost_classes.py` describes the

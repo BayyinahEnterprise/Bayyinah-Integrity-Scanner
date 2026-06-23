@@ -12,6 +12,94 @@ held across every phase.
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-06-23 - Round 19 Q10 framework-free engineering principles
+
+Round 19 is an audit-of-self round dispatched per CODING_STRATEGY_
+v1_2_4_to_v2_0.md §6 v1.9.0 Fatiha session (verse al-Baqarah 2:269:
+"He grants wisdom to whom He wills, and whoever has been granted
+wisdom has certainly been given much good"). LIGHT audit-intensity
+per CODING_STRATEGY §6 v1.9.0 (documentation-only; no Tier 1 claim
+per CODING_STRATEGY §M.3.4 §0.3 boundary exemption).
+
+Per Cow Episode anchor: v1.9.0 fills in the v1.5.0 stub at
+`docs/principles.md` with the full framework-free engineering
+principles statement. No new tests, no new detectors, no new
+mechanisms in MECHANISM_REGISTRY, no new dependencies in pyproject
+or requirements-dev. Single-document content expansion + Q10
+closure-log + version bump.
+
+### Added
+
+- **`docs/principles.md`** -- expanded from the v1.5.0 stub (52
+  lines) to the full Q10 closure target (244 lines). Documents five
+  engineering principles in language that holds without PMD, Audit
+  Framework, Munafiq Protocol, or Quranic vocabulary: §1
+  Determinism (paired with `PARITY.md` + parity test as structural
+  defense), §2 Fail-closed defaults (paired with
+  `tests/contracts/test_scan_incomplete_clamp.py` + `docs/score.md`),
+  §3 Additive-only invariants (paired with `tests/test_public_surface.py`
+  + `tests/test_release_readiness.py` + `tests/test_requirements_dev_sync.py`),
+  §4 Fixture-pinned tests (paired with `tests/test_fixtures.py` +
+  `tests/differential/` + `docs/differential_testing.md`), §5 Honest
+  knowledge bounds (paired with `KNOWN_LIMITS.md` + `QUESTIONS.md`
+  + the three scope-disposition documents). §6 closure cadence
+  documents the maintenance discipline. §7 cross-references summary
+  table.
+
+### Changed
+
+- **`bayyinah.__version__`** bumped 1.8.0 -> 1.9.0.
+- **`pyproject.toml`** version bumped 1.8.0 -> 1.9.0.
+- **`QUESTIONS.md`** -- Q10 closure-log data point #1 authored
+  citing `docs/principles.md`.
+
+### Q10 closure (framework-free engineering principles statement)
+
+QUESTIONS.md Q10 closure-log data point #1 filed:
+`docs/principles.md` expanded to full content. The Q10 thesis
+verbatim per the document's own §6: "this document is consumable
+without the framework." Readers who reach Bayyinah via security
+review, regulated-industry compliance review, or academic citation
+can verify every claim in the document against the source tree
+without accepting any vocabulary outside standard software-
+engineering terminology. The framework-anchored `README.md`
+remains the canonical entry-point for readers who accept the
+framework basis; `docs/principles.md` is the parallel entry-point.
+The two coexist; neither replaces the other.
+
+### Out of scope (per CODING_STRATEGY §6 v1.9.0)
+
+- New mechanisms in MECHANISM_REGISTRY (count remains 159).
+- New detectors, new analyzers, new contract pins.
+- New dependencies in pyproject or requirements-dev.
+- New tests (existing tests carry the structural defenses cited by
+  the document).
+- README narrative changes (the framework-anchored README continues
+  as the canonical entry-point).
+- Round 11 closure mechanism work (still queued for v1.2.6 bridge-
+  tag pending project-lead provision of 2026-05-04 red-team probe
+  document).
+
+### PARITY contract
+
+PARITY is unaffected by this release. No analyzer is added or
+modified; no mechanism enters or leaves MECHANISM_REGISTRY; no
+score-function behavior changes. `bayyinah.scan_pdf(path).to_dict()
+== bayyinah_v0.scan_pdf(path).to_dict()` continues to hold byte-
+identically on every Phase 0 fixture.
+
+### Round 19 retirement
+
+- LOW: Q10 framework-coupling adoption-ceiling risk class. A
+  scanner whose engineering claims are only legible through a
+  framework excludes readers whose adoption is gated on a
+  framework-free statement. Closed by authoring the full
+  `docs/principles.md` content + the Q10 closure-log entry.
+  Structural defense: the document's §7 cross-references summary
+  table pairs each principle with its enforcing test or document,
+  so a modification that breaks an enforcement breaks the document's
+  own internal consistency.
+
 ## [1.8.0] - 2026-06-23 - Round 18 Q8 differential testing matrix
 
 Round 18 is an audit-of-self round dispatched per CODING_STRATEGY_

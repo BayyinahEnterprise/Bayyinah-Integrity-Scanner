@@ -341,6 +341,59 @@ assertions pass at v1.7.0 import. bayyinah.__version__ bumped 1.6.0
 -> 1.7.0 to match pyproject.toml (per TestReleaseReadiness
 test_pyproject_version_matches_package_version invariant).
 
+### Round 18 (audit-of-self by Bilal, retired in v1.8.0)
+
+- HIGH: single-witness blind-spot risk class. A test suite that
+  witnesses only itself can pass while the analyzer it tests is
+  silently broken. The README invokes the two-witnesses principle
+  (al-Baqarah 2:282) but Bayyinah was the only witness to its own
+  output through v1.7.0. Closed by shipping the
+  `DifferentialWitness` ABC at `tests/differential/witness_contract.py`
+  + Priority 1 pdfid external witness at
+  `tests/differential/test_pdfid_witness.py` per Q8 closure
+  (`docs/differential_testing.md` §3.1).
+
+- MEDIUM: score-function property-space gap. Existing
+  fixture-pinning tests sampled the score function at finite
+  fixture-defined points. Five continuous-domain invariants (range,
+  empty-list, idempotence, monotonicity in finding count, saturation
+  at zero) were not pinned over the strategy space. Closed by
+  `tests/contracts/test_score_properties.py` Hypothesis-based
+  property pins per `docs/differential_testing.md` §4. Plus order
+  invariance pinned as a consequence of sum-commutativity.
+
+- LOW: witness-skip silent-pass risk class. An external witness that
+  silently passes when its tool is unavailable would defeat the
+  two-witnesses thesis. Closed by `DifferentialWitness` contract
+  documented in `docs/differential_testing.md` §2.3: witnesses
+  return [] when unavailable (never raise) and tests use
+  `@pytest.mark.skipif` with documented install hints. Structural
+  defense: `tests/differential/test_pdfid_witness.py::TestPdfIdWitnessContract`
+  pins both behaviors.
+
+- LOW: optional-dependency dilution risk class. Hypothesis and pdfid
+  are added to `[project.optional-dependencies] dev` at v1.8.0, not
+  to runtime dependencies. Runtime install footprint is unchanged.
+  Structural defense: pyproject.toml `dev` extra carries both with
+  major-version caps (`hypothesis>=6,<7`, `pdfid>=1.1,<2`) per
+  dependency manifest discipline.
+
+The release is additive. No analyzer modifications, no
+MECHANISM_REGISTRY changes, no ScanService.scan() / scan_batch()
+behavior changes, no tier reclassifications, no score-function
+semantic changes. Per CODING_STRATEGY §6 v1.8.0 audit-intensity
+HEAVY + Cow Episode anchor: ship Priority 1 witness + property
+pins + architecture; defer Priorities 2-4 + mutation + fuzz.
+
+PARITY contract holds unchanged. The v1.3.0 tounicode_anomaly tier
+remapper continues to apply per its v1.3.0 PARITY.md ledger entry;
+no new remappers added at v1.8.0.
+
+Mechanism count unchanged at 159. MECHANISM_REGISTRY coherence
+assertions pass at v1.8.0 import. bayyinah.__version__ bumped 1.7.0
+-> 1.8.0 to match pyproject.toml (per TestReleaseReadiness
+test_pyproject_version_matches_package_version invariant).
+
 ## Mechanically prevented from this version forward
 
 The structural defenses that close each ledger entry are
@@ -365,3 +418,11 @@ themselves preserved in the codebase and run on CI:
 - Phase 25+ post-processor isolation: CrossModalCorrelationEngine is
   NOT a BaseAnalyzer subclass, blocking AnalyzerRegistry from
   dispatching it as a side effect of a scan (since v1.7.0).
+- Score-function property pins: range [0,1], empty-list -> 1.0,
+  idempotence, monotonicity in finding count, saturation at zero,
+  order invariance enforced over the Hypothesis strategy space
+  (since v1.8.0).
+- DifferentialWitness contract: `WitnessDivergence.__post_init__`
+  enforces the three-kind partition (solo_bayyinah / solo_witness /
+  distinct_locus); witnesses must return [] not raise; witnesses
+  must declare an install hint (since v1.8.0).

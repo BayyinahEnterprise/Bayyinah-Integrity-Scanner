@@ -12,6 +12,124 @@ held across every phase.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-06-23 - Round 18 Q8 differential testing matrix
+
+Round 18 is an audit-of-self round dispatched per CODING_STRATEGY_
+v1_2_4_to_v2_0.md §6 v1.8.0 Fatiha session (verse al-Baqarah 2:282:
+"And call two witnesses from among your men"). HEAVY audit-intensity
+per CODING_STRATEGY §6 v1.8.0. The two-witnesses principle applied
+to Bayyinah: the existing fixture-pinning tests witness Bayyinah's
+own behavior; v1.8.0 ships the architecture for adding independent
+external witnesses and the first such witness (pdfid).
+
+Per Cow Episode anchor: v1.8.0 ships ONE differential witness
+(pdfid, the highest threat-model-overlap candidate) plus the
+DifferentialWitness contract harness plus Hypothesis-based property
+pins on the score function. Priorities 2-4 (oletools, yara, clamav)
+queue per documented prioritization rationale; mutation testing and
+FileRouter fuzzing remain deferred.
+
+### Added
+
+- **`docs/differential_testing.md`** -- canonical architecture
+  document for the external-witness testing layer (211 lines).
+  Documents §1 the witness gap, §2 the DifferentialWitness contract
+  (witness shape, divergence kinds, skip behavior), §3 the
+  prioritization order (pdfid -> oletools -> yara -> clamav with
+  threat-model-overlap and install-footprint rationale), §4 the
+  five score-function properties pinned by Hypothesis tests, §5
+  scope boundary, §6 cross-references.
+- **`tests/differential/__init__.py`** -- new test package per
+  CODING_STRATEGY §6 v1.8.0.
+- **`tests/differential/witness_contract.py`** -- `DifferentialWitness`
+  abstract base class + `WitnessFinding` + `WitnessDivergence`
+  frozen dataclasses. `WitnessDivergence.__post_init__` enforces
+  the three valid divergence kinds (solo_bayyinah, solo_witness,
+  distinct_locus) per docs/differential_testing.md §2.2.
+- **`tests/differential/test_pdfid_witness.py`** -- Priority 1
+  external witness wrapping Didier Stevens' pdfid.py. Skips with a
+  documented install hint when pdfid is not available; portable
+  across two pdfid distribution shapes (top-level `PDFiD` and
+  submodule `pdfid.pdfid.PDFiD`). Catches both Exception and
+  SystemExit (pdfid 1.1.3 calls sys.exit() on missing files).
+- **`tests/contracts/test_score_properties.py`** -- Hypothesis-based
+  property pins on `compute_muwazana_score`. Pins five invariants:
+  range [0,1], empty-list -> 1.0, idempotence, monotonicity in
+  finding count (saturating), saturation at zero. Plus order
+  invariance (consequence of sum-commutativity). Tier strategy
+  bounded to 1-3 (Tier 0 routing findings require disclosure-schema
+  evidence; out of strategy space).
+
+### Changed
+
+- **`bayyinah.__version__`** bumped 1.7.0 -> 1.8.0.
+- **`pyproject.toml`** version bumped 1.7.0 -> 1.8.0.
+- **`pyproject.toml`** `[project.optional-dependencies] dev` adds
+  `hypothesis>=6,<7` and `pdfid>=1.1,<2` (capped at current major
+  per dependency manifest discipline). Both are optional: tests
+  skip with documented install hints when absent, preserving zero-
+  extra-dep installability of the runtime.
+- **`requirements-dev.txt`** -- mirrors the two new dev entries
+  per Fraz round 10 MEDIUM 1 dependency-manifest discipline,
+  enforced by `tests/test_requirements_dev_sync.py`.
+- **`QUESTIONS.md`** -- Q8 closure-log data point #1 authored citing
+  `docs/differential_testing.md`.
+
+### Q8 closure (differential testing prioritization)
+
+QUESTIONS.md Q8 closure-log data point #1 filed: prioritization
+order documented and Priority 1 (pdfid) shipping. The order:
+(1) pdfid -- structural PDF address-space inspector, HIGH overlap
+with Bayyinah's PDF analyzer, pure-Python install; shipped at
+v1.8.0. (2) oletools -- Office macro / OLE inspector, HIGH overlap
+with DOCX coverage, single pip dep; deferred to v1.8.1 or later.
+(3) yara -- rule-based content matcher, MEDIUM overlap, heavier
+install footprint + per-fixture rule authoring; deferred to later
+release. (4) clamav -- signature-based malware scanner, LOW
+overlap, heaviest install footprint; deferred. Property-based
+score-function tests ship at v1.8.0 with five invariants pinned.
+Mutation testing and FileRouter fuzzing remain deferred per Q8
+prioritization (the four named external witnesses come first).
+
+### Out of scope (per CODING_STRATEGY §6 v1.8.0)
+
+- Priorities 2-4 witness implementations (oletools / yara / clamav
+  queued per docs/differential_testing.md §3.2-§3.4).
+- Mutation testing harness.
+- FileRouter polyglot-dispatch adversarial fuzzing.
+- Modification of `compute_muwazana_score` or `tamyiz_verdict`
+  semantics. The Hypothesis property pins lock the EXISTING shape;
+  any change that breaks a pinned property requires the parity-
+  break ceremony per PARITY.md.
+- README narrative changes (callers continue to invoke
+  `ScanService().scan(path)` exactly as before).
+- Round 11 closure mechanism work (still queued for v1.2.6 bridge-
+  tag pending project-lead provision of 2026-05-04 red-team probe
+  document).
+
+### PARITY contract
+
+PARITY is unaffected by this release. No analyzer is added or
+modified; no mechanism enters or leaves MECHANISM_REGISTRY; no
+score-function behavior changes. `bayyinah.scan_pdf(path).to_dict()
+== bayyinah_v0.scan_pdf(path).to_dict()` continues to hold byte-
+identically on every Phase 0 fixture. The Hypothesis property
+tests PIN the existing parity, they do not modify it.
+
+### Round 18 retirement
+
+Q8 single-witness blind-spot risk class retired: a test suite that
+witnesses only itself can pass while the analyzer it tests is
+silently broken. v1.8.0 closes this by shipping the
+`DifferentialWitness` ABC, pdfid as the first external witness, and
+Hypothesis property pins as a "different-shape" witness for the
+score function. Future modifications that break a pinned property
+or that introduce a witness violating the contract (witness must
+return [] not raise, must skip with documented install hint) fail
+tests in `tests/contracts/test_score_properties.py` or
+`tests/differential/test_pdfid_witness.py::TestPdfIdWitnessContract`,
+blocking the regression.
+
 ## [1.7.0] - 2026-06-23 - Round 17 Q5 cross-modal correlation policy closure
 
 Round 17 is an audit-of-self round dispatched per CODING_STRATEGY_

@@ -134,6 +134,31 @@ SHA-256 of IPv4 over a daily-rotating salt is brute-forceable by enumeration in 
 
 1,782 tests is the published number. The taxonomy is fixture-pinning plus integration. Missing from the suite: mutation testing (do the tests fail when an analyzer is broken?), differential testing against `pdfid`, `oletools`, `yara`, `clamav` on a shared corpus, adversarial fuzzing of the `FileRouter` polyglot dispatch, property-based tests with Hypothesis on the score function (idempotence, monotonicity in finding severity). The two-witnesses principle the README invokes (Al-Baqarah 2:282) is currently witnessed only by the project's own fixtures. Q8 is which of these external witness layers gets prioritized for v1.3.
 
+**v1.8.0 closure-log data point #1 (Round 18, 2026-06-23):** Q8
+prioritization order documented in `docs/differential_testing.md` §3.
+Priority 1 (pdfid) ships at v1.8.0 as
+`tests/differential/test_pdfid_witness.py` wrapping Didier Stevens'
+pdfid.py via the `DifferentialWitness` abstract base class declared
+in `tests/differential/witness_contract.py`. The witness skips
+cleanly with a documented install hint when pdfid is unavailable.
+Priority 2 (oletools), Priority 3 (yara), Priority 4 (clamav)
+remain queued per the prioritization rationale in
+`docs/differential_testing.md` §3.2-§3.4 (threat-model overlap +
+install-footprint cost). Property-based score-function tests ship
+at v1.8.0 as `tests/contracts/test_score_properties.py` using
+Hypothesis, pinning five score-function invariants per
+`docs/differential_testing.md` §4: range, empty-list, idempotence,
+monotonicity in finding count, saturation at zero, plus order
+invariance. Mutation testing and FileRouter fuzzing remain
+deferred. Verse 2:282 anchor: Bayyinah's existing fixture-pinning
+tests witness Bayyinah's own behavior; the differential layer adds
+the second witness the verse requires. Cross-reference:
+`docs/differential_testing.md` (canonical architecture) +
+`tests/differential/witness_contract.py` (DifferentialWitness ABC) +
+`tests/differential/test_pdfid_witness.py` (Priority 1) +
+`tests/contracts/test_score_properties.py` (Hypothesis pins) +
+CHANGELOG [1.8.0].
+
 ### Q9. The cross-model audit shares failure modes
 
 "Eight sessions, eight closing audits, zero open findings under the Munafiq Protocol cross-verification across three AI collaborators (Anthropic Claude, xAI Grok, Perplexity Computer)." Current LLMs share substantial failure modes (sycophancy, anchoring on prompt framing, agreement under social pressure). Three of them auditing the same artifact under the same framework reduces single-model variance but does not address shared bias. Q9 is whether the project should claim "audit-cleanness" at all in the absence of a human audit by someone paid to find holes, who does not accept the framework's premises.

@@ -2665,6 +2665,9 @@ function renderResult(report) {
   var panels = Array.prototype.slice.call(document.querySelectorAll('.case-panel'));
   if (tabs.length === 0 || panels.length === 0) return;
 
+  // Whitelist of case names (keep in sync with api.py routes).
+  var KNOWN_CASES = ['aviation', 'healthcare', 'grid', 'automotive', 'financial'];
+
   function selectByCase(name, opts) {
     opts = opts || {};
     var found = false;
@@ -2691,9 +2694,11 @@ function renderResult(report) {
     }
     if (opts.updateUrl) {
       try {
-        var url = new URL(window.location.href);
-        url.searchParams.set('case', name);
-        history.replaceState(null, '', url.toString());
+        // Push a clean path (e.g. /aviation) and drop any legacy ?case=.
+        // Preserve the #applications hash so the section stays in view
+        // after the URL change.
+        var hash = window.location.hash || '';
+        history.replaceState(null, '', '/' + name + hash);
       } catch (e) { /* old browser; ignore */ }
     }
     return true;
@@ -2720,14 +2725,46 @@ function renderResult(report) {
     selectByCase(tabs[next].getAttribute('data-case'), { focus: true, updateUrl: true });
   });
 
-  // Initial selection from ?case= query string, fallback to first tab
-  try {
-    var params = new URLSearchParams(window.location.search);
-    var initial = params.get('case');
-    if (initial && !selectByCase(initial)) {
-      // unknown value - leave default
+  // Initial selection: prefer the path (/aviation), fall back to legacy
+  // ?case= query string, then to the default first tab. If a legacy
+  // ?case= URL is hit, rewrite it to the clean path so the next reload
+  // is canonical.
+  function initialFromPath() {
+    var path = (window.location.pathname || '').replace(/^\/+|\/+$/g, '');
+    return KNOWN_CASES.indexOf(path) !== -1 ? path : null;
+  }
+  function initialFromQuery() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var v = params.get('case');
+      return (v && KNOWN_CASES.indexOf(v) !== -1) ? v : null;
+    } catch (e) { return null; }
+  }
+
+  var initial = initialFromPath();
+  if (!initial) {
+    var legacy = initialFromQuery();
+    if (legacy) {
+      initial = legacy;
+      try {
+        var hash = window.location.hash || '';
+        history.replaceState(null, '', '/' + legacy + hash);
+      } catch (e) { /* ignore */ }
     }
-  } catch (e) { /* ignore */ }
+  }
+  if (initial) {
+    selectByCase(initial);
+    // If the user landed directly on /aviation etc., scroll the
+    // Applications section into view so the tab they linked to is
+    // visible without manual scrolling. Skip if there is already a
+    // hash anchor in the URL (the browser will handle that itself).
+    if (!window.location.hash) {
+      var section = document.getElementById('applications');
+      if (section && typeof section.scrollIntoView === 'function') {
+        section.scrollIntoView({ block: 'start' });
+      }
+    }
+  }
 })();
 </script>
 

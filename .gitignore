@@ -98,3 +98,4 @@ tmp/
 # --- Built docs (if/when docs/ is added) ------------------------------------
 docs/_build/
 site/
+docs/benchmarks/clean_50pg.pdf

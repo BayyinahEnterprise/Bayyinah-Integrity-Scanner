@@ -25,6 +25,9 @@ Declared horizon
   differs by at least ``MIN_PIXEL_DELTA`` of 255, so near-white text on
   white is unseen. Visible-but-illegible text (a 1 pt font) does change
   pixels and is left to the size-based checks.
+* Text drawn on top of other text is settled one operator at a time,
+  up to ``MAX_OVERLAP_OPS`` operators per file; any beyond that are
+  disclosed as unchecked.
 * A renderer is one reader. Another viewer may draw a malformed file
   differently; this check speaks for MuPDF.
 """
@@ -39,6 +42,11 @@ from typing import Final
 MAX_PAGES: Final[int] = 40
 MIN_PIXEL_DELTA: Final[int] = 24
 MIN_CHANGED_PIXELS: Final[int] = 2
+# Where an extracted span sits on top of another, the pixels under it
+# change when *all* text is removed whether or not it drew any of them.
+# Those spans are settled by removing one text operator at a time.
+OVERLAP_SHARE: Final[float] = 0.05
+MAX_OVERLAP_OPS: Final[int] = 60
 _TEXT_SHOW_OPS: Final[frozenset[str]] = frozenset({"Tj", "TJ", "'", '"'})
 
 
@@ -59,6 +67,7 @@ class OracleResult:
     spans: tuple[Span, ...]
     pages_checked: int
     pages_total: int
+    overlap_ops_unchecked: int = 0
 
     @property
     def unseen(self) -> tuple[Span, ...]:
@@ -175,7 +184,104 @@ def examine_pdf(file_path: Path | str, max_pages: int = MAX_PAGES) -> OracleResu
                             r.x + 0.6 * size * len(r.text), height - r.y + 0.3 * size)
                     spans.append(Span(r.page_index, r.text, bbox,
                                       _changed(pa, pb, bbox)))
-    return OracleResult(tuple(spans), pages, total)
+            unchecked = _resolve_overlaps(data, doc, spans, pages)
+    return OracleResult(tuple(spans), pages, total, unchecked)
+
+
+_MIN_PROBE: Final[int] = 4
+
+
+def _same_text(run_text: str, span_text: str) -> bool:
+    """Whether a content-stream run and an extracted span are the same
+    text: one begins with at least ``_MIN_PROBE`` characters of the
+    other. Deliberately strict; an unmatched run changes nothing."""
+    a, b = run_text.strip(), span_text.strip()
+    if len(a) < _MIN_PROBE or len(b) < _MIN_PROBE:
+        return False
+    return a.startswith(b[:12]) or b.startswith(a[:12])
+
+
+def _overlap(a, b) -> float:
+    """Intersection area as a share of the smaller box."""
+    w = min(a[2], b[2]) - max(a[0], b[0])
+    h = min(a[3], b[3]) - max(a[1], b[1])
+    if w <= 0 or h <= 0:
+        return 0.0
+    small = min((a[2] - a[0]) * (a[3] - a[1]), (b[2] - b[0]) * (b[3] - b[1]))
+    return (w * h) / small if small > 0 else 0.0
+
+
+def _resolve_overlaps(data: bytes, doc, spans: list, pages: int) -> int:
+    """Settle spans that overlap another span: remove one text-showing
+    operator at a time and see whether the page changes at all. Spans
+    are corrected in place. Returns the number of operators left
+    unchecked because of ``MAX_OVERLAP_OPS``."""
+    import pikepdf
+
+    try:
+        import pymupdf as fitz
+    except ImportError:  # older PyMuPDF
+        import fitz
+    from analyzers.pdf_content_stream_text import walk_page
+
+    by_page: dict[int, list[int]] = {}
+    for i, s in enumerate(spans):
+        if s.seen:
+            by_page.setdefault(s.page_index, []).append(i)
+    ambiguous: dict[int, set[int]] = {}
+    for page_index, idxs in by_page.items():
+        for a in idxs:
+            for b in idxs:
+                if a < b and _overlap(spans[a].bbox, spans[b].bbox) >= OVERLAP_SHARE:
+                    ambiguous.setdefault(page_index, set()).update((a, b))
+    if not ambiguous:
+        return 0
+    unchecked = 0
+    budget = MAX_OVERLAP_OPS
+    with pikepdf.open(io.BytesIO(data)) as pdf:
+        for page_index, idxs in sorted(ambiguous.items()):
+            page = pdf.pages[page_index]
+            try:
+                instructions = list(pikepdf.parse_content_stream(page))
+                runs = [r for r in walk_page(page, page_index)
+                        if not r.off_page and _has_glyphs(r.text)
+                        and 0 <= r.operator_index < len(instructions)
+                        and str(instructions[r.operator_index][1]) in _TEXT_SHOW_OPS]
+            except Exception:
+                continue
+            # Only operators whose text belongs to an ambiguous span.
+            # A full stop moves one pixel at 72 dpi, so short runs cannot
+            # be judged this way and are left as the first pass found them.
+            wanted = [r for r in runs
+                      if len(r.text.strip()) >= _MIN_PROBE
+                      and any(_same_text(r.text, spans[i].text) for i in idxs)]
+            base = doc[page_index].get_pixmap(colorspace=fitz.csGRAY, alpha=False)
+            whole = (0, 0, base.width, base.height)
+            for run in wanted:
+                if budget <= 0:
+                    unchecked += 1
+                    continue
+                budget -= 1
+                single = pikepdf.new()
+                single.pages.append(page)
+                kept = [ins for k, ins in enumerate(instructions)
+                        if k != run.operator_index]
+                single.pages[0].Contents = single.make_stream(
+                    pikepdf.unparse_content_stream(kept))
+                buf = io.BytesIO()
+                single.save(buf)
+                single.close()
+                with fitz.open(stream=buf.getvalue(), filetype="pdf") as variant:
+                    pix = variant[0].get_pixmap(colorspace=fitz.csGRAY, alpha=False)
+                if (pix.width, pix.height) != (base.width, base.height):
+                    continue
+                if _changed(base, pix, whole) >= MIN_CHANGED_PIXELS:
+                    continue  # this operator drew something a reader sees
+                for i in idxs:
+                    if _same_text(run.text, spans[i].text):
+                        spans[i] = Span(spans[i].page_index, spans[i].text,
+                                        spans[i].bbox, 0)
+    return unchecked
 
 
 def visible_text(file_path: Path | str, max_pages: int = MAX_PAGES) -> str:
@@ -211,6 +317,13 @@ def detect_text_not_rendered(file_path: Path | str, existing=()) -> list:
             f"Pages {result.pages_checked + 1} to {result.pages_total} were "
             "not compared against their rendering (page limit). Hidden text "
             "on those pages is caught only by the mechanism-specific checks.",
+        )
+    if result.overlap_ops_unchecked:
+        note_disclosure(
+            "overlapping_text_not_fully_checked", result.overlap_ops_unchecked,
+            f"{result.overlap_ops_unchecked} text operator(s) drawn over other "
+            "text were not individually render-checked (limit reached). Text "
+            "hidden on top of visible text may be unreported on those pages.",
         )
     quoted = " ".join(
         f"{getattr(f, 'concealed', '')} {getattr(f, 'description', '')}"

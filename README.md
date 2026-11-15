@@ -10,7 +10,70 @@ Bayyinah extracts every content layer from a file, visible and invisible, and re
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.19677111-blue)](https://doi.org/10.5281/zenodo.19677111)
-[![Version](https://img.shields.io/badge/version-1.1.8-green.svg)](https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0.1-green.svg)](https://github.com/BayyinahEnterprise/Bayyinah-Integrity-Scanner/blob/main/CHANGELOG.md)
+
+## Where it fits, and where it does not
+
+Bayyinah is the **structural layer** of a document pipeline. It answers
+one question: does this file show a reader one thing and hand a parser
+another? Text classifiers and hosted guardrail services read the text
+they are given and cannot tell visible words from hidden ones. Bayyinah
+looks at the file itself, offline, and reports what is hidden, where,
+and what it says.
+
+Use it **alongside** a prompt-injection classifier, not instead of one.
+
+- It reports concealment. It does not rule on intent. A finding says a
+  mechanism is present; it never says a file is malicious.
+- One finding, `concealed_instruction`, does read meaning: it flags
+  hidden text shaped like an instruction to an AI system. It matches
+  phrases, in English and (experimentally) sixteen other languages. It
+  does not understand paraphrase, and its silence is not evidence that
+  hidden text is harmless.
+- An instruction written in plain sight is outside its scope.
+
+How well it does, including where it does badly, is measured in
+[docs/benchmarks/README.md](docs/benchmarks/README.md). Known limits
+are listed in [KNOWN_LIMITS.md](KNOWN_LIMITS.md) and five of them are
+pinned as tests.
+
+> **Unreleased work.** The `main` branch and the PyPI package are 2.0.1.
+> Everything marked *2.1 development* below is on a feature branch and
+> has not been released. See [CHANGELOG.md](CHANGELOG.md).
+
+### Commands
+
+| Command | What it does | Status |
+|---|---|---|
+| `bayyinah scan FILE` | Findings, score, and (2.1) named outcomes, disclosures and score axes | released |
+| `bayyinah clean FILE` | A copy of a text file with hidden characters removed, and a receipt | 2.1 development |
+| `bayyinah view FILE` | The text a reader of a PDF or Office file could see, and a receipt | 2.1 development |
+| `bayyinah keygen KEYFILE` | An Ed25519 key for signing scan reports | 2.1 development |
+| `bayyinah attest FILE --key KEYFILE` | A signed record binding the result to the file and to the detector's source hash | 2.1 development |
+| `bayyinah verify ATTESTATION` | Checks signature, key trust, file match and detector match separately | 2.1 development |
+
+What a scan result does and does not mean:
+
+- **No findings** means no registered mechanism matched and, for PDFs,
+  every extracted span left a mark on the rendered page. It does not
+  mean the file is safe to act on.
+- **`instruction_assessment`** is `instruction_like`, `no_match`,
+  `not_assessed` or `failed`. Only the first raises a finding. The other
+  three are stated so that silence is never mistaken for clearance.
+- **`disclosures`** list what the scan chose not to report or could not
+  check: zero-width characters a writing system requires, invisible
+  runs that did not decode, pages not render-checked.
+- **A receipt or attestation** shows which key signed it. Whether to
+  trust that key is the reader's decision.
+
+### Where the idea comes from
+
+The scanner's central distinction, between what a thing shows and what
+it holds, is taken from Islamic theology: *zahir* (the outward) and
+*batin* (the inward), and the Qur'anic treatment of performed sincerity
+(*nifaq*). The mechanism names in the code keep that vocabulary. The
+engineering claims stand or fall on the tests and benchmarks, not on
+their origin.
 
 ## Why Bayyinah
 
@@ -21,6 +84,11 @@ Bayyinah scans that substrate. It applies the same question to 23 file kinds acr
 > **Default coverage disclosure.** Cross-modal correlation is **opt-in** and is **not** wired into the default `ScanService().scan(path)` pipeline while the rule set stabilises. A scan that completes against a video or audio file via the default pipeline does not exercise cross-modal divergence detection; it exercises the per-stem analyzers only. The v1.2 report shape adds a `coverage` field that lists the mechanism groups that actually ran, so a downstream CI step can fail-closed when a required mechanism was not exercised. To opt into cross-modal correlation in v1.1.x, instantiate `CrossModalCorrelator` directly; v1.3 is the candidate release for making cross-modal default-on. See `QUESTIONS.md` Q5 for the open policy question.
 
 ## What Bayyinah detects
+
+<!-- BAYYINAH_COUNTS_AUTO_BEGIN -->
+<!-- Generated by scripts/generate_counts.py. Do not edit by hand. -->
+The scanner registers **166 mechanisms**: 48 in what is rendered or extracted as text, 117 in a file's inner structure, and 1 about the scanner's own routing. By tier: 55 verified, 81 structural, 29 interpretive, 1 routing.
+<!-- BAYYINAH_COUNTS_AUTO_END -->
 
 Two concealment *loci*, mapped onto the classical distinction between *zahir* (the outward / rendered) and *batin* (the inner / structural):
 
@@ -150,6 +218,26 @@ bayyinah scan release_notes.pdf --quiet || {
   exit 1
 }
 ```
+
+## Use in a pipeline (2.1 development)
+
+```python
+from integrations import check_file, check_text
+
+verdict = check_file("brief.pdf")
+if verdict.instruction_like:
+    ...  # hidden text reads as an instruction to an AI system
+print(verdict.assessment_status, verdict.disclosures)
+```
+
+Adapters: `integrations.langchain.BayyinahDocumentScanner`,
+`integrations.llamaindex.BayyinahNodeScanner`, and an MCP server
+(`python -m integrations.mcp_server`). They were exercised against
+langchain-core 1.8, llama-index-core 0.14 and mcp 2.3 only.
+
+Scan the original file where you can. Text extracted from a PDF has
+already lost the difference between what a reader could see and what
+they could not, so `check_text` sees only character-level concealment.
 
 ## Python API
 

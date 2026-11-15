@@ -82,6 +82,10 @@ from domain.config import (
     TIER,
     ZERO_WIDTH_CHARS,
 )
+from domain.script_awareness import (
+    has_spoof_word, is_spoof_word, suspicious_zero_width,
+    suspicious_zero_width_indices,
+)
 from infrastructure.file_router import FileKind
 
 
@@ -671,12 +675,14 @@ class VideoAnalyzer(BaseAnalyzer):
 
     def _text_has_concealment(self, text: str) -> bool:
         """Fast check: does ``text`` carry any of the concealment signals?"""
+        if suspicious_zero_width(text, ZERO_WIDTH_CHARS):
+            return True
+        if has_spoof_word(text, CONFUSABLE_TO_LATIN):
+            return True
         for c in text:
-            if c in ZERO_WIDTH_CHARS or c in BIDI_CONTROL_CHARS:
+            if c in BIDI_CONTROL_CHARS:
                 return True
             if ord(c) in TAG_CHAR_RANGE:
-                return True
-            if c in CONFUSABLE_TO_LATIN:
                 return True
         if _METADATA_BASE64_SHAPE.search(text):
             return True
@@ -685,13 +691,13 @@ class VideoAnalyzer(BaseAnalyzer):
     def _describe_concealment(self, text: str) -> str:
         """Human-readable summary of which concealment signals fired."""
         reasons: list[str] = []
-        if any(c in ZERO_WIDTH_CHARS for c in text):
+        if suspicious_zero_width(text, ZERO_WIDTH_CHARS):
             reasons.append("zero-width chars")
         if any(c in BIDI_CONTROL_CHARS for c in text):
             reasons.append("bidi controls")
         if any(ord(c) in TAG_CHAR_RANGE for c in text):
             reasons.append("TAG chars")
-        if any(c in CONFUSABLE_TO_LATIN for c in text):
+        if has_spoof_word(text, CONFUSABLE_TO_LATIN):
             reasons.append("homoglyphs")
         if _METADATA_BASE64_SHAPE.search(text):
             reasons.append("base64-shaped payload")

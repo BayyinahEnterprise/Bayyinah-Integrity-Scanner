@@ -69,9 +69,9 @@ DOCX_FIXTURE_EXPECTATIONS: dict[str, list[str]] = {
     # Clean — any firing is a false positive.
     "clean/clean.docx": [],
     # Zahir-layer adversarial fixtures.
-    "adversarial/hidden_text.docx":            ["docx_hidden_text"],
+    "adversarial/hidden_text.docx":            ["docx_hidden_text", "concealed_instruction"],
     "adversarial/zero_width.docx":             ["zero_width_chars"],
-    "adversarial/tag_chars.docx":              ["tag_chars"],
+    "adversarial/tag_chars.docx":              ["tag_chars", "invisible_payload_decoded"],
     "adversarial/bidi_control.docx":           ["bidi_control"],
     "adversarial/homoglyph.docx":              ["homoglyph"],
     # Batin-layer adversarial fixtures.

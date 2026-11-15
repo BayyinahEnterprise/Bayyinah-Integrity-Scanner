@@ -82,7 +82,7 @@ XLSX_FIXTURE_EXPECTATIONS: dict[str, list[str]] = {
     "adversarial/data_validation_formula.xlsx":     ["xlsx_data_validation_formula"],
     # Shared zahir detectors on cell text.
     "adversarial/zero_width.xlsx":                  ["zero_width_chars"],
-    "adversarial/tag_chars.xlsx":                   ["tag_chars"],
+    "adversarial/tag_chars.xlsx":                   ["tag_chars", "invisible_payload_decoded"],
     "adversarial/bidi_control.xlsx":                ["bidi_control"],
     "adversarial/homoglyph.xlsx":                   ["homoglyph"],
 }

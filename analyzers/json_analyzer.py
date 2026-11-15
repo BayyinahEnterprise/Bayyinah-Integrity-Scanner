@@ -77,6 +77,8 @@ from domain.config import (
     TIER,
     ZERO_WIDTH_CHARS,
 )
+from analyzers.invisible_text import scan_string as _invisible_scan
+from domain.script_awareness import is_spoof_word, suspicious_zero_width
 from infrastructure.file_router import FileKind
 
 
@@ -405,7 +407,8 @@ class JsonAnalyzer(BaseAnalyzer):
         location_prefix = f"{file_path}@{json_path}"
 
         # Zero-width characters.
-        zw = [c for c in value if c in ZERO_WIDTH_CHARS]
+        yield from _invisible_scan(value, location_prefix)
+        zw = suspicious_zero_width(value, ZERO_WIDTH_CHARS)
         if zw:
             codepoints = ", ".join(sorted({f"U+{ord(c):04X}" for c in zw}))
             yield Finding(
@@ -477,7 +480,7 @@ class JsonAnalyzer(BaseAnalyzer):
             latin_letters = [c for c in word if _is_latin_letter(c)]
             if not confusables:
                 continue
-            if not (latin_letters or len(confusables) >= 2):
+            if not is_spoof_word(word, CONFUSABLE_TO_LATIN, value):
                 continue
             recovered = "".join(
                 CONFUSABLE_TO_LATIN.get(c, c) for c in word

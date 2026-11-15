@@ -330,6 +330,7 @@ def _all_text_and_clean_fixtures() -> list[Path]:
     return [p for p in pdfs if p.exists()]
 
 
+@pytest.mark.legacy_parity
 @pytest.mark.parametrize(
     "pdf_path",
     _all_text_and_clean_fixtures(),
@@ -354,6 +355,7 @@ def test_parity_with_v0_1_text_layer_analyzer(pdf_path: Path) -> None:
     )
 
 
+@pytest.mark.legacy_parity
 def test_parity_on_positive_combined() -> None:
     """The combined fixture fires every single-mechanism detector the
     corpus covers — including all the text-layer ones. Parity must
@@ -371,6 +373,7 @@ def test_parity_on_positive_combined() -> None:
     assert ours_tuples == theirs_tuples
 
 
+@pytest.mark.legacy_parity
 def test_parity_mechanism_sets_on_object_fixtures() -> None:
     """On object-layer fixtures, the text analyzer should agree with
     v0.1's text analyzer about what text-layer mechanisms fire —

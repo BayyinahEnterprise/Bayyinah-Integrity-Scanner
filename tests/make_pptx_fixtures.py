@@ -85,8 +85,8 @@ PPTX_FIXTURE_EXPECTATIONS: dict[str, list[str]] = {
     "adversarial/embedded_object.pptx":             ["pptx_embedded_object"],
     # Tier 2 — most common.
     "adversarial/hidden_slide.pptx":                ["pptx_hidden_slide"],
-    "adversarial/speaker_notes_injection.pptx":     ["pptx_speaker_notes_injection"],
-    "adversarial/slide_master_injection.pptx":      ["pptx_slide_master_injection"],
+    "adversarial/speaker_notes_injection.pptx":     ["pptx_speaker_notes_injection", "concealed_instruction"],
+    "adversarial/slide_master_injection.pptx":      ["pptx_slide_master_injection", "concealed_instruction"],
     "adversarial/revision_history.pptx":            ["pptx_revision_history"],
     # Tier 2-3 — most subtle.
     "adversarial/external_link.pptx":               ["pptx_external_link"],
@@ -94,7 +94,7 @@ PPTX_FIXTURE_EXPECTATIONS: dict[str, list[str]] = {
     "adversarial/custom_xml_payload.pptx":          ["pptx_custom_xml_payload"],
     # Shared zahir detectors on slide text.
     "adversarial/zero_width.pptx":                  ["zero_width_chars"],
-    "adversarial/tag_chars.pptx":                   ["tag_chars"],
+    "adversarial/tag_chars.pptx":                   ["tag_chars", "invisible_payload_decoded"],
     "adversarial/bidi_control.pptx":                ["bidi_control"],
     "adversarial/homoglyph.pptx":                   ["homoglyph"],
 }

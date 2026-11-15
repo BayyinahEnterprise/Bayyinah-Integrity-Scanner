@@ -84,6 +84,8 @@ from domain.config import (
     TIER,
     ZERO_WIDTH_CHARS,
 )
+from analyzers.invisible_text import scan_string as _invisible_scan
+from domain.script_awareness import is_spoof_word, suspicious_zero_width
 from infrastructure.file_router import FileKind
 
 # v1.1.2 HTML format-gauntlet detectors. Each is a standalone byte-
@@ -551,7 +553,8 @@ class _HtmlWalker(HTMLParser):
         loc = self._loc(location_suffix) if location_suffix else self._loc()
 
         # Zero-width.
-        zw = [c for c in value if c in ZERO_WIDTH_CHARS]
+        self.findings.extend(_invisible_scan(value, loc))
+        zw = suspicious_zero_width(value, ZERO_WIDTH_CHARS)
         if zw:
             codepoints = ", ".join(
                 sorted({f"U+{ord(c):04X}" for c in zw})
@@ -625,7 +628,7 @@ class _HtmlWalker(HTMLParser):
             latin_letters = [c for c in word if _is_latin_letter(c)]
             if not confusables:
                 continue
-            if not (latin_letters or len(confusables) >= 2):
+            if not is_spoof_word(word, CONFUSABLE_TO_LATIN, value):
                 continue
             recovered = "".join(
                 CONFUSABLE_TO_LATIN.get(c, c) for c in word

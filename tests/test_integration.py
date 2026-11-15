@@ -192,6 +192,7 @@ class TestPublicSurface:
 # Library-API parity — bayyinah.scan_pdf vs bayyinah_v0.scan_pdf
 # ---------------------------------------------------------------------------
 
+@pytest.mark.legacy_parity
 @pytest.mark.parametrize(
     "pdf_path",
     _all_phase0_fixtures(),
@@ -224,6 +225,7 @@ def test_scan_pdf_parity_with_v0(pdf_path: Path) -> None:
     assert ours.scan_incomplete == theirs.scan_incomplete
 
 
+@pytest.mark.legacy_parity
 @pytest.mark.parametrize(
     "pdf_path",
     _all_phase0_fixtures(),
@@ -261,6 +263,7 @@ def test_scan_pdf_accepts_path_object() -> None:
     assert r.integrity_score == 1.0
 
 
+@pytest.mark.legacy_parity
 def test_format_text_report_is_byte_identical_to_v01() -> None:
     """The terminal formatter wraps the v0.1 output shape — an
     informational diff here signals a formatter drift."""
@@ -563,27 +566,33 @@ def test_cli_json_output_matches_library_api(pdf_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 class TestAdditiveIsolation:
+    @pytest.mark.legacy_parity
     def test_v0_scan_pdf_still_works(self) -> None:
         report = bayyinah_v0.scan_pdf(CLEAN_PDF)
         assert report.integrity_score == 1.0
         assert report.findings == []
 
+    @pytest.mark.legacy_parity
     def test_v01_scan_pdf_still_works(self) -> None:
         report = bayyinah_v0_1.scan_pdf(CLEAN_PDF)
         assert report.integrity_score == 1.0
         assert report.findings == []
 
+    @pytest.mark.legacy_parity
     def test_v0_main_still_importable(self) -> None:
         """Downstream callers pinning to ``bayyinah_v0.main`` must
         keep working — the CLI rebinding is additive."""
         assert callable(bayyinah_v0.main)
 
+    @pytest.mark.legacy_parity
     def test_v01_main_still_importable(self) -> None:
         assert callable(bayyinah_v0_1.main)
 
+    @pytest.mark.legacy_parity
     def test_new_scan_service_is_distinct_from_v01(self) -> None:
         assert ScanService is not bayyinah_v0_1.ScanService
 
+    @pytest.mark.legacy_parity
     def test_package_scan_pdf_is_distinct_from_v0(self) -> None:
         """bayyinah.scan_pdf is a new function, not a re-export of v0."""
         assert bayyinah.scan_pdf is not bayyinah_v0.scan_pdf

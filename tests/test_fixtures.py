@@ -76,6 +76,7 @@ def _ensure_fixtures_built() -> None:
 # Tests
 # ---------------------------------------------------------------------------
 
+@pytest.mark.legacy_parity
 @pytest.mark.parametrize(
     "fixture_name",
     list(FIXTURES.keys()),
@@ -99,6 +100,7 @@ def test_fixture_fires_expected_mechanisms_only(fixture_name: str) -> None:
     )
 
 
+@pytest.mark.legacy_parity
 @pytest.mark.parametrize(
     "fixture_name",
     list(FIXTURES.keys()),
@@ -122,6 +124,7 @@ def test_v0_v01_parity(fixture_name: str) -> None:
     )
 
 
+@pytest.mark.legacy_parity
 def test_clean_pdf_has_score_one_and_no_errors() -> None:
     """The reference-standard fixture must score exactly 1.0 with zero
     findings and zero scan errors. If this ever breaks, a detector has
@@ -140,6 +143,7 @@ def test_clean_pdf_has_score_one_and_no_errors() -> None:
     assert not report.scan_incomplete, "clean.pdf marked scan_incomplete"
 
 
+@pytest.mark.legacy_parity
 def test_positive_combined_fires_all_sixteen() -> None:
     """The complete munafiq fixture must fire every single-mechanism
     detector the corpus covers. If this count drops, the combined

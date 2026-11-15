@@ -37,6 +37,7 @@ def test_legacy_package_importable():
     assert hasattr(legacy, "bayyinah_v0_1")
 
 
+@pytest.mark.legacy_parity
 def test_legacy_alias_resolves_to_top_level_module_objects():
     """The alias must be the *same module object* as the top-level import,
     not a copy. This is load-bearing: the md5-fingerprint CI check
@@ -49,6 +50,7 @@ def test_legacy_alias_resolves_to_top_level_module_objects():
     assert legacy.bayyinah_v0_1 is bayyinah_v0_1
 
 
+@pytest.mark.legacy_parity
 def test_legacy_alias_scan_pdf_parity():
     """``legacy.bayyinah_v0.scan_pdf`` is literally ``bayyinah_v0.scan_pdf``.
 

@@ -114,6 +114,7 @@ def test_plain_formatter_returns_summary_paragraph() -> None:
     assert "No concealment mechanisms detected" in fmt.format(_clean_report())
 
 
+@pytest.mark.legacy_parity
 def test_plain_formatter_matches_v0_1_summary() -> None:
     """Byte-for-byte parity check against v0.1's plain_language_summary."""
     for report in (_clean_report(), _one_finding_report(), _incomplete_report()):
@@ -127,6 +128,7 @@ def test_plain_formatter_matches_v0_1_summary() -> None:
 # TerminalReportFormatter — byte-identical to v0.1
 # ---------------------------------------------------------------------------
 
+@pytest.mark.legacy_parity
 def test_terminal_formatter_matches_v0_1_for_clean_report() -> None:
     report = _clean_report()
     ours = TerminalReportFormatter().format(report)
@@ -134,6 +136,7 @@ def test_terminal_formatter_matches_v0_1_for_clean_report() -> None:
     assert ours == theirs
 
 
+@pytest.mark.legacy_parity
 def test_terminal_formatter_matches_v0_1_for_finding_report() -> None:
     report = _one_finding_report()
     ours = TerminalReportFormatter().format(report)
@@ -141,6 +144,7 @@ def test_terminal_formatter_matches_v0_1_for_finding_report() -> None:
     assert ours == theirs
 
 
+@pytest.mark.legacy_parity
 def test_terminal_formatter_matches_v0_1_for_incomplete_report() -> None:
     report = _incomplete_report()
     ours = TerminalReportFormatter().format(report)
@@ -174,6 +178,7 @@ def test_json_formatter_parses_back_to_to_dict_shape() -> None:
     assert parsed == report.to_dict()
 
 
+@pytest.mark.legacy_parity
 def test_json_formatter_matches_v0_1_json_shape_for_clean() -> None:
     """v0.1 keys are a prefix subset of the modular formatter's output;
     on the shared keys the values are byte-identical. The two
@@ -193,6 +198,7 @@ def test_json_formatter_matches_v0_1_json_shape_for_clean() -> None:
     assert "coverage" in ours
 
 
+@pytest.mark.legacy_parity
 def test_json_formatter_matches_v0_1_json_shape_for_findings() -> None:
     """Same prefix-subset shape as the clean variant (see PARITY.md)."""
     report = _one_finding_report()

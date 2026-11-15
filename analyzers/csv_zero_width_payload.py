@@ -44,14 +44,17 @@ from typing import Iterable
 
 from domain import Finding
 from domain.config import TIER, ZERO_WIDTH_CHARS
+from domain.script_awareness import (
+    has_spoof_word, is_spoof_word, suspicious_zero_width,
+    suspicious_zero_width_indices,
+)
 
 
 def _zero_width_codepoints_in(value: str) -> list[str]:
     """Return ordered list of zero-width codepoints (as 'U+XXXX')."""
     return [
         f"U+{ord(ch):04X}"
-        for ch in value
-        if ch in ZERO_WIDTH_CHARS
+        for ch in suspicious_zero_width(value, ZERO_WIDTH_CHARS)
     ]
 
 

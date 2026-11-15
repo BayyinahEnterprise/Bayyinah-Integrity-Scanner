@@ -68,6 +68,11 @@ from domain.config import (
     TIER,
     ZERO_WIDTH_CHARS,
 )
+from analyzers.invisible_text import scan_string as _invisible_scan
+from domain.script_awareness import (
+    has_spoof_word, is_spoof_word, suspicious_zero_width,
+    suspicious_zero_width_indices,
+)
 from infrastructure.file_router import FileKind
 
 
@@ -158,6 +163,7 @@ class TextFileAnalyzer(BaseAnalyzer):
         yield from self._detect_tag_chars(text, file_path)
         yield from self._detect_bidi_control(text, file_path)
         yield from self._detect_homoglyphs(text, file_path)
+        yield from _invisible_scan(text, str(file_path))
 
     def _detect_zero_width(
         self, text: str, file_path: Path,
@@ -169,10 +175,9 @@ class TextFileAnalyzer(BaseAnalyzer):
         grep to, rather than hundreds of per-character findings.
         """
         flagged_lines: dict[int, list[str]] = {}
-        for idx, ch in enumerate(text):
-            if ch in ZERO_WIDTH_CHARS:
-                line, _ = _line_and_column(text, idx)
-                flagged_lines.setdefault(line, []).append(ch)
+        for idx in suspicious_zero_width_indices(text, ZERO_WIDTH_CHARS):
+            line, _ = _line_and_column(text, idx)
+            flagged_lines.setdefault(line, []).append(text[idx])
         for line, chars in flagged_lines.items():
             codepoints = ", ".join(sorted({f"U+{ord(c):04X}" for c in chars}))
             yield Finding(
@@ -273,7 +278,7 @@ class TextFileAnalyzer(BaseAnalyzer):
             latin_letters = [c for c in word if _is_latin_letter(c)]
             if not confusables:
                 continue
-            if not (latin_letters or len(confusables) >= 2):
+            if not is_spoof_word(word, CONFUSABLE_TO_LATIN, text):
                 continue
             line, col = _line_and_column(text, match_start)
             recovered = "".join(

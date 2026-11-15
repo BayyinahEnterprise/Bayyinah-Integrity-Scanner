@@ -99,6 +99,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Pipeline adapters (integrations/). Each is optional and imported lazily.
+langchain = ["langchain-core>=0.3"]
+llamaindex = ["llama-index-core>=0.12"]
+mcp = ["mcp>=1.2"]
 dev = [
     "pytest>=7",
     "pytest-asyncio>=0.23",
@@ -167,6 +171,7 @@ packages = [
     "infrastructure",
     "analyzers",
     "application",
+    "integrations",
     "legacy",
 ]
 

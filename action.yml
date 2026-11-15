@@ -1,0 +1,42 @@
+name: Bayyinah scan
+description: Scan files in a repository for hidden or concealed content before they reach a reader or a model.
+inputs:
+  paths:
+    description: Files or globs to scan, separated by spaces.
+    required: true
+  fail-on:
+    description: '"findings" fails the job on any finding; "instruction" only when hidden text reads as an instruction to an AI system; "never" reports without failing.'
+    default: instruction
+  version:
+    description: pip requirement for the scanner.
+    default: bayyinah
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - shell: bash
+      run: python -m pip install --quiet "${{ inputs.version }}"
+    - shell: bash
+      env:
+        BAYYINAH_PATHS: ${{ inputs.paths }}
+        BAYYINAH_FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        python - <<'PY'
+        import glob, os, sys
+        from integrations import check_file
+        mode = os.environ["BAYYINAH_FAIL_ON"]
+        files = sorted({f for pat in os.environ["BAYYINAH_PATHS"].split()
+                        for f in glob.glob(pat, recursive=True) if os.path.isfile(f)})
+        bad = 0
+        for f in files:
+            v = check_file(f)
+            if v.flagged:
+                level = "error" if v.instruction_like else "warning"
+                print(f"::{level} file={f}::{', '.join(v.mechanisms)}")
+            if (mode == "findings" and v.flagged) or (mode == "instruction" and v.instruction_like):
+                bad += 1
+        print(f"Scanned {len(files)} file(s); {bad} failed the '{mode}' rule.")
+        sys.exit(1 if bad else 0)
+        PY

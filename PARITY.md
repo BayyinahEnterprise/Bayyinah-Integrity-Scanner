@@ -48,7 +48,9 @@ publicly declared events; this ledger is the canonical record.
 ### v2.1.0 (unreleased) -- stream-level PDF pass and instruction assessment on by default
 
 **Mechanisms:** `pdf_off_page_text`, `microscopic_font` (new emitter:
-`analyzers/pdf_stream_concealment.py`); `concealed_instruction`.
+`analyzers/pdf_stream_concealment.py`); `pdf_text_not_rendered`;
+`concealed_instruction`. Report keys `instruction_assessment`,
+`disclosures` and `score_axes` are emitted only outside legacy mode.
 **Locus:** `analyzers/text_analyzer.py`, `application/scan_service.py`.
 **Old (v0 / v0_1 reference) behaviour:** off-page text was found only
 when positioned with a `Tm` operator; hidden text was never assessed.
@@ -59,9 +61,10 @@ to an AI system raises `concealed_instruction`.
 `zero_width.pdf`, `positive_combined.pdf`. Each places its carrier text
 at y=2000 on an 842 pt page; the new pass reports that, correctly.
 **How parity is kept:** `BAYYINAH_LEGACY_PARITY=1` restores the v0.1
-detector set for the PDF path. `tests/conftest.py` sets it for every
-test whose name contains "parity", so those tests still compare like
-with like. Without the variable the scanner emits the additional
+detector set for the PDF path. Tests that reach the reference modules carry
+`@pytest.mark.legacy_parity`; `tests/conftest.py` sets the variable for
+them, and `tests/test_parity_guard.py` reads every test's syntax tree
+and fails if one reaches a reference module unmarked. Without the variable the scanner emits the additional
 findings. The frozen reference modules are untouched.
 **Not a parity matter:** the script-awareness corrections to
 `homoglyph` and `zero_width_chars` change no Phase 0 fixture output;

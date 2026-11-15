@@ -141,6 +141,27 @@ The score function is `clamp(1.0 - sum(severity * confidence for f in findings),
 8. **The integration adapters were exercised against langchain-core
    1.8, llama-index-core 0.14 and mcp 2.3.** Other releases are untested.
 
+9. **The render check has a horizon.** MuPDF at 72 dpi is one reader;
+   text inside form XObjects and annotation appearances is not checked;
+   pages after the fortieth are disclosed as unchecked; a line set
+   mostly beyond the page edge in a 3 pt font is missed (pinned in
+   `tests/bench/test_concealment_map.py`).
+10. **The concealment map has only ten visible pages in 3,840.** It is
+    strong evidence about misses and thin evidence about false alarms;
+    the false-alarm evidence is 3,385 spans in 150 clean benchmark PDFs
+    and 22 clean fixtures, all correctly unreported.
+11. **A signed FATIMA seal covers visible text only.** Zero-width
+    content added beside a valid seal leaves it valid. The scanner
+    therefore still reports and assesses every hidden payload, and a
+    sealed file's score stays low.
+12. **Attestations and receipts say who signed, not who that is.**
+    Trust in a public key is the verifier's decision.
+13. **`.github/workflows/build.yml` and the `Dockerfile` have not run.**
+    A Linux single-file binary was built and exercised locally.
+
+Limits 1, 4, 6, 7 and 9 are pinned as tests in
+`tests/test_documented_limits.py` and `tests/bench/`.
+
 ## §10 What this document is NOT
 
 - A complete enumeration of all possible adversarial inputs (no such enumeration exists).

@@ -35,7 +35,7 @@ Planned as 2.1.0. Not committed, not tagged.
 
 ### Added
 
-- Six mechanisms (159 -> 165): `ansi_escape_sequence`,
+- Seven mechanisms (159 -> 166; the seventh is listed below): `ansi_escape_sequence`,
   `variation_selector_payload`, `invisible_format_chars`,
   `soft_hyphen_obfuscation` (zahir); `invisible_payload_decoded`,
   `concealed_instruction` (batin). See `analyzers/invisible_text.py`.
@@ -55,11 +55,40 @@ Planned as 2.1.0. Not committed, not tagged.
   MCP server. `Dockerfile` and `action.yml`.
 - `docs/benchmarks/`: results on public benchmarks, with scripts.
 
+- **Total outcomes and disclosures.** The instruction assessment
+  returns one of five named statuses (`instruction_like`, `no_match`,
+  `not_assessed`, `failed`, or nothing hidden) and is never silent. The
+  report discloses zero-width characters treated as orthography,
+  invisible runs that did not decode, pages not render-checked, and
+  signed seals. Disclosures are not findings and do not change the score.
+- **`score_axes`**: the scalar score split into `surface`, `structure`
+  and `coverage`, plus `seal` when a signed seal is present.
+- **`pdf_text_not_rendered`** (166 mechanisms): the render-versus-extract
+  invariant. Each page is rendered with and without its text; extracted
+  spans that leave no mark are reported whatever hides them.
+- **`bench/concealment_map`**: pages generated from an eight-dimension
+  grammar, with truth taken from rendering. 3,840 pages: 3,828 reported,
+  10 clean, 2 known misses, 0 false positives. A 124-page cut gates the
+  test suite.
+- **`bayyinah view`**: the text a reader could see, for PDF and (through
+  LibreOffice) Office files, with a receipt.
+- **`bayyinah keygen` / `attest` / `verify`**: Ed25519-signed scan
+  attestations carrying the file hash and a hash of every detector
+  source file. FATIMA signed seals (encoder 11.2.0) are verified.
+- Other-language instruction matches are marked experimental and capped
+  at 0.6 confidence.
+- Known limits are pinned as tests (`tests/test_documented_limits.py`);
+  README mechanism counts are generated from the registry.
+- `action.yml` installs from its own checkout by default.
+  `.github/workflows/build.yml` builds the container and single-file
+  binaries; it has not yet run on GitHub.
+
 ### Parity
 
-- Byte-parity tests against v0 / v0.1 run with
-  `BAYYINAH_LEGACY_PARITY=1`, which switches off the two passes those
-  versions did not have. See PARITY.md, "v2.1.0".
+- Byte-parity tests against v0 / v0.1 carry `@pytest.mark.legacy_parity`
+  and run with `BAYYINAH_LEGACY_PARITY=1`, which switches off the passes
+  those versions did not have. A syntax-tree guard fails if any test
+  reaching the reference modules is unmarked. See PARITY.md, "v2.1.0".
 
 ## [2.0.1] - 2026-06-23 - Round 21 FileRouter calibration corrective
 

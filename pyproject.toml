@@ -103,6 +103,8 @@ dependencies = [
 langchain = ["langchain-core>=0.3"]
 llamaindex = ["llama-index-core>=0.12"]
 mcp = ["mcp>=1.2"]
+# Signed scan attestations and seal verification (application/attestation.py).
+attest = ["cryptography>=42"]
 dev = [
     "pytest>=7",
     "pytest-asyncio>=0.23",

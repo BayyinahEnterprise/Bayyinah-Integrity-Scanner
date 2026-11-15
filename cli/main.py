@@ -187,6 +187,29 @@ def _build_parser() -> argparse.ArgumentParser:
                              "(default: FILE.reader-view.txt)")
     view_p.add_argument("--json", action="store_true",
                         help="print the receipt as JSON")
+    # ----- keygen / attest / verify -------------------------------------
+    keygen_p = subparsers.add_parser(
+        "keygen", help="create an Ed25519 key for signing scan attestations",
+        description="Write a new private key (PEM, owner-read-only) and print "
+                    "the public key. Keep the private key off shared machines "
+                    "and out of repositories.")
+    keygen_p.add_argument("path", metavar="KEYFILE", type=Path)
+    attest_p = subparsers.add_parser(
+        "attest", help="scan a file and write a signed attestation of the result",
+        description="Scan FILE and write a signed record binding the result to "
+                    "the file's hash and to the detector's source hash.")
+    attest_p.add_argument("file", metavar="FILE", type=Path)
+    attest_p.add_argument("--key", metavar="KEYFILE", type=Path, required=True)
+    attest_p.add_argument("-o", "--output", metavar="OUT", type=Path, default=None,
+                          help="default: FILE.attestation.json")
+    verify_p = subparsers.add_parser(
+        "verify", help="check a signed scan attestation",
+        description="Check an attestation's signature and, optionally, that it "
+                    "is for FILE and signed by a key you trust. Exit 0 only when "
+                    "every check that was requested passes.")
+    verify_p.add_argument("attestation", metavar="ATTESTATION", type=Path)
+    verify_p.add_argument("--file", metavar="FILE", type=Path, default=None)
+    verify_p.add_argument("--trust", metavar="PUBKEY_HEX", action="append", default=None)
     return parser
 
 
@@ -297,6 +320,47 @@ def _cmd_view(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_attestation(args: argparse.Namespace) -> int:
+    """Handle ``keygen``, ``attest`` and ``verify``."""
+    import json as _json
+
+    from application import attestation as att
+
+    try:
+        if args.command == "keygen":
+            public = att.generate_key(args.path)
+            print(f"Private key: {args.path} (owner-read-only; do not share)")
+            print(f"Public key:  {public}")
+            return 0
+        if args.command == "attest":
+            record = att.attest(args.file, args.key)
+            out = args.output or args.file.with_name(args.file.name + ".attestation.json")
+            out.write_text(_json.dumps(record, indent=2, ensure_ascii=False) + "\n",
+                           encoding="utf-8")
+            print(f"Attestation: {out}")
+            print(f"  file sha256   {record['file_sha256']}")
+            print(f"  detector hash {record['detector_set_hash']}")
+            print(f"  score {record['integrity_score']}, "
+                  f"{record['finding_count']} finding(s), signed by {record['public_key']}")
+            return 0
+        record = _json.loads(args.attestation.read_text(encoding="utf-8"))
+        res = att.verify_attestation(record, args.file, args.trust)
+    except (att.AttestationError, OSError, ValueError, FileExistsError) as exc:
+        print(f"bayyinah {args.command}: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    yes_no = {True: "yes", False: "NO", None: "not checked"}
+    print(f"Signature:      {res['signature']}")
+    print(f"Signed by:      {record.get('public_key')}")
+    print(f"Key trusted:    {yes_no[res['key_trusted']]}"
+          + ("" if args.trust else " (pass --trust PUBKEY_HEX)"))
+    print(f"File matches:   {yes_no[res['file_matches']]}"
+          + ("" if args.file else " (pass --file FILE)"))
+    print(f"Same detector:  {yes_no[res['same_detector']]}")
+    ok = (res["signature"] == "valid" and res["key_trusted"] is not False
+          and res["file_matches"] is not False)
+    return 0 if ok else EXIT_FINDINGS
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """CLI entry point.
 
@@ -333,6 +397,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "view":
         return _cmd_view(args)
+
+    if args.command in ("keygen", "attest", "verify"):
+        return _cmd_attestation(args)
 
     # argparse enforces the subparser choices, so the fall-through is
     # defensive: any new subcommand added without a handler will hit

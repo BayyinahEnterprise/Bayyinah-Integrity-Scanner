@@ -61,6 +61,9 @@ def finalize_report(
         report.instruction_assessment = assessment.to_dict()
     report.disclosures = disclosures
     report.score_axes = score_axes(report)
+    seals = [d for d in disclosures if d["kind"] == "fatima_signed_seal"]
+    if seals:
+        report.score_axes["seal"] = seals[0]["detail"].split(" Key ")[0]
     return report
 
 

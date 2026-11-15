@@ -408,6 +408,9 @@ def scan_string(value: str, location: str) -> list[Finding]:
                 "recognition by format only: nothing authenticates it, "
                 "and anyone can write the same shape."
             )
+            seal_note = _seal_note(value, p.text)
+            if seal_note:
+                note = f" Its shape matches a {p.recognised_format}.{seal_note}"
         else:
             note = ""
         findings.append(Finding(
@@ -423,6 +426,40 @@ def scan_string(value: str, location: str) -> list[Finding]:
             concealed=f"recovered text: {p.text[:PAYLOAD_TEXT_LIMIT]!r}",
         ))
     return findings
+
+
+_SEAL_TEXT: Final[dict[str, str]] = {
+    "valid": "The seal's signature verifies and covers the visible text of this file.",
+    "content_changed": "The seal's signature is genuine but the visible text has changed since it was signed.",
+    "invalid": "The seal's signature does not verify.",
+    "unverifiable": "The seal is signed but could not be checked (the cryptography package is not installed).",
+}
+
+
+def _seal_note(text: str, payload: str) -> str:
+    """Describe a signed FATIMA seal, and record it for the report. Empty
+    for an unsigned declaration. A valid seal covers visible text only,
+    so the payload is still reported and still assessed."""
+    try:
+        declaration = json.loads(payload)
+    except (ValueError, TypeError):
+        return ""
+    if not isinstance(declaration, dict) or "seal" not in declaration:
+        return ""
+    from application.attestation import verify_fatima_seal
+    from domain.outcomes import note_disclosure
+
+    res = verify_fatima_seal(text, declaration)
+    trust = {True: "The signing key is on your trusted list.",
+             False: "The signing key is NOT on your trusted list.",
+             None: "No trusted-key list is configured, so this shows only "
+                   "that some key holder signed it."}[res["key_trusted"]]
+    sentence = _SEAL_TEXT.get(res["status"], "")
+    note_disclosure(
+        "fatima_signed_seal", 1,
+        f"{sentence} Key {res['public_key']}. {trust} The signature does not "
+        "cover other zero-width content in the file.")
+    return f" {sentence} {trust}"
 
 
 def scan_strings(pairs: Iterable[tuple[str, str]]) -> list[Finding]:

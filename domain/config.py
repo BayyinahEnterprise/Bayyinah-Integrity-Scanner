@@ -453,6 +453,8 @@ ZAHIR_MECHANISMS: Final[frozenset[str]] = frozenset({
     "variation_selector_payload",
     "invisible_format_chars",
     "soft_hyphen_obfuscation",
+    # v2.1 render-versus-extract invariant (analyzers/pdf_render_oracle.py).
+    "pdf_text_not_rendered",
 })
 
 # v1.1.2 - Tier 0 routing mechanisms (the meta-evidence layer).
@@ -2467,6 +2469,7 @@ SEVERITY: Final[dict[str, float]] = {
     "soft_hyphen_obfuscation":        0.05,
     "invisible_payload_decoded":      0.25,
     "concealed_instruction":          0.50,
+    "pdf_text_not_rendered":          0.25,
 }
 
 # Default severity for any unknown mechanism — mirrors v0 behaviour.
@@ -2897,6 +2900,7 @@ TIER: Final[dict[str, int]] = {
     "soft_hyphen_obfuscation":        3,
     "invisible_payload_decoded":      1,
     "concealed_instruction":          3,
+    "pdf_text_not_rendered":          1,
 }
 
 

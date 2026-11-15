@@ -1,0 +1,5 @@
+pages: 3840
+  agree_clean            10
+  agree_reported         3828
+  false_negative         2
+false negatives by choice: {'position=edge': 2, 'size=3': 2, 'render_mode=0': 2, 'color=black': 2, 'clip=none': 2, 'alpha=1': 2, 'scale=1': 2, 'overlay=none': 1, 'overlay=white_box': 1}

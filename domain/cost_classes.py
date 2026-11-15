@@ -273,6 +273,8 @@ MECHANISM_COST_CLASS: Final[dict[str, "CostClass"]] = {
     "invisible_payload_decoded":   CostClass.B,
     # Reads the concealed text other mechanisms recovered.
     "concealed_instruction":       CostClass.C,
+    # Renders each page twice.
+    "pdf_text_not_rendered":       CostClass.D,
 }
 
 

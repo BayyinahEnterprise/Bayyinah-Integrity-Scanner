@@ -209,9 +209,9 @@ def test_registry_count_is_exact_159() -> None:
     # (ansi_escape_sequence, variation_selector_payload,
     # invisible_format_chars, soft_hyphen_obfuscation; zahir),
     # invisible_payload_decoded and concealed_instruction (batin).
-    assert len(MECHANISM_REGISTRY) == 165, (
-        f"Mechanism count drift: expected 165 "
-        f"(47 zahir + 117 batin + 1 routing), "
+    assert len(MECHANISM_REGISTRY) == 166, (
+        f"Mechanism count drift: expected 166 "
+        f"(48 zahir + 117 batin + 1 routing), "
         f"got {len(MECHANISM_REGISTRY)} "
         f"(zahir={len(ZAHIR_MECHANISMS)}, batin={len(BATIN_MECHANISMS)}, "
         f"routing={len(ROUTING_MECHANISMS)})"
@@ -274,7 +274,7 @@ def test_zahir_count_is_exact_43() -> None:
     json_oversized_string_band (item 5), single-walk
     document-relative string-length threshold. 41 -> 43.
     v2.1 invisible-text family: 43 -> 47."""
-    assert len(ZAHIR_MECHANISMS) == 47
+    assert len(ZAHIR_MECHANISMS) == 48
 
 
 def test_batin_count_is_exact_115() -> None:

@@ -69,6 +69,7 @@ class ScanNotes:
     undecodable_runs: int = 0
     undecodable_chars: int = 0
     _seen: set = field(default_factory=set, repr=False)
+    extra: list = field(default_factory=list)
 
     def disclosures(self) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
@@ -95,6 +96,7 @@ class ScanNotes:
                     "unknown, not empty."
                 ),
             })
+        out.extend(self.extra)
         return out
 
 
@@ -130,6 +132,13 @@ def note_exempt_zero_width(rule: str, count: int, key: object = None) -> None:
         notes.exempt_rules[rule] = notes.exempt_rules.get(rule, 0) + count
 
 
+def note_disclosure(kind: str, count: int, detail: str) -> None:
+    """Record any other thing the scan did not do or did not report."""
+    notes = _NOTES.get()
+    if notes is not None:
+        notes.extra.append({"kind": kind, "count": count, "detail": detail})
+
+
 def note_undecodable_run(chars: int, key: object = None) -> None:
     notes = _NOTES.get()
     if notes is not None:
@@ -143,5 +152,5 @@ def note_undecodable_run(chars: int, key: object = None) -> None:
 
 __all__ = [
     "AssessmentStatus", "InstructionAssessment", "ScanNotes",
-    "collect_notes", "current_notes", "note_exempt_zero_width", "note_undecodable_run",
+    "collect_notes", "current_notes", "note_disclosure", "note_exempt_zero_width", "note_undecodable_run",
 ]

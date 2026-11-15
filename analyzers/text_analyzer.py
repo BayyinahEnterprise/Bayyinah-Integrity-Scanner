@@ -336,6 +336,25 @@ class ZahirTextAnalyzer(BaseAnalyzer):
                 findings.extend(
                     detect_pdf_stream_concealment(file_path, tm_pages)
                 )
+                # Render-versus-extract invariant. BAYYINAH_RENDER_ORACLE=0
+                # switches it off alone. A failure here is disclosed, not
+                # raised: the mechanism-specific checks above still stand.
+                if _os.environ.get("BAYYINAH_RENDER_ORACLE", "1") != "0":
+                    try:
+                        from analyzers.pdf_render_oracle import (
+                            detect_text_not_rendered,
+                        )
+                        findings.extend(
+                            detect_text_not_rendered(file_path, findings)
+                        )
+                    except Exception as _exc:
+                        from domain.outcomes import note_disclosure
+                        note_disclosure(
+                            "render_check_failed", 1,
+                            "The render-versus-extract check could not run "
+                            f"({type(_exc).__name__}: {_exc}). Hidden text is "
+                            "caught only by the mechanism-specific checks.",
+                        )
 
             report = IntegrityReport(
                 file_path=str(file_path),

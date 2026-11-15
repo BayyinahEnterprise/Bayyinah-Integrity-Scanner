@@ -168,6 +168,25 @@ def _build_parser() -> argparse.ArgumentParser:
                          help="treat the file as UTF-8 text whatever its suffix")
     clean_p.add_argument("--json", action="store_true",
                          help="print the receipt as JSON")
+    # ----- view --------------------------------------------------------
+    view_p = subparsers.add_parser(
+        "view",
+        help="write the text a reader of a PDF or Office file could see",
+        description=(
+            "Render a PDF or Office file and write out only the text that "
+            "left a visible mark, with a receipt. Hidden, clipped, covered, "
+            "transparent and off-page text is left out. Office files are "
+            "rendered by LibreOffice. The output is plain text, not the "
+            "original document."
+        ),
+    )
+    view_p.add_argument("file", metavar="FILE", type=Path,
+                        help="path to a PDF or Office file")
+    view_p.add_argument("-o", "--output", metavar="OUT", type=Path, default=None,
+                        help="where to write the text "
+                             "(default: FILE.reader-view.txt)")
+    view_p.add_argument("--json", action="store_true",
+                        help="print the receipt as JSON")
     return parser
 
 
@@ -253,6 +272,31 @@ def _cmd_clean(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_view(args: argparse.Namespace) -> int:
+    """Handle ``bayyinah view``. Exit 0 on success, EXIT_ERROR otherwise."""
+    import json as _json
+
+    from application.reader_view import ReaderViewError, reader_view
+
+    try:
+        receipt = reader_view(args.file, args.output)
+    except (ReaderViewError, OSError) as exc:
+        print(f"bayyinah view: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    if args.json:
+        print(_json.dumps(receipt, indent=2, ensure_ascii=False))
+        return 0
+    print(f"Reader's view: {receipt['view_path']}")
+    print(f"Receipt:       {receipt['receipt_path']}")
+    print(f"  pages {receipt['pages_included']} of {receipt['pages_total']}, "
+          f"rendered via {receipt['rendered_via']}")
+    print(f"  kept {receipt['spans_kept']} text span(s), "
+          f"left out {receipt['spans_left_out']} that a reader could not see")
+    for line in receipt["left_out_preview"][:3]:
+        print(f"    left out: {line!r}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """CLI entry point.
 
@@ -286,6 +330,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "clean":
         return _cmd_clean(args)
+
+    if args.command == "view":
+        return _cmd_view(args)
 
     # argparse enforces the subparser choices, so the fall-through is
     # defensive: any new subcommand added without a handler will hit

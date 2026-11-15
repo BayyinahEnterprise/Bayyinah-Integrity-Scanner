@@ -68,6 +68,11 @@ from domain.config import (
     TIER,
     ZERO_WIDTH_CHARS,
 )
+from analyzers.invisible_text import scan_string as _invisible_scan
+from domain.script_awareness import (
+    has_spoof_word, is_spoof_word, suspicious_zero_width,
+    suspicious_zero_width_indices,
+)
 from domain.exceptions import PDFParseError
 from infrastructure.pdf_client import PDFClient
 
@@ -298,7 +303,39 @@ class ZahirTextAnalyzer(BaseAnalyzer):
             # pikepdf handle and is independent of the pymupdf doc
             # used above. Closes pdf_gauntlet fixture 03_off_page.pdf.
             from analyzers.pdf_off_page_text import detect_pdf_off_page_text
-            findings.extend(detect_pdf_off_page_text(file_path))
+            tm_findings = detect_pdf_off_page_text(file_path)
+            findings.extend(tm_findings)
+
+            # Content-stream walk for text the two passes above cannot see:
+            # off-page text positioned with Td/TD/T*/cm (the Tm-only pass
+            # misses it; PyMuPDF drops the spans), and sub-legible text in
+            # the 1.0-2.5 pt band. Emits only existing mechanisms; see
+            # analyzers/pdf_stream_concealment.py.
+            #
+            # ON by default since v2.1. Four Phase 0 fixtures (bidi_control,
+            # tag_characters, zero_width, positive_combined) place carrier
+            # text at y=2000, above the page; this pass reports it, which
+            # v0 and v0.1 never did. Byte-parity comparisons against those
+            # versions therefore run with BAYYINAH_LEGACY_PARITY=1 (see
+            # PARITY.md). BAYYINAH_STREAM_CONCEALMENT=0 switches off this
+            # pass alone. Pages the Tm pass already reported are skipped
+            # so one page yields one off-page finding.
+            import os as _os
+            if (_os.environ.get("BAYYINAH_STREAM_CONCEALMENT", "1") != "0"
+                    and _os.environ.get("BAYYINAH_LEGACY_PARITY") != "1"):
+                from analyzers.pdf_stream_concealment import (
+                    detect_pdf_stream_concealment,
+                )
+                tm_pages = frozenset(
+                    int(f.location.split()[1]) - 1
+                    for f in tm_findings
+                    if f.mechanism == "pdf_off_page_text"
+                    and f.location.startswith("page ")
+                    and f.location.split()[1].isdigit()
+                )
+                findings.extend(
+                    detect_pdf_stream_concealment(file_path, tm_pages)
+                )
 
             report = IntegrityReport(
                 file_path=str(file_path),
@@ -648,7 +685,7 @@ class ZahirTextAnalyzer(BaseAnalyzer):
             codepoints)`` pair per hit so the caller can emit one
             finding per bucket with representative evidence attached.
             """
-            zw = [c for c in decoded if c in ZERO_WIDTH_CHARS]
+            zw = suspicious_zero_width(decoded, ZERO_WIDTH_CHARS)
             if zw:
                 visible = decoded
                 for c in ZERO_WIDTH_CHARS:
@@ -1068,7 +1105,8 @@ class ZahirTextAnalyzer(BaseAnalyzer):
         techniques are stacked.
         """
         findings: list[Finding] = []
-        zw = [c for c in text if c in ZERO_WIDTH_CHARS]
+        findings.extend(_invisible_scan(text, f"page {page_idx + 1}"))
+        zw = suspicious_zero_width(text, ZERO_WIDTH_CHARS)
         if zw:
             visible = text
             for c in ZERO_WIDTH_CHARS:
@@ -1142,7 +1180,7 @@ class ZahirTextAnalyzer(BaseAnalyzer):
             has_plain_latin = any(
                 ("a" <= c.lower() <= "z") for c in word
             )
-            if has_plain_latin or len(confusables_in_word) >= 2:
+            if is_spoof_word(word, CONFUSABLE_TO_LATIN, text):
                 hits.append((word, confusables_in_word))
         if not hits:
             return []

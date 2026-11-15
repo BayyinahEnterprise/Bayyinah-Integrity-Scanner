@@ -54,6 +54,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Iterable
 
+from analyzers.concealed_instruction import instruction_finding
 from analyzers import (
     AnalyzerRegistry,
     AudioAnalyzer,
@@ -684,6 +685,15 @@ class ScanService:
                 merged.integrity_score = compute_muwazana_score(
                     merged.findings,
                 )
+            # v2.1 - is the text this scan found hidden written as an
+            # instruction to an AI system? Reads recovered concealed
+            # text only; appended last, score recomputed.
+            _instr = instruction_finding(merged.findings, file_path)
+            if _instr is not None:
+                merged.findings.append(_instr)
+                merged.integrity_score = compute_muwazana_score(
+                    merged.findings,
+                )
             # Defence-in-depth clamp, same as PDF path.
             has_scan_error = any(
                 f.mechanism == "scan_error" for f in merged.findings
@@ -798,6 +808,13 @@ class ScanService:
             merged = self.registry.scan_all(
                 file_path, kind=FileKind.PDF, mode=mode
             )
+
+        # v2.1 - same instruction assessment as the non-PDF path. Off
+        # under BAYYINAH_LEGACY_PARITY=1 so v0.1 byte parity holds.
+        _instr = instruction_finding(merged.findings, file_path, is_pdf=True)
+        if _instr is not None:
+            merged.findings.append(_instr)
+            merged.integrity_score = compute_muwazana_score(merged.findings)
 
         # Defence-in-depth: re-assert the invariants. If an older
         # registry in a custom setup forgets the clamp, we enforce it

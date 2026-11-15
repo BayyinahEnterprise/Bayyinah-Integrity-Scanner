@@ -389,9 +389,11 @@ class TestUnopenablePdf:
 
 # (fixture_name, expected_mechanism_set)
 _TEXT_FIXTURE_EXPECTED: dict[str, frozenset[str]] = {
-    "text.zero_width":       frozenset({"zero_width_chars"}),
-    "text.tag_characters":   frozenset({"tag_chars"}),
-    "text.bidi_control":     frozenset({"bidi_control"}),
+    # v2.1: these three fixtures place their carrier text at y=2000 on an
+    # 842 pt page. The stream-level pass reports that as off-page text.
+    "text.zero_width":       frozenset({"zero_width_chars", "pdf_off_page_text"}),
+    "text.tag_characters":   frozenset({"tag_chars", "pdf_off_page_text"}),
+    "text.bidi_control":     frozenset({"bidi_control", "pdf_off_page_text"}),
     "text.homoglyph":        frozenset({"homoglyph", "tounicode_anomaly"}),
     "text.invisible_render": frozenset({"invisible_render_mode"}),
     "text.microscopic_font": frozenset({"microscopic_font"}),

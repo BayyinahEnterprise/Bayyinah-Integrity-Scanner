@@ -265,6 +265,14 @@ MECHANISM_COST_CLASS: Final[dict[str, "CostClass"]] = {
     "scan_error":   CostClass.A,  # bookkeeping finding
     "scan_limited": CostClass.A,  # bookkeeping finding
     "unknown_format": CostClass.A,
+    # v2.1 invisible-text family: each walks every string once.
+    "ansi_escape_sequence":        CostClass.B,
+    "variation_selector_payload":  CostClass.B,
+    "invisible_format_chars":      CostClass.B,
+    "soft_hyphen_obfuscation":     CostClass.B,
+    "invisible_payload_decoded":   CostClass.B,
+    # Reads the concealed text other mechanisms recovered.
+    "concealed_instruction":       CostClass.C,
 }
 
 

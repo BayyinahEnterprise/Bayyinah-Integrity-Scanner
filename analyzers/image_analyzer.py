@@ -96,6 +96,10 @@ from domain.config import (
     TIER,
     ZERO_WIDTH_CHARS,
 )
+from domain.script_awareness import (
+    has_spoof_word, is_spoof_word, suspicious_zero_width,
+    suspicious_zero_width_indices,
+)
 from infrastructure.file_router import FileKind
 
 # v1.1.2 image gauntlet detectors (standalone modules).
@@ -158,8 +162,11 @@ def _has_unicode_concealment(text: str) -> dict[str, list[str]]:
     as the same payload hidden in a plain Markdown file.
     """
     found: dict[str, list[str]] = {}
-    for ch in text:
+    _zw_idx = frozenset(suspicious_zero_width_indices(text, ZERO_WIDTH_CHARS))
+    for _i, ch in enumerate(text):
         cp = ord(ch)
+        if ch in ZERO_WIDTH_CHARS and _i not in _zw_idx:
+            continue
         if ch in ZERO_WIDTH_CHARS:
             found.setdefault("zero_width_chars", []).append(f"U+{cp:04X}")
         elif cp in TAG_CHAR_RANGE:

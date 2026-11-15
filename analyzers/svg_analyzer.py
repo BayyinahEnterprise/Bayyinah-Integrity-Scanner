@@ -89,6 +89,10 @@ from domain.config import (
     TIER,
     ZERO_WIDTH_CHARS,
 )
+from domain.script_awareness import (
+    has_spoof_word, is_spoof_word, suspicious_zero_width,
+    suspicious_zero_width_indices,
+)
 from infrastructure.file_router import FileKind
 
 # v1.1.2 image gauntlet detectors (standalone modules).
@@ -247,11 +251,16 @@ class SvgAnalyzer(BaseAnalyzer):
         math_lines: dict[int, list[str]] = {}
 
         line = 1
-        for ch in text:
+        _zw_idx = frozenset(
+            suspicious_zero_width_indices(text, ZERO_WIDTH_CHARS)
+        )
+        for _i, ch in enumerate(text):
             if ch == "\n":
                 line += 1
                 continue
             cp = ord(ch)
+            if ch in ZERO_WIDTH_CHARS and _i not in _zw_idx:
+                continue
             if ch in ZERO_WIDTH_CHARS:
                 zw_lines.setdefault(line, []).append(ch)
             elif cp in TAG_CHAR_RANGE:
@@ -339,7 +348,7 @@ class SvgAnalyzer(BaseAnalyzer):
             latin = [c for c in word if _is_latin_letter(c)]
             if not confusables:
                 continue
-            if not (latin or len(confusables) >= 2):
+            if not is_spoof_word(word, CONFUSABLE_TO_LATIN, text):
                 continue
             recovered = "".join(
                 CONFUSABLE_TO_LATIN.get(c, c) for c in word

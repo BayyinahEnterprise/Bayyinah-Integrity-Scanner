@@ -103,6 +103,7 @@ from domain.config import (
     TIER,
     ZERO_WIDTH_CHARS,
 )
+from domain.script_awareness import script_of
 from infrastructure.pdf_client import PDFClient
 
 
@@ -935,6 +936,26 @@ class BatinObjectAnalyzer(BaseAnalyzer):
             except Exception:
                 return ""
 
+        # A font that really covers a script maps to that script's
+        # ordinary letters too. Lookalike targets are an anomaly only in
+        # a CMap that carries fewer than three other letters of the same
+        # script: a few Cyrillic lookalikes dropped into a Latin font,
+        # not a Russian document's own font.
+        _targets = "".join(
+            hex_to_text(h) for h in re.findall(
+                r"<\s*[0-9A-Fa-f]+\s*>\s*<\s*([0-9A-Fa-f]+)\s*>", cmap_text,
+            )
+        )
+        _native: dict[str, set[str]] = {}
+        for _c in _targets:
+            if _c not in CONFUSABLE_TO_LATIN:
+                _s = script_of(_c)
+                if _s and _s != "LATIN":
+                    _native.setdefault(_s, set()).add(_c)
+        native_scripts = frozenset(
+            k for k, v in _native.items() if len(v) >= 3
+        )
+
         def is_anomalous(text: str) -> tuple[bool, str]:
             for c in text:
                 if c in ZERO_WIDTH_CHARS:
@@ -943,7 +964,8 @@ class BatinObjectAnalyzer(BaseAnalyzer):
                     return True, f"bidi U+{ord(c):04X}"
                 if ord(c) in TAG_CHAR_RANGE:
                     return True, f"TAG U+{ord(c):06X}"
-                if c in CONFUSABLE_TO_LATIN:
+                if c in CONFUSABLE_TO_LATIN \
+                        and script_of(c) not in native_scripts:
                     return True, (
                         f"homoglyph U+{ord(c):04X} (looks like "
                         f"'{CONFUSABLE_TO_LATIN[c]}')"

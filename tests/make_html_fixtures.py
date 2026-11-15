@@ -62,8 +62,8 @@ HTML_FIXTURE_EXPECTATIONS: dict[str, list[str]] = {
     # Clean — any firing is a false positive.
     "clean/clean.html":                          [],
     # Priority 1: hidden text via CSS (most common HTML concealment).
-    "adversarial/hidden_display_none.html":      ["html_hidden_text"],
-    "adversarial/hidden_offscreen.html":         ["html_hidden_text"],
+    "adversarial/hidden_display_none.html":      ["html_hidden_text", "concealed_instruction"],
+    "adversarial/hidden_offscreen.html":         ["html_hidden_text", "concealed_instruction"],
     # Priority 2: inline JavaScript (most dangerous).
     "adversarial/inline_script.html":            ["html_inline_script"],
     "adversarial/event_handler.html":            ["html_inline_script"],
@@ -92,6 +92,7 @@ HTML_FIXTURE_EXPECTATIONS: dict[str, list[str]] = {
     # mechanism.
     "adversarial/tag_chars_in_visible.html":     [
         "tag_chars", "coordinated_concealment",
+        "concealed_instruction", "invisible_payload_decoded",
     ],
     "adversarial/bidi_in_visible.html":          ["bidi_control"],
     "adversarial/homoglyph_in_visible.html":     ["homoglyph"],

@@ -368,7 +368,7 @@ AUDIO_FIXTURE_EXPECTATIONS: dict[str, set[str]] = {
     "clean/clean.flac":          {"audio_stem_inventory"},
     # Adversarial fixtures — inventory + the targeted mechanism.
     "adversarial/metadata_injection.mp3":     {"audio_stem_inventory", "audio_metadata_injection"},
-    "adversarial/lyrics_injection.mp3":       {"audio_stem_inventory", "audio_lyrics_prompt_injection"},
+    "adversarial/lyrics_injection.mp3":       {"audio_stem_inventory", "audio_lyrics_prompt_injection", "concealed_instruction"},
     "adversarial/identity_anomaly.mp3":       {"audio_stem_inventory", "audio_metadata_identity_anomaly"},
     "adversarial/embedded_payload.mp3":       {"audio_stem_inventory", "audio_embedded_payload"},
     "adversarial/lsb_stego_candidate.wav":    {"audio_stem_inventory", "audio_lsb_stego_candidate"},

@@ -51,15 +51,26 @@ def test_corpus_round_trip_byte_stable_on_pdftex_fixtures() -> None:
         out_path = CORPUS_DIR / output
         if not out_path.exists():
             pytest.skip(f"{output} not present; run builder")
-        sha_first = hashlib.sha256(out_path.read_bytes()).hexdigest()
-        # Re-run builder
-        result = subprocess.run(
-            ["python3", str(CORPUS_DIR / builder)],
-            capture_output=True, text=True,
-        )
-        if result.returncode != 0:
-            pytest.skip(f"builder failed (likely missing pdflatex): {result.stderr}")
-        sha_second = hashlib.sha256(out_path.read_bytes()).hexdigest()
+        # Compare two consecutive local builds, not a local build against
+        # the committed file: the committed bytes came from whichever TeX
+        # release built them, and a different release legitimately emits
+        # different bytes. The committed fixture is restored afterwards so
+        # running the suite never rewrites tracked files.
+        committed = out_path.read_bytes()
+        shas = []
+        try:
+            for _ in range(2):
+                result = subprocess.run(
+                    ["python3", str(CORPUS_DIR / builder)],
+                    capture_output=True, text=True,
+                )
+                if result.returncode != 0:
+                    pytest.skip(
+                        f"builder failed (likely missing pdflatex): {result.stderr}")
+                shas.append(hashlib.sha256(out_path.read_bytes()).hexdigest())
+        finally:
+            out_path.write_bytes(committed)
+        sha_first, sha_second = shas
         assert sha_first == sha_second, (
             f"{output} not byte-stable across runs: {sha_first} != {sha_second}"
         )

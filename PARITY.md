@@ -45,6 +45,28 @@ modification with rationale, scope, and downstream-consumer migration
 notes. Per FRAMEWORK.md, parity breaks are reviewed, version-bumped, and
 publicly declared events; this ledger is the canonical record.
 
+### v2.1.0 (unreleased) -- stream-level PDF pass and instruction assessment on by default
+
+**Mechanisms:** `pdf_off_page_text`, `microscopic_font` (new emitter:
+`analyzers/pdf_stream_concealment.py`); `concealed_instruction`.
+**Locus:** `analyzers/text_analyzer.py`, `application/scan_service.py`.
+**Old (v0 / v0_1 reference) behaviour:** off-page text was found only
+when positioned with a `Tm` operator; hidden text was never assessed.
+**New behaviour:** every positioning operator is followed, text between
+1.0 and 2.5 pt is reported, and hidden text that reads as an instruction
+to an AI system raises `concealed_instruction`.
+**Fixtures affected:** `bidi_control.pdf`, `tag_characters.pdf`,
+`zero_width.pdf`, `positive_combined.pdf`. Each places its carrier text
+at y=2000 on an 842 pt page; the new pass reports that, correctly.
+**How parity is kept:** `BAYYINAH_LEGACY_PARITY=1` restores the v0.1
+detector set for the PDF path. `tests/conftest.py` sets it for every
+test whose name contains "parity", so those tests still compare like
+with like. Without the variable the scanner emits the additional
+findings. The frozen reference modules are untouched.
+**Not a parity matter:** the script-awareness corrections to
+`homoglyph` and `zero_width_chars` change no Phase 0 fixture output;
+the parity suite passes with them in place.
+
 ### v1.3.0 (Round 13) -- tounicode_anomaly tier reclassification 1 -> 2
 
 **Date:** 2026-06-22.

@@ -151,6 +151,36 @@ bayyinah scan release_notes.pdf --quiet || {
 }
 ```
 
+## Clean a file, and use the scanner in a pipeline
+
+Unreleased; see CHANGELOG.
+
+```bash
+bayyinah clean notes.md          # writes notes.clean.md and a receipt
+```
+
+Cleaning removes hidden characters from text files and keeps the ones a
+writing system needs (Persian and Indic joiners, Thai word breaks, emoji
+sequences). It does not handle PDF or Office files, and a cleaned file
+is not a certified file.
+
+```python
+from integrations import check_file, check_text
+
+verdict = check_file("brief.pdf")
+if verdict.instruction_like:
+    ...  # hidden text reads as an instruction to an AI system
+```
+
+Adapters: `integrations.langchain.BayyinahDocumentScanner`,
+`integrations.llamaindex.BayyinahNodeScanner`, and an MCP server
+(`python -m integrations.mcp_server`). Scan the original file where you
+can: text extracted from a PDF has already lost the difference between
+what a reader could see and what they could not.
+
+Results on public benchmarks, including where the scanner does badly:
+[docs/benchmarks/README.md](docs/benchmarks/README.md).
+
 ## Python API
 
 ```python

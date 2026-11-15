@@ -111,6 +111,36 @@ The score function is `clamp(1.0 - sum(severity * confidence for f in findings),
 
 **Cross-reference:** PARITY.md + tests/test_integration.py + MIGRATION.md.
 
+## §12 Limits of the v2.1 additions
+
+1. **`concealed_instruction` reads phrases, not meaning.** It matches
+   known shapes of an instruction in English and sixteen other
+   languages. A paraphrase, a dialect form or an unlisted language
+   passes. Its silence is not evidence that hidden text is harmless.
+2. **The English patterns were developed on the CrackedPDFs training
+   split.** The 0.935 F1 on that benchmark's test split is therefore
+   in-distribution. See `docs/benchmarks/README.md`.
+3. **The other-language patterns have one attack and one ordinary
+   sentence each as tests.** That shows they work on the plainest
+   phrasing. It is not a measured detection rate.
+4. **An orthographic exemption is also a hiding place.** Joiners and
+   word breaks a writing system requires are not reported. Guards
+   (joiners with no visual effect, joiners away from a virama, density
+   caps) bound the channel; a patient writer can still hide a few bits
+   inside the allowed rate.
+5. **Cleaning mode handles text files only**, does not rewrite
+   lookalike letters, and cannot remove an instruction written in plain
+   sight. Its receipt is unsigned: it shows the two files belong
+   together, not who produced them.
+6. **`check_text` cannot see layout.** Text extracted from a PDF or an
+   Office file has lost the difference between visible and hidden.
+   Pipelines should scan the original file.
+7. **Decoded payloads in image trailers are not read.** `trailing_data`
+   reports bytes after an image's end marker but does not pass them to
+   the instruction assessment.
+8. **The integration adapters were exercised against langchain-core
+   1.8, llama-index-core 0.14 and mcp 2.3.** Other releases are untested.
+
 ## §10 What this document is NOT
 
 - A complete enumeration of all possible adversarial inputs (no such enumeration exists).

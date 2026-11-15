@@ -147,6 +147,27 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
 
+    # ----- clean -------------------------------------------------------
+    clean_p = subparsers.add_parser(
+        "clean",
+        help="write a copy of a text file with hidden content removed",
+        description=(
+            "Remove hidden content from a text file (plain text, Markdown, "
+            "code, CSV, JSON, HTML, logs) and write a receipt binding the "
+            "original to the cleaned copy. The original is never modified. "
+            "Binary containers (PDF, Office, images) are not cleaned."
+        ),
+    )
+    clean_p.add_argument("file", metavar="FILE", type=Path,
+                         help="path to the text file to clean")
+    clean_p.add_argument("-o", "--output", metavar="OUT", type=Path,
+                         default=None,
+                         help="where to write the cleaned copy "
+                              "(default: FILE with .clean before the suffix)")
+    clean_p.add_argument("--force", action="store_true",
+                         help="treat the file as UTF-8 text whatever its suffix")
+    clean_p.add_argument("--json", action="store_true",
+                         help="print the receipt as JSON")
     return parser
 
 
@@ -199,6 +220,39 @@ def _cmd_scan(args: argparse.Namespace) -> int:
 # main — the script entry point
 # ---------------------------------------------------------------------------
 
+def _cmd_clean(args: argparse.Namespace) -> int:
+    """Handle ``bayyinah clean``. Exit 0 on success, EXIT_ERROR otherwise."""
+    import json as _json
+
+    from application.sanitize import NotATextFile, clean_file
+
+    try:
+        receipt = clean_file(args.file, args.output, force=args.force)
+    except (NotATextFile, OSError, ValueError) as exc:
+        print(f"bayyinah clean: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    if args.json:
+        print(_json.dumps(receipt, indent=2, ensure_ascii=False))
+        return 0
+    print(f"Cleaned copy: {receipt['cleaned_path']}")
+    print(f"Receipt:      {receipt['receipt_path']}")
+    if receipt["removed"]:
+        for kind, n in receipt["removed"].items():
+            print(f"  removed {n:>6}  {kind.replace('_', ' ')}")
+    else:
+        print("  nothing to remove")
+    if receipt["kept_orthographic_zero_width"]:
+        print(f"  kept    {receipt['kept_orthographic_zero_width']:>6}  "
+              "zero-width characters the writing system requires")
+    for p in receipt["hidden_payloads_removed"]:
+        print(f"  hidden text removed ({p['channel']}): {p['preview'][:100]!r}")
+    b, a = receipt["scan_before"], receipt["scan_after"]
+    print(f"Findings before: {b['findings']}   after: {a['findings']}")
+    if a["findings"]:
+        print("  still reported: " + ", ".join(sorted(a["by_mechanism"])))
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """CLI entry point.
 
@@ -229,6 +283,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "scan":
         return _cmd_scan(args)
+
+    if args.command == "clean":
+        return _cmd_clean(args)
 
     # argparse enforces the subparser choices, so the fall-through is
     # defensive: any new subcommand added without a handler will hit

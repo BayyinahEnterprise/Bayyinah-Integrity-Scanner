@@ -171,6 +171,13 @@ def exempt_zero_width_indices(
     exempt.update(by_rule.get("emoji", []))
     if bom_at_start_ok:
         exempt.update(by_rule.get("bom", []))
+    # Disclose what is not reported (see domain/outcomes.py).
+    from domain.outcomes import note_exempt_zero_width
+    for rule, hits in by_rule.items():
+        if rule != "bom":
+            note_exempt_zero_width(
+                rule, sum(1 for i in hits if i in exempt),
+                key=(len(text), hash(text)))
     return frozenset(exempt)
 
 

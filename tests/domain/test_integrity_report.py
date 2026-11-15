@@ -8,6 +8,7 @@ Coverage targets:
 """
 
 from __future__ import annotations
+import pytest
 
 import json
 
@@ -64,6 +65,7 @@ def _v01_report_with_findings() -> bayyinah_v0_1.IntegrityReport:
     )
 
 
+@pytest.mark.legacy_parity
 def test_modular_to_dict_preserves_v01_keys() -> None:
     """v0.1 keys must remain in to_dict in the same order, with the same
     values. Modular may add additional keys after the v0.1 keys
@@ -94,6 +96,7 @@ def test_modular_to_dict_preserves_v01_keys() -> None:
     assert d["coverage"] is None or isinstance(d["coverage"], dict)
 
 
+@pytest.mark.legacy_parity
 def test_to_dict_is_v01_prefix_byte_identical() -> None:
     """v0.1 prefix of the modular to_dict output is byte-identical to
     bayyinah_v0_1.IntegrityReport.to_dict, when both are serialised
@@ -111,6 +114,7 @@ def test_to_dict_is_v01_prefix_byte_identical() -> None:
     assert d_json == v_json
 
 
+@pytest.mark.legacy_parity
 def test_to_dict_roundtrip_empty_report() -> None:
     """Empty report: v0.1 prefix matches v0.1 byte-for-byte; modular
     output additionally carries scan_complete=True and the per-layer

@@ -72,6 +72,7 @@ def test_muwazana_clamps_at_one() -> None:
     assert compute_muwazana_score([f]) == 1.0
 
 
+@pytest.mark.legacy_parity
 def test_muwazana_matches_v0_compute_integrity_score() -> None:
     """The headline parity invariant for Phase 1 value objects:
     muwazana and compute_integrity_score must return identical floats

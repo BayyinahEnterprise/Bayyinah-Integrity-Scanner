@@ -339,6 +339,7 @@ class TestUnopenablePdf:
         assert report.error is not None
         assert report.error.startswith("Could not open PDF:")
 
+    @pytest.mark.legacy_parity
     def test_error_string_matches_v01_byte_for_byte(
         self, tmp_path: Path,
     ) -> None:
@@ -479,6 +480,7 @@ def _all_phase0_fixtures() -> list[Path]:
     return [p for p in pdfs if p.exists()]
 
 
+@pytest.mark.legacy_parity
 @pytest.mark.parametrize(
     "pdf_path",
     _all_phase0_fixtures(),
@@ -503,6 +505,7 @@ def test_parity_finding_tuples_with_v01_scan_pdf(pdf_path: Path) -> None:
     )
 
 
+@pytest.mark.legacy_parity
 @pytest.mark.parametrize(
     "pdf_path",
     _all_phase0_fixtures(),
@@ -517,6 +520,7 @@ def test_parity_integrity_score_with_v01(pdf_path: Path) -> None:
     )
 
 
+@pytest.mark.legacy_parity
 @pytest.mark.parametrize(
     "pdf_path",
     _all_phase0_fixtures(),
@@ -531,6 +535,7 @@ def test_parity_error_with_v01(pdf_path: Path) -> None:
     )
 
 
+@pytest.mark.legacy_parity
 @pytest.mark.parametrize(
     "pdf_path",
     _all_phase0_fixtures(),
@@ -545,6 +550,7 @@ def test_parity_scan_incomplete_with_v01(pdf_path: Path) -> None:
     )
 
 
+@pytest.mark.legacy_parity
 @pytest.mark.parametrize(
     "pdf_path",
     _all_phase0_fixtures(),
@@ -559,6 +565,7 @@ def test_parity_finding_count_with_v01(pdf_path: Path) -> None:
     )
 
 
+@pytest.mark.legacy_parity
 def test_parity_missing_file_error(tmp_path: Path) -> None:
     ghost = tmp_path / "does_not_exist.pdf"
     ours = ScanService().scan(ghost)
@@ -568,6 +575,7 @@ def test_parity_missing_file_error(tmp_path: Path) -> None:
     assert ours.scan_incomplete == theirs.scan_incomplete
 
 
+@pytest.mark.legacy_parity
 def test_parity_unopenable_pdf(tmp_path: Path) -> None:
     corrupt = tmp_path / "corrupt.pdf"
     corrupt.write_bytes(b"%PDF-1.4 garbled garbled garbled")
@@ -641,11 +649,13 @@ class TestScanIncompleteClamp:
 # ---------------------------------------------------------------------------
 
 class TestAdditiveIsolation:
+    @pytest.mark.legacy_parity
     def test_scan_service_class_distinct_from_v01(self) -> None:
         """The new class must not be the legacy class. If they became the
         same object, we would have accidentally re-bound v0.1's export."""
         assert ScanService is not bayyinah_v0_1.ScanService
 
+    @pytest.mark.legacy_parity
     def test_legacy_scan_pdf_still_works(self) -> None:
         """v0.1's public surface must still produce a report — the
         Phase 6 port must not have broken it."""
@@ -999,6 +1009,7 @@ class TestScanBatchParityIsolation:
     """Batch API must not perturb non-batch callers in any observable
     way — no global state, no shared mutable defaults."""
 
+    @pytest.mark.legacy_parity
     def test_scan_after_scan_batch_still_matches_v01(self) -> None:
         """Running scan_batch then scan on a Phase 0 fixture must still
         parity-match v0.1 exactly — no residue from batching.

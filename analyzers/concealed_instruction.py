@@ -332,41 +332,126 @@ def legacy_parity_mode() -> bool:
     return os.environ.get(LEGACY_PARITY_ENV) == "1"
 
 
-def instruction_finding(findings, file_path=None, *, is_pdf: bool = False):
-    """A ``concealed_instruction`` Finding when the text this scan found
-    hidden is written as an instruction to an AI system, else ``None``.
+COVERED_SCRIPTS = frozenset({
+    "LATIN", "CYRILLIC", "ARABIC", "CJK", "HIRAGANA", "KATAKANA", "HANGUL",
+    "DEVANAGARI",
+})
+COVERED_LANGUAGES = (
+    "English, Chinese, Japanese, Korean, Arabic, Persian, Urdu, Hindi, "
+    "Russian, Ukrainian, Spanish, Portuguese, French, German, Italian, "
+    "Turkish, Indonesian, Vietnamese"
+)
+UNCOVERED_SCRIPT_MIN_LETTERS = 8
+
+
+def _scripts_in(text: str) -> dict[str, int]:
+    from domain.script_awareness import script_of
+    counts: dict[str, int] = {}
+    for ch in text:
+        if ch.isascii():
+            if ch.isalpha():
+                counts["LATIN"] = counts.get("LATIN", 0) + 1
+            continue
+        sc = script_of(ch)
+        if sc:
+            counts[sc] = counts.get(sc, 0) + 1
+    return counts
+
+
+def assess_report(findings, file_path=None, *, is_pdf: bool = False):
+    """Assess the text one scan found hidden. Total: always returns an
+    ``InstructionAssessment`` with one of five statuses, never ``None``.
 
     Reads only what other mechanisms recovered (and, for a PDF, the full
     text of the runs the stream walk classed as unseen). It never reads
-    visible text, so an article *about* prompt injection does not fire.
+    visible text, so an article *about* prompt injection is not assessed.
+
+    ``hidden_chars`` counts the characters of concealed-field text that
+    were examined. Some mechanisms put a short label there instead of
+    recovered text, so it is an upper bound on the hidden text itself.
     """
-    if legacy_parity_mode() or not findings:
-        return None
-    if any(getattr(f, "mechanism", None) == "concealed_instruction" for f in findings):
-        return None
-    result = None
-    if is_pdf and file_path is not None:
-        try:
-            from analyzers.pdf_stream_concealment import assess_pdf
-            result = assess_pdf(file_path, findings)
-        except Exception:
-            result = None
-    if result is None:
-        result = assess_findings(findings)
-    if not result.instruction_like:
+    from domain.outcomes import AssessmentStatus as S, InstructionAssessment
+
+    findings = [f for f in findings
+                if getattr(f, "mechanism", None) != "concealed_instruction"]
+    try:
+        text = concealed_text_of(findings)
+        if is_pdf and file_path is not None:
+            from analyzers.pdf_stream_concealment import concealed_stream_text
+            text = (concealed_stream_text(file_path) + " " + text).strip()
+        clean = sanitize(text)
+        if not clean:
+            return InstructionAssessment(
+                S.NOTHING_HIDDEN, "No concealed text was recovered by this scan.")
+        result = assess(text)
+        if not result.instruction_like:
+            hidden = assess_acrostic(text)
+            if hidden.instruction_like:
+                result = hidden
+        scripts = _scripts_in(clean)
+        assessed = tuple(sorted(k for k in scripts if k in COVERED_SCRIPTS))
+        unassessed = tuple(sorted(
+            k for k, n in scripts.items()
+            if k not in COVERED_SCRIPTS and n >= UNCOVERED_SCRIPT_MIN_LETTERS))
+        strong = [f for f in result.families if f != "addressee"]
+        experimental = bool(strong) and all(
+            f.endswith("_i18n") or f == "directive_shape" for f in strong
+        ) and any(f.endswith("_i18n") for f in strong)
+        common = dict(hidden_chars=len(clean), scripts_assessed=assessed,
+                      scripts_unassessed=unassessed, families=result.families,
+                      evidence=result.evidence, score=result.score,
+                      experimental_only=experimental)
+        if result.instruction_like:
+            return InstructionAssessment(
+                S.INSTRUCTION_LIKE,
+                "Hidden text matches the shape of an instruction to an AI system."
+                + (" Matched only by other-language patterns, which have not "
+                   "had native-speaker review." if experimental else ""),
+                **common)
+        if unassessed:
+            return InstructionAssessment(
+                S.NOT_ASSESSED,
+                "Hidden text includes writing the assessment has no patterns "
+                f"for ({', '.join(unassessed)}). Covered languages: "
+                f"{COVERED_LANGUAGES}. Its meaning is unknown to this scan.",
+                **common)
+        return InstructionAssessment(
+            S.NO_MATCH,
+            "Hidden text was read and matched no known instruction shape. "
+            "The patterns do not understand paraphrase; this is not evidence "
+            "that the hidden text is harmless.",
+            **common)
+    except Exception as exc:  # the assessment must not take the scan down
+        return InstructionAssessment(
+            S.FAILED, f"The assessment raised {type(exc).__name__}: {exc}. "
+                      "Hidden text was not assessed.")
+
+
+def finding_from_assessment(assessment, file_path=None):
+    """The ``concealed_instruction`` Finding for an INSTRUCTION_LIKE
+    assessment; ``None`` for every other status (those are disclosed on
+    the report, not raised as findings)."""
+    from domain.outcomes import AssessmentStatus
+    if assessment.status is not AssessmentStatus.INSTRUCTION_LIKE:
         return None
     from domain import Finding
     from domain.config import TIER
-    families = ", ".join(result.families)
-    evidence = "; ".join(repr(e) for e in result.evidence[:4])
+    families = ", ".join(assessment.families)
+    evidence = "; ".join(repr(e) for e in assessment.evidence[:4])
+    confidence = min(0.95, 0.5 + 0.08 * assessment.score)
+    note = ""
+    if assessment.experimental_only:
+        confidence = min(confidence, 0.6)
+        note = (" Matched only by other-language patterns, which are "
+                "experimental and have not had native-speaker review.")
     return Finding(
         mechanism="concealed_instruction",
         tier=TIER["concealed_instruction"],
-        confidence=min(0.95, 0.5 + 0.08 * result.score),
+        confidence=confidence,
         description=(
             "Text that a reader of this file cannot see is written as an "
             f"instruction to an AI system (signals: {families}). Matched: "
-            f"{evidence}. This is a phrase-based reading of the hidden "
+            f"{evidence}.{note} This is a phrase-based reading of the hidden "
             "text; it does not understand paraphrase, and its silence is "
             "not evidence that hidden text is harmless."
         ),
@@ -376,4 +461,17 @@ def instruction_finding(findings, file_path=None, *, is_pdf: bool = False):
     )
 
 
-__all__ += ["instruction_finding", "legacy_parity_mode", "LEGACY_PARITY_ENV"]
+def instruction_finding(findings, file_path=None, *, is_pdf: bool = False):
+    """Convenience wrapper: assess, and return the Finding or ``None``.
+    Prefer ``assess_report`` where the non-finding statuses matter."""
+    if legacy_parity_mode() or not findings:
+        return None
+    if any(getattr(f, "mechanism", None) == "concealed_instruction" for f in findings):
+        return None
+    return finding_from_assessment(
+        assess_report(findings, file_path, is_pdf=is_pdf), file_path)
+
+
+__all__ += ["instruction_finding", "legacy_parity_mode", "LEGACY_PARITY_ENV",
+            "assess_report", "finding_from_assessment", "COVERED_SCRIPTS",
+            "COVERED_LANGUAGES"]

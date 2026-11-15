@@ -36,6 +36,7 @@ from typing import Final
 
 from domain import Finding
 from domain.config import TIER
+from domain.outcomes import note_undecodable_run
 from domain.script_awareness import suspicious_zero_width_indices
 
 # ---------------------------------------------------------------------------
@@ -168,10 +169,14 @@ class DecodedPayload:
 
 
 def _readable(s: str) -> bool:
+    """Printable, and varied enough to be text rather than a repeating
+    bit pattern that happens to land on one printable byte."""
     if len(s.strip()) < 3:
         return False
     ok = sum(1 for c in s if c.isprintable() or c in "\n\r\t")
-    return ok / len(s) >= 0.9
+    if ok / len(s) < 0.9:
+        return False
+    return len(set(s)) >= min(4, len(s))
 
 
 def _bytes_to_text(data: bytes) -> str | None:
@@ -280,6 +285,8 @@ def decode_hidden_payloads(text: str) -> list[DecodedPayload]:
                 decoded_any = True
                 out.append(DecodedPayload(
                     "zero_width", s, b - a, a, _recognised_format(s)))
+        failed_runs = [(a, b) for a, b in runs
+                       if not any(p.start == a for p in out)]
         if not decoded_any:
             # Interleaved encoding: digits scattered between visible
             # characters. Only the ones orthography does not explain.
@@ -287,9 +294,16 @@ def decode_hidden_payloads(text: str) -> list[DecodedPayload]:
             if len(idx) >= _ZW_RUN_MIN:
                 s = _decode_zero_width("".join(text[k] for k in idx))
                 if s:
+                    failed_runs = []
                     out.append(DecodedPayload(
                         "zero_width", s, len(idx), idx[0],
                         _recognised_format(s)))
+                elif not runs:
+                    note_undecodable_run(len(idx), key=(len(text), hash(text), -1))
+        # A run that decodes to nothing readable is disclosed, not dropped:
+        # its content is unknown.
+        for a, b in failed_runs:
+            note_undecodable_run(b - a, key=(len(text), hash(text), a))
     return out
 
 

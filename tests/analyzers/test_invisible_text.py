@@ -126,7 +126,7 @@ def test_visible_instruction_text_is_not_a_concealed_instruction(tmp_path: Path)
     assert ScanService().scan(path).findings == []
 
 
-def test_reference_mode_switches_the_assessment_off(tmp_path: Path, monkeypatch) -> None:
+def test_legacy_parity_mode_switches_the_assessment_off(tmp_path: Path, monkeypatch) -> None:
     path = tmp_path / "a.md"
     path.write_text("Summary." + _tags(INS) + "\n", encoding="utf-8")
     assert "concealed_instruction" in {f.mechanism for f in ScanService().scan(path).findings}

@@ -54,7 +54,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Iterable
 
-from analyzers.concealed_instruction import instruction_finding
+from application.finalize import finalize_report
+from domain.outcomes import collect_notes, current_notes
 from analyzers import (
     AnalyzerRegistry,
     AudioAnalyzer,
@@ -338,6 +339,21 @@ class ScanService:
     # ------------------------------------------------------------------
 
     def scan(
+        self,
+        file_path: Path | str | None = None,
+        *,
+        pdf_path: Path | str | None = None,
+        mode: str = "forensic",
+    ) -> IntegrityReport:
+        """Scan one file. See :meth:`_scan` for the pipeline.
+
+        Wraps the pipeline in a notes collector so analyzers can record
+        what they chose not to report (domain/outcomes.py).
+        """
+        with collect_notes():
+            return self._scan(file_path, pdf_path=pdf_path, mode=mode)
+
+    def _scan(
         self,
         file_path: Path | str | None = None,
         *,
@@ -688,12 +704,7 @@ class ScanService:
             # v2.1 - is the text this scan found hidden written as an
             # instruction to an AI system? Reads recovered concealed
             # text only; appended last, score recomputed.
-            _instr = instruction_finding(merged.findings, file_path)
-            if _instr is not None:
-                merged.findings.append(_instr)
-                merged.integrity_score = compute_muwazana_score(
-                    merged.findings,
-                )
+            finalize_report(merged, file_path, current_notes(), is_pdf=False)
             # Defence-in-depth clamp, same as PDF path.
             has_scan_error = any(
                 f.mechanism == "scan_error" for f in merged.findings
@@ -811,10 +822,7 @@ class ScanService:
 
         # v2.1 - same instruction assessment as the non-PDF path. Off
         # under BAYYINAH_LEGACY_PARITY=1 so v0.1 byte parity holds.
-        _instr = instruction_finding(merged.findings, file_path, is_pdf=True)
-        if _instr is not None:
-            merged.findings.append(_instr)
-            merged.integrity_score = compute_muwazana_score(merged.findings)
+        finalize_report(merged, file_path, current_notes(), is_pdf=True)
 
         # Defence-in-depth: re-assert the invariants. If an older
         # registry in a custom setup forgets the clamp, we enforce it

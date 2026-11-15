@@ -34,6 +34,12 @@ class Verdict:
     findings: tuple[dict[str, Any], ...] = field(default_factory=tuple)
     scan_incomplete: bool = False
     source: str = ""
+    # "instruction_like", "no_match", "not_assessed", "failed", or None
+    # when the scan recovered no hidden text. "no_match" and
+    # "not_assessed" are not "safe"; see domain/outcomes.py.
+    assessment_status: str | None = None
+    assessment_reason: str = ""
+    disclosures: tuple[dict[str, Any], ...] = field(default_factory=tuple)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -44,6 +50,9 @@ class Verdict:
             "findings": list(self.findings),
             "scan_incomplete": self.scan_incomplete,
             "source": self.source,
+            "assessment_status": self.assessment_status,
+            "assessment_reason": self.assessment_reason,
+            "disclosures": list(self.disclosures),
         }
 
 
@@ -57,9 +66,13 @@ def _finding_dict(f) -> dict[str, Any]:
     }
 
 
-def _verdict(findings, score: float, incomplete: bool, source: str) -> Verdict:
+def _verdict(findings, score: float, incomplete: bool, source: str,
+             assessment: dict | None = None, disclosures=()) -> Verdict:
     mechs = tuple(dict.fromkeys(f.mechanism for f in findings))
     return Verdict(
+        assessment_status=(assessment or {}).get("status"),
+        assessment_reason=(assessment or {}).get("reason", ""),
+        disclosures=tuple(disclosures),
         flagged=bool(findings),
         instruction_like="concealed_instruction" in mechs,
         integrity_score=round(float(score), 4),
@@ -76,20 +89,25 @@ def check_file(path: str | Path) -> Verdict:
 
     report = scan_file(Path(path))
     return _verdict(report.findings, report.integrity_score,
-                    bool(report.scan_incomplete), str(path))
+                    bool(report.scan_incomplete), str(path),
+                    report.instruction_assessment, report.disclosures)
 
 
 def check_text(text: str, source: str = "<text>") -> Verdict:
     """Scan a string in memory. See the module note on what this can see."""
-    from analyzers.concealed_instruction import instruction_finding
     from analyzers.text_file_analyzer import TextFileAnalyzer
-    from domain import compute_muwazana_score
+    from application.finalize import finalize_report
+    from domain import IntegrityReport, compute_muwazana_score
+    from domain.outcomes import collect_notes
 
-    findings = list(TextFileAnalyzer()._scan_text(text, Path(source)))
-    extra = instruction_finding(findings, source)
-    if extra is not None:
-        findings.append(extra)
-    return _verdict(findings, compute_muwazana_score(findings), False, source)
+    with collect_notes() as notes:
+        findings = list(TextFileAnalyzer()._scan_text(text, Path(source)))
+        report = IntegrityReport(
+            file_path=source, findings=findings,
+            integrity_score=compute_muwazana_score(findings))
+        finalize_report(report, Path(source), notes, is_pdf=False)
+    return _verdict(report.findings, report.integrity_score, False, source,
+                    report.instruction_assessment, report.disclosures)
 
 
 __all__ = ["Verdict", "check_file", "check_text"]

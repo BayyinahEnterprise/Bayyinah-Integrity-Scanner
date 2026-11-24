@@ -188,6 +188,82 @@ and 0.932 after the change.
 
 Reproduce: `scripts/benchmarks/phantomlint_run.py TESTS_DIR results.jsonl`.
 
+## Split-view PDFs (outside test of concealment detection)
+
+Source: `SD957/Split-View-PDF`, the samples published with "What Users
+See Is Not What Models Read" (arXiv 2606.15020): 25 minimal PDFs, one
+per way a PDF can show a reader one thing and give a parser another
+(EG01 to EG25), and 36 longer documents built from the same
+constructions. None informed any detector here. The scanner was run
+once at commit `c0e872c` with defaults.
+
+The payloads are ordinary claims, not instructions, so the question is
+whether the scan reports the divergence at all. A file counts as
+reported when it has at least one finding other than
+`metadata_anomaly`, `incremental_update` or `pdf_metadata_analyzer`.
+That rule was fixed before the run.
+
+| Family | Minimal PDFs reported |
+|---|---|
+| Hidden text (EG04 to EG14: invisible mode, white, off-page, tiny, zero alpha, clipped, occluded, text-as-clip, zero-height, squeezed, layer off) | 11 of 11 |
+| Replacement text (EG01 ToUnicode remap; EG02, EG03 ActualText) | 0 of 3 |
+| Reading order (EG15 to EG17) | 0 of 3 |
+| Font decoding (EG18 to EG25) | 3 of 8 (EG19, EG22, EG23) |
+| **All** | **14 of 25** |
+
+Longer documents: 14 of 25 in the primary set, the same gaps as above;
+6 of 11 in the question-answering set, where the clipped (EG09),
+occluded (EG10) and squeezed (EG13) variants were **missed although
+their minimal versions were caught**. In those files the hidden text is
+a short suffix on a visible line.
+
+What this shows:
+
+- Text a reader cannot see is found whatever hides it. Five of the
+  eleven were caught by the render check alone, with no detector for
+  the specific construction.
+- **Text that is replaced rather than hidden is not detected.** A
+  reader sees one word and a parser is handed another through
+  `/ActualText` or a remapped `/ToUnicode` table. `tounicode_anomaly`
+  did not fire on EG01.
+- Reading-order and most font-metadata gaps are not detected. The
+  paper's own scanner fires on 6.8% of ordinary academic PDFs for the
+  font family, so these need care before they are reported at all.
+- The benchmark has no clean counterparts, so it says nothing about
+  false alarms.
+
+Median 0.01 s per file. Reproduce:
+`scripts/benchmarks/splitview_run.py REPO results.jsonl`.
+
+## Reverse CAPTCHA (outside test of invisible-character decoding)
+
+Source: `canonicalmg/reverse-captcha-eval` (arXiv 2603.00164), run once
+at commit `c0e872c` through `integrations.check_text`.
+
+Main pack: 30 trivia questions, each carrying a hidden answer in
+zero-width characters used as binary digits or in Unicode Tag
+characters, under four prompt conditions, plus 30 controls with nothing
+hidden.
+
+| | Reported | Hidden text decoded | Read as an instruction |
+|---|---|---|---|
+| Zero-width binary (120) | 120 | 120 | 30 |
+| Unicode Tags (120) | 120 | 120 | 30 |
+| Controls (30) | 0 | | 0 |
+
+The 60 read as instructions are the ones whose payload says to ignore
+previous instructions. **The other 180 carry "Reply WORD" and were not
+read as instructions**, though a hidden order to give a particular
+answer is one. They are still reported, as a decoded invisible payload.
+
+Second pack (hidden-message puzzles): zero-width binary decoded in 13
+of 13; 20 cases using a made-up mapping of zero-width characters to
+letters were reported but, as expected, not decoded; 12 controls not
+flagged. Its remaining cases (acrostics, capital letters, comma counts)
+hide nothing from a reader and are out of scope; none was reported.
+
+Reproduce: `scripts/benchmarks/reverse_captcha_run.py REPO results.jsonl`.
+
 ## Not yet run
 
 OpenRAG-Soc (arXiv 2601.10923): no downloadable copy was found. The

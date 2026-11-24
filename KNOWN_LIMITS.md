@@ -127,6 +127,14 @@ The score function is `clamp(1.0 - sum(severity * confidence for f in findings),
    **HTML concealment that depends on layout is not detected**: text in
    the background colour, clipped text, text under another element, a
    font that draws nothing. Rotated PDF text is not detected.
+   **Replaced text in a PDF is not detected**: `/ActualText` or a
+   remapped `/ToUnicode` table hands a parser different words from the
+   ones drawn (0 of 3 in the split-view benchmark). Reading-order
+   tricks and most font-metadata gaps are not detected either, and a
+   short hidden suffix on a visible line can be missed where the same
+   construction on its own line is caught.
+   **A hidden order to give a particular answer ("Reply X") is not
+   read as an instruction**; it is reported only as hidden text.
    **A planted endorsement on a long hidden text needs a second
    signal**, because the text layer behind a scanned reference letter
    can praise a candidate honestly; a short hidden endorsement is

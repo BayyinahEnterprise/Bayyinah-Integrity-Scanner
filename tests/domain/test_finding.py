@@ -169,6 +169,7 @@ def test_to_dict_does_not_leak_source_layer() -> None:
     assert "source_layer" not in d.get("inversion_recovery", {})
 
 
+@pytest.mark.legacy_parity
 def test_to_dict_keys_match_v01() -> None:
     domain_f = Finding(mechanism="homoglyph", tier=2, confidence=0.8,
                        description="d", location="loc",
@@ -181,6 +182,7 @@ def test_to_dict_keys_match_v01() -> None:
     assert list(domain_f.to_dict().keys()) == list(v01_f.to_dict().keys())
 
 
+@pytest.mark.legacy_parity
 def test_to_dict_byte_identical_to_v01() -> None:
     """Serialised output must match v0.1 byte-for-byte. This is the
     additive-only invariant: domain.Finding.to_dict is the v0.1 shape."""

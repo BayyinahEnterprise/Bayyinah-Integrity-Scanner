@@ -77,6 +77,15 @@ class IntegrityReport:
     # in v1.3. See PARITY.md for the procedure under which this break
     # was made.
     coverage: dict[str, float | None] | None = None
+    # v2.1.0 (see domain/outcomes.py). Not part of the v0.1 report shape;
+    # serialised only when present, so a scan run under
+    # BAYYINAH_LEGACY_PARITY=1 produces the earlier output byte for byte.
+    #   instruction_assessment: outcome of assessing hidden text
+    #   disclosures: what the scan chose not to report
+    #   score_axes: the scalar score split by layer, plus coverage
+    instruction_assessment: dict[str, Any] | None = None
+    disclosures: list[dict[str, Any]] = field(default_factory=list)
+    score_axes: dict[str, Any] | None = None
 
     # ------------------------------------------------------------------
     # Serialisation
@@ -100,7 +109,7 @@ class IntegrityReport:
         CHANGELOG.md. Nothing from the domain-layer-only ``source_layer``
         field of individual findings leaks into this output.
         """
-        return {
+        out = {
             "tool": TOOL_NAME,
             "version": TOOL_VERSION,
             "file_path": self.file_path,
@@ -120,6 +129,13 @@ class IntegrityReport:
                 else {"zahir": None, "batin": None}
             ),
         }
+        if self.instruction_assessment is not None:
+            out["instruction_assessment"] = self.instruction_assessment
+        if self.disclosures:
+            out["disclosures"] = list(self.disclosures)
+        if self.score_axes is not None:
+            out["score_axes"] = self.score_axes
+        return out
 
     # ------------------------------------------------------------------
     # Convenience accessors (domain-only; not reflected in to_dict)

@@ -446,6 +446,15 @@ ZAHIR_MECHANISMS: Final[frozenset[str]] = frozenset({
     #                                    reads them.
     "audio_metadata_injection",
     "audio_lyrics_prompt_injection",
+    # v2.1 invisible-text family (analyzers/invisible_text.py). Character
+    # classes the per-format analyzers did not cover; lists ported from
+    # the FATIMA encoder's sanitizer and audit engine.
+    "ansi_escape_sequence",
+    "variation_selector_payload",
+    "invisible_format_chars",
+    "soft_hyphen_obfuscation",
+    # v2.1 render-versus-extract invariant (analyzers/pdf_render_oracle.py).
+    "pdf_text_not_rendered",
 })
 
 # v1.1.2 - Tier 0 routing mechanisms (the meta-evidence layer).
@@ -1665,6 +1674,11 @@ BATIN_MECHANISMS: Final[frozenset[str]] = frozenset({
     # isnad — the chain of names persists.
     "cross_stem_inventory",
     "cross_stem_undeclared_text",
+    # v2.1: what an invisible channel decodes to, and whether text a
+    # reader cannot see is written as an instruction to an AI system
+    # (analyzers/invisible_text.py, analyzers/concealed_instruction.py).
+    "invisible_payload_decoded",
+    "concealed_instruction",
 })
 
 
@@ -2448,6 +2462,14 @@ SEVERITY: Final[dict[str, float]] = {
     # short-circuiting to VERDICT_MUGHLAQ when any Tier 0 finding is
     # present.
     "format_routing_divergence":      0.00,
+    # v2.1 invisible-text family and the instruction assessor.
+    "ansi_escape_sequence":           0.20,
+    "variation_selector_payload":     0.30,
+    "invisible_format_chars":         0.10,
+    "soft_hyphen_obfuscation":        0.05,
+    "invisible_payload_decoded":      0.25,
+    "concealed_instruction":          0.50,
+    "pdf_text_not_rendered":          0.25,
 }
 
 # Default severity for any unknown mechanism — mirrors v0 behaviour.
@@ -2870,6 +2892,15 @@ TIER: Final[dict[str, int]] = {
     # it claims uncertainty about which analyzer should have run. The
     # verdict resolver floors at mughlaq when this finding is present.
     "format_routing_divergence":      0,
+    # v2.1. The assessor reads meaning, so it is interpretive (Tier 3)
+    # even though what it reads was verifiably hidden.
+    "ansi_escape_sequence":           2,
+    "variation_selector_payload":     1,
+    "invisible_format_chars":         2,
+    "soft_hyphen_obfuscation":        3,
+    "invisible_payload_decoded":      1,
+    "concealed_instruction":          3,
+    "pdf_text_not_rendered":          1,
 }
 
 

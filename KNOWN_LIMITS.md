@@ -111,6 +111,76 @@ The score function is `clamp(1.0 - sum(severity * confidence for f in findings),
 
 **Cross-reference:** PARITY.md + tests/test_integration.py + MIGRATION.md.
 
+## §12 Limits of the v2.1 additions
+
+1. **`concealed_instruction` reads phrases, not meaning.** It matches
+   known shapes of an instruction in English and sixteen other
+   languages. A paraphrase, a dialect form or an unlisted language
+   passes. Its silence is not evidence that hidden text is harmless.
+2. **The English patterns were developed on the CrackedPDFs training
+   split.** The 0.935 F1 on that benchmark's test split is therefore
+   in-distribution. See `docs/benchmarks/README.md`.
+   One outside test exists: PhantomLint's test documents, run once
+   before any change, 94 of 106 PDFs and 7 of 34 HTML pages. Patterns
+   for verdict steering, imitated role markers and planted endorsements
+   were written after reading its misses, so that collection is spent.
+   **HTML concealment that depends on layout is not detected**: text in
+   the background colour, clipped text, text under another element, a
+   font that draws nothing. Rotated PDF text is not detected.
+   **Replaced text in a PDF is not detected**: `/ActualText` or a
+   remapped `/ToUnicode` table hands a parser different words from the
+   ones drawn (0 of 3 in the split-view benchmark). Reading-order
+   tricks and most font-metadata gaps are not detected either, and a
+   short hidden suffix on a visible line can be missed where the same
+   construction on its own line is caught.
+   **A hidden order to give a particular answer ("Reply X") is not
+   read as an instruction**; it is reported only as hidden text.
+   **A planted endorsement on a long hidden text needs a second
+   signal**, because the text layer behind a scanned reference letter
+   can praise a candidate honestly; a short hidden endorsement is
+   reported on its own.
+3. **The other-language patterns have one attack and one ordinary
+   sentence each as tests.** That shows they work on the plainest
+   phrasing. It is not a measured detection rate.
+4. **An orthographic exemption is also a hiding place.** Joiners and
+   word breaks a writing system requires are not reported. Guards
+   (joiners with no visual effect, joiners away from a virama, density
+   caps) bound the channel; a patient writer can still hide a few bits
+   inside the allowed rate.
+5. **Cleaning mode handles text files only**, does not rewrite
+   lookalike letters, and cannot remove an instruction written in plain
+   sight. Its receipt is unsigned: it shows the two files belong
+   together, not who produced them.
+6. **`check_text` cannot see layout.** Text extracted from a PDF or an
+   Office file has lost the difference between visible and hidden.
+   Pipelines should scan the original file.
+7. **Decoded payloads in image trailers are not read.** `trailing_data`
+   reports bytes after an image's end marker but does not pass them to
+   the instruction assessment.
+8. **The integration adapters were exercised against langchain-core
+   1.8, llama-index-core 0.14 and mcp 2.3.** Other releases are untested.
+
+9. **The render check has a horizon.** MuPDF at 72 dpi is one reader;
+   text inside form XObjects and annotation appearances is not checked;
+   pages after the fortieth are disclosed as unchecked; a line set
+   mostly beyond the page edge in a 3 pt font is missed (pinned in
+   `tests/bench/test_concealment_map.py`).
+10. **The concealment map has only ten visible pages in 3,840.** It is
+    strong evidence about misses and thin evidence about false alarms;
+    the false-alarm evidence is 3,385 spans in 150 clean benchmark PDFs
+    and 22 clean fixtures, all correctly unreported.
+11. **A signed FATIMA seal covers visible text only.** Zero-width
+    content added beside a valid seal leaves it valid. The scanner
+    therefore still reports and assesses every hidden payload, and a
+    sealed file's score stays low.
+12. **Attestations and receipts say who signed, not who that is.**
+    Trust in a public key is the verifier's decision.
+13. **`.github/workflows/build.yml` and the `Dockerfile` have not run.**
+    A Linux single-file binary was built and exercised locally.
+
+Limits 1, 4, 6, 7 and 9 are pinned as tests in
+`tests/test_documented_limits.py` and `tests/bench/`.
+
 ## §10 What this document is NOT
 
 - A complete enumeration of all possible adversarial inputs (no such enumeration exists).

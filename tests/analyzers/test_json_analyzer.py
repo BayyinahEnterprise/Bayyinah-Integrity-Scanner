@@ -211,7 +211,8 @@ FIXTURE_ROOT = (
         ("clean/clean.json", []),
         ("adversarial/duplicate_keys.json", ["duplicate_keys"]),
         ("adversarial/excessive_nesting.json", ["excessive_nesting"]),
-        ("adversarial/tag_in_json.json", ["tag_chars"]),
+        ("adversarial/tag_in_json.json",
+         ["tag_chars", "invisible_payload_decoded"]),
     ],
 )
 def test_fixture_fires_exactly_expected(rel: str, expected: list[str]) -> None:

@@ -205,9 +205,13 @@ def test_registry_count_is_exact_159() -> None:
     json_oversized_string_band (zahir, item 5),
     csv_payload_in_adjacent_cell (batin, item 6).
     """
-    assert len(MECHANISM_REGISTRY) == 159, (
-        f"Mechanism count drift: expected 159 "
-        f"(43 zahir + 115 batin + 1 routing), "
+    # v2.1 adds 6 mechanisms (159 -> 165): the invisible-text family
+    # (ansi_escape_sequence, variation_selector_payload,
+    # invisible_format_chars, soft_hyphen_obfuscation; zahir),
+    # invisible_payload_decoded and concealed_instruction (batin).
+    assert len(MECHANISM_REGISTRY) == 166, (
+        f"Mechanism count drift: expected 166 "
+        f"(48 zahir + 117 batin + 1 routing), "
         f"got {len(MECHANISM_REGISTRY)} "
         f"(zahir={len(ZAHIR_MECHANISMS)}, batin={len(BATIN_MECHANISMS)}, "
         f"routing={len(ROUTING_MECHANISMS)})"
@@ -268,8 +272,9 @@ def test_zahir_count_is_exact_43() -> None:
     csv_oversized_freetext_cell (item 2), single-walk per-column
     median-relative cell length threshold; and
     json_oversized_string_band (item 5), single-walk
-    document-relative string-length threshold. 41 -> 43."""
-    assert len(ZAHIR_MECHANISMS) == 43
+    document-relative string-length threshold. 41 -> 43.
+    v2.1 invisible-text family: 43 -> 47."""
+    assert len(ZAHIR_MECHANISMS) == 48
 
 
 def test_batin_count_is_exact_115() -> None:
@@ -380,8 +385,9 @@ def test_batin_count_is_exact_115() -> None:
     values only, so keys were out of scope); and
     csv_payload_in_adjacent_cell (item 6), co-occurrence
     detector that runs after csv_bidi_payload and
-    csv_zero_width_payload. 113 -> 115."""
-    assert len(BATIN_MECHANISMS) == 115
+    csv_zero_width_payload. 113 -> 115.
+    v2.1 invisible_payload_decoded, concealed_instruction: 115 -> 117."""
+    assert len(BATIN_MECHANISMS) == 117
 
 
 def test_registry_is_union_of_zahir_batin_and_routing() -> None:

@@ -57,6 +57,7 @@ import pikepdf
 
 from domain import get_current_content_index
 from domain.finding import Finding
+from domain.script_awareness import has_spoof_word, suspicious_zero_width
 
 
 _FIELD_LENGTH_LIMIT = 512  # bytes (UTF-8); per Day 2 prompt section 6.3
@@ -213,7 +214,7 @@ def _check_field(
             concealed=f"bidi codepoints: {[hex(ord(c)) for c in bidi]}",
         ))
     # (c) zero-width
-    zw = sorted({c for c in value if c in _ZERO_WIDTH_CHARS})
+    zw = sorted(set(suspicious_zero_width(value, _ZERO_WIDTH_CHARS)))
     if zw:
         out.append(Finding(
             mechanism="pdf_metadata_analyzer",

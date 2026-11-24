@@ -1,0 +1,424 @@
+[
+ {
+  "kind": "injection",
+  "technique": "zerosize",
+  "modality": "default",
+  "format": "pdf",
+  "file": "inj_zerosize_default.pdf",
+  "error": null,
+  "mechanisms": [
+   "pdf_text_not_rendered"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.775,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "zerosize",
+  "modality": "close-to-zero",
+  "format": "pdf",
+  "file": "inj_zerosize_close-to-zero.pdf",
+  "error": null,
+  "mechanisms": [
+   "microscopic_font"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.92,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "transparent",
+  "modality": "default",
+  "format": "pdf",
+  "file": "inj_transparent_default.pdf",
+  "error": null,
+  "mechanisms": [
+   "white_on_white_text"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.82,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "transparent",
+  "modality": "opacity-0",
+  "format": "pdf",
+  "file": "inj_transparent_opacity-0.pdf",
+  "error": null,
+  "mechanisms": [],
+  "flagged": false,
+  "payload_recovered": false,
+  "assessment": null,
+  "score": 1.0,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "transparent",
+  "modality": "opacity-close-to-zero",
+  "format": "pdf",
+  "file": "inj_transparent_opacity-close-to-zero.pdf",
+  "error": null,
+  "mechanisms": [],
+  "flagged": false,
+  "payload_recovered": false,
+  "assessment": null,
+  "score": 1.0,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "outofbound",
+  "modality": "default",
+  "format": "pdf",
+  "file": "inj_outofbound_default.pdf",
+  "error": null,
+  "mechanisms": [
+   "pdf_off_page_text"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.0,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "zerosize",
+  "modality": "default",
+  "format": "docx",
+  "file": "inj_zerosize_default.docx",
+  "error": null,
+  "mechanisms": [
+   "docx_microscopic_font"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.5,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "transparent",
+  "modality": "default",
+  "format": "docx",
+  "file": "inj_transparent_default.docx",
+  "error": null,
+  "mechanisms": [
+   "docx_white_text"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.0,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "transparent",
+  "modality": "vanish",
+  "format": "docx",
+  "file": "inj_transparent_vanish.docx",
+  "error": null,
+  "mechanisms": [
+   "docx_hidden_text"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.8,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "outofbound",
+  "modality": "default",
+  "format": "docx",
+  "file": "inj_outofbound_default.docx",
+  "error": null,
+  "mechanisms": [],
+  "flagged": false,
+  "payload_recovered": false,
+  "assessment": null,
+  "score": 1.0,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "zerosize",
+  "modality": "default",
+  "format": "html",
+  "file": "inj_zerosize_default.html",
+  "error": null,
+  "mechanisms": [
+   "html_hidden_text"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.8,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "zerosize",
+  "modality": "close-to-zero",
+  "format": "html",
+  "file": "inj_zerosize_close-to-zero.html",
+  "error": null,
+  "mechanisms": [
+   "html_hidden_text"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.8,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "transparent",
+  "modality": "default",
+  "format": "html",
+  "file": "inj_transparent_default.html",
+  "error": null,
+  "mechanisms": [],
+  "flagged": false,
+  "payload_recovered": false,
+  "assessment": null,
+  "score": 1.0,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "transparent",
+  "modality": "opacity-0",
+  "format": "html",
+  "file": "inj_transparent_opacity-0.html",
+  "error": null,
+  "mechanisms": [
+   "html_hidden_text"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.8,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "transparent",
+  "modality": "opacity-close-to-zero",
+  "format": "html",
+  "file": "inj_transparent_opacity-close-to-zero.html",
+  "error": null,
+  "mechanisms": [
+   "html_hidden_text"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.8,
+  "incomplete": false
+ },
+ {
+  "kind": "injection",
+  "technique": "outofbound",
+  "modality": "default",
+  "format": "html",
+  "file": "inj_outofbound_default.html",
+  "error": null,
+  "mechanisms": [
+   "html_hidden_text"
+  ],
+  "flagged": true,
+  "payload_recovered": true,
+  "assessment": "no_match",
+  "score": 0.8,
+  "incomplete": false
+ },
+ {
+  "kind": "obfuscation",
+  "technique": "zeroWidthCharacter",
+  "modality": "default",
+  "format": "html",
+  "file": "obf_zeroWidthCharacter_default.html",
+  "error": null,
+  "changed": true,
+  "mechanisms": [
+   "zero_width_chars"
+  ],
+  "flagged": true,
+  "payload_recovered": false,
+  "assessment": "not_assessed",
+  "score": 0.82,
+  "incomplete": false
+ },
+ {
+  "kind": "obfuscation",
+  "technique": "zeroWidthCharacter",
+  "modality": "heavy",
+  "format": "html",
+  "file": "obf_zeroWidthCharacter_heavy.html",
+  "error": null,
+  "changed": true,
+  "mechanisms": [
+   "zero_width_chars"
+  ],
+  "flagged": true,
+  "payload_recovered": false,
+  "assessment": "not_assessed",
+  "score": 0.82,
+  "incomplete": false
+ },
+ {
+  "kind": "obfuscation",
+  "technique": "homoglyph",
+  "modality": "default",
+  "format": "html",
+  "file": "obf_homoglyph_default.html",
+  "error": null,
+  "changed": true,
+  "mechanisms": [
+   "homoglyph"
+  ],
+  "flagged": true,
+  "payload_recovered": false,
+  "assessment": "no_match",
+  "score": 0.66,
+  "incomplete": false
+ },
+ {
+  "kind": "obfuscation",
+  "technique": "homoglyph",
+  "modality": "heavy",
+  "format": "html",
+  "file": "obf_homoglyph_heavy.html",
+  "error": null,
+  "changed": true,
+  "mechanisms": [
+   "homoglyph"
+  ],
+  "flagged": true,
+  "payload_recovered": false,
+  "assessment": "no_match",
+  "score": 0.66,
+  "incomplete": false
+ },
+ {
+  "kind": "obfuscation",
+  "technique": "diacritical",
+  "modality": "default",
+  "format": "html",
+  "file": "obf_diacritical_default.html",
+  "error": null,
+  "changed": true,
+  "mechanisms": [],
+  "flagged": false,
+  "payload_recovered": false,
+  "assessment": null,
+  "score": 1.0,
+  "incomplete": false
+ },
+ {
+  "kind": "obfuscation",
+  "technique": "diacritical",
+  "modality": "heavy",
+  "format": "html",
+  "file": "obf_diacritical_heavy.html",
+  "error": null,
+  "changed": true,
+  "mechanisms": [],
+  "flagged": false,
+  "payload_recovered": false,
+  "assessment": null,
+  "score": 1.0,
+  "incomplete": false
+ },
+ {
+  "kind": "obfuscation",
+  "technique": "bidi",
+  "modality": "default",
+  "format": "html",
+  "file": "obf_bidi_default.html",
+  "error": null,
+  "changed": true,
+  "mechanisms": [
+   "bidi_control"
+  ],
+  "flagged": true,
+  "payload_recovered": false,
+  "assessment": "no_match",
+  "score": 0.73,
+  "incomplete": false
+ },
+ {
+  "kind": "obfuscation",
+  "technique": "bidi",
+  "modality": "heavy",
+  "format": "html",
+  "file": "obf_bidi_heavy.html",
+  "error": null,
+  "changed": true,
+  "mechanisms": [
+   "bidi_control"
+  ],
+  "flagged": true,
+  "payload_recovered": false,
+  "assessment": "no_match",
+  "score": 0.73,
+  "incomplete": false
+ },
+ {
+  "kind": "clean",
+  "technique": "none",
+  "modality": "none",
+  "format": "pdf",
+  "file": "clean_base.pdf",
+  "error": null,
+  "mechanisms": [],
+  "flagged": false,
+  "payload_recovered": false,
+  "assessment": null,
+  "score": 1.0,
+  "incomplete": false
+ },
+ {
+  "kind": "clean",
+  "technique": "none",
+  "modality": "none",
+  "format": "docx",
+  "file": "clean_base.docx",
+  "error": null,
+  "mechanisms": [],
+  "flagged": false,
+  "payload_recovered": false,
+  "assessment": null,
+  "score": 1.0,
+  "incomplete": false
+ },
+ {
+  "kind": "clean",
+  "technique": "none",
+  "modality": "none",
+  "format": "html",
+  "file": "clean_base.html",
+  "error": null,
+  "mechanisms": [],
+  "flagged": false,
+  "payload_recovered": false,
+  "assessment": null,
+  "score": 1.0,
+  "incomplete": false
+ }
+]

@@ -107,6 +107,7 @@ from domain.config import (
     TIER,
     ZERO_WIDTH_CHARS,
 )
+from domain.script_awareness import is_spoof_word, suspicious_zero_width
 from infrastructure.file_router import FileKind, FileRouter
 
 # v1.1.2 EML format-gauntlet detectors. Each is a standalone byte-
@@ -1457,9 +1458,11 @@ class EmlAnalyzer(BaseAnalyzer):
                              present.
         """
         classes: set[str] = set()
+        if suspicious_zero_width(text, ZERO_WIDTH_CHARS):
+            classes.add("zero_width")
         for ch in text:
             if ch in ZERO_WIDTH_CHARS:
-                classes.add("zero_width")
+                continue
             elif ch in BIDI_CONTROL_CHARS:
                 classes.add("bidi")
             elif ord(ch) in TAG_CHAR_RANGE:
@@ -1471,7 +1474,7 @@ class EmlAnalyzer(BaseAnalyzer):
                 continue
             confusables = [c for c in word if c in CONFUSABLE_TO_LATIN]
             latin = [c for c in word if _is_latin_letter(c)]
-            if confusables and (latin or len(confusables) >= 2):
+            if is_spoof_word(word, CONFUSABLE_TO_LATIN, text):
                 classes.add("homoglyph")
                 break
         return classes

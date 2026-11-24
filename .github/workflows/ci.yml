@@ -62,6 +62,13 @@ jobs:
         run: pytest -q --strict-markers
 
       - name: Verify byte-identical PDF parity against bayyinah_v0
+        # v2.1: the comparison is over the detector set v0 had. The
+        # stream-level pass, the render check and the instruction
+        # assessment did not exist in v0, so this step runs in legacy
+        # parity mode, the same mode the marked parity tests use. See
+        # PARITY.md, "v2.1.0".
+        env:
+          BAYYINAH_LEGACY_PARITY: "1"
         run: |
           python - <<'PY'
           import bayyinah, bayyinah_v0

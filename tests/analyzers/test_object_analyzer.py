@@ -447,6 +447,7 @@ def _all_phase0_fixtures() -> list[Path]:
     return [p for p in pdfs if p.exists()]
 
 
+@pytest.mark.legacy_parity
 @pytest.mark.parametrize(
     "pdf_path",
     _all_phase0_fixtures(),
@@ -473,6 +474,7 @@ def test_parity_with_v0_1_object_layer_analyzer(pdf_path: Path) -> None:
     )
 
 
+@pytest.mark.legacy_parity
 def test_parity_mechanism_sets_on_text_fixtures() -> None:
     """On text-layer fixtures, the object analyzer should agree with
     v0.1's object analyzer about what object-layer mechanisms fire —

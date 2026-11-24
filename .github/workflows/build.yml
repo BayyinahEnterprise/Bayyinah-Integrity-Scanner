@@ -1,0 +1,64 @@
+# Builds the container and the single-file binaries. Added in 2.1.0
+# development; NOT yet run: it has never executed on GitHub's runners.
+# The first push that includes this file is its first test.
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t bayyinah:ci .
+      - name: Scan a file with no network
+        run: |
+          printf 'An ordinary note about the meeting.\n' > note.md
+          docker run --rm --network none -v "$PWD:/data:ro" bayyinah:ci scan /data/note.md
+
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run this repository's own action on its documents
+        uses: ./
+        with:
+          paths: "README.md CHANGELOG.md"
+          fail-on: instruction
+
+  binary:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build single-file binary
+        shell: bash
+        run: |
+          python -m pip install --quiet . pyinstaller
+          pyinstaller --onefile --name bayyinah --collect-all pymupdf \
+            --hidden-import analyzers --hidden-import application \
+            --hidden-import domain --hidden-import infrastructure \
+            cli/__main__.py
+      - name: Smoke test
+        shell: bash
+        run: |
+          printf 'An ordinary note about the meeting.\n' > note.md
+          ./dist/bayyinah scan note.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bayyinah-${{ matrix.os }}
+          path: dist/bayyinah*

@@ -54,6 +54,7 @@ from pathlib import Path
 from typing import Iterable
 
 from domain.finding import Finding
+from domain.script_awareness import has_spoof_word, suspicious_zero_width
 
 
 _MAX_IMAGE_BYTES: int = 16 * 1024 * 1024
@@ -196,7 +197,7 @@ def _has_bidi(text: str) -> bool:
 
 
 def _has_zero_width(text: str) -> bool:
-    return any(ch in _ZERO_WIDTH_CHARS for ch in text)
+    return bool(suspicious_zero_width(text, _ZERO_WIDTH_CHARS))
 
 
 def _bidi_codepoints(text: str) -> list[str]:
@@ -205,7 +206,7 @@ def _bidi_codepoints(text: str) -> list[str]:
 
 
 def _zero_width_codepoints(text: str) -> list[str]:
-    found = sorted({c for c in text if c in _ZERO_WIDTH_CHARS})
+    found = sorted(set(suspicious_zero_width(text, _ZERO_WIDTH_CHARS)))
     return [f"U+{ord(c):04X}" for c in found]
 
 

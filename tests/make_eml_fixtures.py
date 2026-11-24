@@ -74,9 +74,9 @@ EML_FIXTURE_EXPECTATIONS: dict[str, list[str]] = {
     "adversarial/multipart_alternative_divergence.eml":
         ["eml_multipart_alternative_divergence"],
     "adversarial/hidden_html_display_none.eml":
-        ["eml_hidden_html_content"],
+        ["eml_hidden_html_content", "concealed_instruction"],
     "adversarial/hidden_html_attribute.eml":
-        ["eml_hidden_html_content"],
+        ["eml_hidden_html_content", "concealed_instruction"],
     "adversarial/display_name_spoof_brand.eml":
         ["eml_display_name_spoof"],
     "adversarial/display_name_spoof_embedded.eml":

@@ -147,6 +147,69 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
 
+    # ----- clean -------------------------------------------------------
+    clean_p = subparsers.add_parser(
+        "clean",
+        help="write a copy of a text file with hidden content removed",
+        description=(
+            "Remove hidden content from a text file (plain text, Markdown, "
+            "code, CSV, JSON, HTML, logs) and write a receipt binding the "
+            "original to the cleaned copy. The original is never modified. "
+            "Binary containers (PDF, Office, images) are not cleaned."
+        ),
+    )
+    clean_p.add_argument("file", metavar="FILE", type=Path,
+                         help="path to the text file to clean")
+    clean_p.add_argument("-o", "--output", metavar="OUT", type=Path,
+                         default=None,
+                         help="where to write the cleaned copy "
+                              "(default: FILE with .clean before the suffix)")
+    clean_p.add_argument("--force", action="store_true",
+                         help="treat the file as UTF-8 text whatever its suffix")
+    clean_p.add_argument("--json", action="store_true",
+                         help="print the receipt as JSON")
+    # ----- view --------------------------------------------------------
+    view_p = subparsers.add_parser(
+        "view",
+        help="write the text a reader of a PDF or Office file could see",
+        description=(
+            "Render a PDF or Office file and write out only the text that "
+            "left a visible mark, with a receipt. Hidden, clipped, covered, "
+            "transparent and off-page text is left out. Office files are "
+            "rendered by LibreOffice. The output is plain text, not the "
+            "original document."
+        ),
+    )
+    view_p.add_argument("file", metavar="FILE", type=Path,
+                        help="path to a PDF or Office file")
+    view_p.add_argument("-o", "--output", metavar="OUT", type=Path, default=None,
+                        help="where to write the text "
+                             "(default: FILE.reader-view.txt)")
+    view_p.add_argument("--json", action="store_true",
+                        help="print the receipt as JSON")
+    # ----- keygen / attest / verify -------------------------------------
+    keygen_p = subparsers.add_parser(
+        "keygen", help="create an Ed25519 key for signing scan attestations",
+        description="Write a new private key (PEM, owner-read-only) and print "
+                    "the public key. Keep the private key off shared machines "
+                    "and out of repositories.")
+    keygen_p.add_argument("path", metavar="KEYFILE", type=Path)
+    attest_p = subparsers.add_parser(
+        "attest", help="scan a file and write a signed attestation of the result",
+        description="Scan FILE and write a signed record binding the result to "
+                    "the file's hash and to the detector's source hash.")
+    attest_p.add_argument("file", metavar="FILE", type=Path)
+    attest_p.add_argument("--key", metavar="KEYFILE", type=Path, required=True)
+    attest_p.add_argument("-o", "--output", metavar="OUT", type=Path, default=None,
+                          help="default: FILE.attestation.json")
+    verify_p = subparsers.add_parser(
+        "verify", help="check a signed scan attestation",
+        description="Check an attestation's signature and, optionally, that it "
+                    "is for FILE and signed by a key you trust. Exit 0 only when "
+                    "every check that was requested passes.")
+    verify_p.add_argument("attestation", metavar="ATTESTATION", type=Path)
+    verify_p.add_argument("--file", metavar="FILE", type=Path, default=None)
+    verify_p.add_argument("--trust", metavar="PUBKEY_HEX", action="append", default=None)
     return parser
 
 
@@ -199,6 +262,105 @@ def _cmd_scan(args: argparse.Namespace) -> int:
 # main — the script entry point
 # ---------------------------------------------------------------------------
 
+def _cmd_clean(args: argparse.Namespace) -> int:
+    """Handle ``bayyinah clean``. Exit 0 on success, EXIT_ERROR otherwise."""
+    import json as _json
+
+    from application.sanitize import NotATextFile, clean_file
+
+    try:
+        receipt = clean_file(args.file, args.output, force=args.force)
+    except (NotATextFile, OSError, ValueError) as exc:
+        print(f"bayyinah clean: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    if args.json:
+        print(_json.dumps(receipt, indent=2, ensure_ascii=False))
+        return 0
+    print(f"Cleaned copy: {receipt['cleaned_path']}")
+    print(f"Receipt:      {receipt['receipt_path']}")
+    if receipt["removed"]:
+        for kind, n in receipt["removed"].items():
+            print(f"  removed {n:>6}  {kind.replace('_', ' ')}")
+    else:
+        print("  nothing to remove")
+    if receipt["kept_orthographic_zero_width"]:
+        print(f"  kept    {receipt['kept_orthographic_zero_width']:>6}  "
+              "zero-width characters the writing system requires")
+    for p in receipt["hidden_payloads_removed"]:
+        print(f"  hidden text removed ({p['channel']}): {p['preview'][:100]!r}")
+    b, a = receipt["scan_before"], receipt["scan_after"]
+    print(f"Findings before: {b['findings']}   after: {a['findings']}")
+    if a["findings"]:
+        print("  still reported: " + ", ".join(sorted(a["by_mechanism"])))
+    return 0
+
+
+def _cmd_view(args: argparse.Namespace) -> int:
+    """Handle ``bayyinah view``. Exit 0 on success, EXIT_ERROR otherwise."""
+    import json as _json
+
+    from application.reader_view import ReaderViewError, reader_view
+
+    try:
+        receipt = reader_view(args.file, args.output)
+    except (ReaderViewError, OSError) as exc:
+        print(f"bayyinah view: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    if args.json:
+        print(_json.dumps(receipt, indent=2, ensure_ascii=False))
+        return 0
+    print(f"Reader's view: {receipt['view_path']}")
+    print(f"Receipt:       {receipt['receipt_path']}")
+    print(f"  pages {receipt['pages_included']} of {receipt['pages_total']}, "
+          f"rendered via {receipt['rendered_via']}")
+    print(f"  kept {receipt['spans_kept']} text span(s), "
+          f"left out {receipt['spans_left_out']} that a reader could not see")
+    for line in receipt["left_out_preview"][:3]:
+        print(f"    left out: {line!r}")
+    return 0
+
+
+def _cmd_attestation(args: argparse.Namespace) -> int:
+    """Handle ``keygen``, ``attest`` and ``verify``."""
+    import json as _json
+
+    from application import attestation as att
+
+    try:
+        if args.command == "keygen":
+            public = att.generate_key(args.path)
+            print(f"Private key: {args.path} (owner-read-only; do not share)")
+            print(f"Public key:  {public}")
+            return 0
+        if args.command == "attest":
+            record = att.attest(args.file, args.key)
+            out = args.output or args.file.with_name(args.file.name + ".attestation.json")
+            out.write_text(_json.dumps(record, indent=2, ensure_ascii=False) + "\n",
+                           encoding="utf-8")
+            print(f"Attestation: {out}")
+            print(f"  file sha256   {record['file_sha256']}")
+            print(f"  detector hash {record['detector_set_hash']}")
+            print(f"  score {record['integrity_score']}, "
+                  f"{record['finding_count']} finding(s), signed by {record['public_key']}")
+            return 0
+        record = _json.loads(args.attestation.read_text(encoding="utf-8"))
+        res = att.verify_attestation(record, args.file, args.trust)
+    except (att.AttestationError, OSError, ValueError, FileExistsError) as exc:
+        print(f"bayyinah {args.command}: {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    yes_no = {True: "yes", False: "NO", None: "not checked"}
+    print(f"Signature:      {res['signature']}")
+    print(f"Signed by:      {record.get('public_key')}")
+    print(f"Key trusted:    {yes_no[res['key_trusted']]}"
+          + ("" if args.trust else " (pass --trust PUBKEY_HEX)"))
+    print(f"File matches:   {yes_no[res['file_matches']]}"
+          + ("" if args.file else " (pass --file FILE)"))
+    print(f"Same detector:  {yes_no[res['same_detector']]}")
+    ok = (res["signature"] == "valid" and res["key_trusted"] is not False
+          and res["file_matches"] is not False)
+    return 0 if ok else EXIT_FINDINGS
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """CLI entry point.
 
@@ -229,6 +391,15 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "scan":
         return _cmd_scan(args)
+
+    if args.command == "clean":
+        return _cmd_clean(args)
+
+    if args.command == "view":
+        return _cmd_view(args)
+
+    if args.command in ("keygen", "attest", "verify"):
+        return _cmd_attestation(args)
 
     # argparse enforces the subparser choices, so the fall-through is
     # defensive: any new subcommand added without a handler will hit

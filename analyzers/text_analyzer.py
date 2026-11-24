@@ -68,6 +68,11 @@ from domain.config import (
     TIER,
     ZERO_WIDTH_CHARS,
 )
+from analyzers.invisible_text import scan_string as _invisible_scan
+from domain.script_awareness import (
+    has_spoof_word, is_spoof_word, suspicious_zero_width,
+    suspicious_zero_width_indices,
+)
 from domain.exceptions import PDFParseError
 from infrastructure.pdf_client import PDFClient
 
@@ -188,6 +193,22 @@ def _overlapping_pair_candidates(
 # ZahirTextAnalyzer
 # ---------------------------------------------------------------------------
 
+# Content-stream string operands, matched without lazy ``.*?`` scans.
+#
+# The earlier patterns (``\((.*?)(?<!\\)\)\s*Tj`` and ``\[(.*?)\]\s*TJ``
+# with DOTALL) restarted a scan to the end of the stream from every opening
+# bracket that was not followed by the expected operator, which is quadratic:
+# two ordinary two-page resumes took 130 s and 217 s. These patterns stop at
+# the string's or array's own closing bracket, so each byte is visited a
+# bounded number of times. A literal string may hold escaped characters and
+# one level of balanced parentheses, as the PDF syntax allows unescaped.
+_LIT_BODY = r"(?:[^()\\]|\\.|\((?:[^()\\]|\\.)*\))*"
+_LITERAL = re.compile(r"\((" + _LIT_BODY + r")\)", re.DOTALL)
+_TJ_LITERAL = re.compile(r"\((" + _LIT_BODY + r")\)\s*Tj", re.DOTALL)
+_TJ_ARRAY = re.compile(r"\[((?:[^\]()\\]|\\.|\(" + _LIT_BODY + r"\))*)\]\s*TJ", re.DOTALL)
+_HEX_SHOW = re.compile(r"<([0-9A-Fa-f\s]{1,65536})>\s*T[jJ]")
+
+
 class ZahirTextAnalyzer(BaseAnalyzer):
     """Detects concealment at the rendered-text (zahir) layer of a PDF.
 
@@ -298,7 +319,58 @@ class ZahirTextAnalyzer(BaseAnalyzer):
             # pikepdf handle and is independent of the pymupdf doc
             # used above. Closes pdf_gauntlet fixture 03_off_page.pdf.
             from analyzers.pdf_off_page_text import detect_pdf_off_page_text
-            findings.extend(detect_pdf_off_page_text(file_path))
+            tm_findings = detect_pdf_off_page_text(file_path)
+            findings.extend(tm_findings)
+
+            # Content-stream walk for text the two passes above cannot see:
+            # off-page text positioned with Td/TD/T*/cm (the Tm-only pass
+            # misses it; PyMuPDF drops the spans), and sub-legible text in
+            # the 1.0-2.5 pt band. Emits only existing mechanisms; see
+            # analyzers/pdf_stream_concealment.py.
+            #
+            # ON by default since v2.1. Four Phase 0 fixtures (bidi_control,
+            # tag_characters, zero_width, positive_combined) place carrier
+            # text at y=2000, above the page; this pass reports it, which
+            # v0 and v0.1 never did. Byte-parity comparisons against those
+            # versions therefore run with BAYYINAH_LEGACY_PARITY=1 (see
+            # PARITY.md). BAYYINAH_STREAM_CONCEALMENT=0 switches off this
+            # pass alone. Pages the Tm pass already reported are skipped
+            # so one page yields one off-page finding.
+            import os as _os
+            if (_os.environ.get("BAYYINAH_STREAM_CONCEALMENT", "1") != "0"
+                    and _os.environ.get("BAYYINAH_LEGACY_PARITY") != "1"):
+                from analyzers.pdf_stream_concealment import (
+                    detect_pdf_stream_concealment,
+                )
+                tm_pages = frozenset(
+                    int(f.location.split()[1]) - 1
+                    for f in tm_findings
+                    if f.mechanism == "pdf_off_page_text"
+                    and f.location.startswith("page ")
+                    and f.location.split()[1].isdigit()
+                )
+                findings.extend(
+                    detect_pdf_stream_concealment(file_path, tm_pages)
+                )
+                # Render-versus-extract invariant. BAYYINAH_RENDER_ORACLE=0
+                # switches it off alone. A failure here is disclosed, not
+                # raised: the mechanism-specific checks above still stand.
+                if _os.environ.get("BAYYINAH_RENDER_ORACLE", "1") != "0":
+                    try:
+                        from analyzers.pdf_render_oracle import (
+                            detect_text_not_rendered,
+                        )
+                        findings.extend(
+                            detect_text_not_rendered(file_path, findings)
+                        )
+                    except Exception as _exc:
+                        from domain.outcomes import note_disclosure
+                        note_disclosure(
+                            "render_check_failed", 1,
+                            "The render-versus-extract check could not run "
+                            f"({type(_exc).__name__}: {_exc}). Hidden text is "
+                            "caught only by the mechanism-specific checks.",
+                        )
 
             report = IntegrityReport(
                 file_path=str(file_path),
@@ -648,7 +720,7 @@ class ZahirTextAnalyzer(BaseAnalyzer):
             codepoints)`` pair per hit so the caller can emit one
             finding per bucket with representative evidence attached.
             """
-            zw = [c for c in decoded if c in ZERO_WIDTH_CHARS]
+            zw = suspicious_zero_width(decoded, ZERO_WIDTH_CHARS)
             if zw:
                 visible = decoded
                 for c in ZERO_WIDTH_CHARS:
@@ -701,21 +773,19 @@ class ZahirTextAnalyzer(BaseAnalyzer):
                 accumulate(decoded, "/ActualText hex")
 
         # Bare Tj / TJ hex strings
-        for m in re.finditer(
-            r"<([0-9A-Fa-f\s]+)>\s*T[jJ]", stream,
-        ):
+        for m in _HEX_SHOW.finditer(stream):
             decoded = self._decode_hex_text(m.group(1), prefer_utf16be=False)
             if decoded:
                 accumulate(decoded, "hex text string")
 
         # TJ arrays — both hex fragments and literal fragments
-        for m in re.finditer(r"\[(.*?)\]\s*TJ", stream, re.DOTALL):
+        for m in _TJ_ARRAY.finditer(stream):
             arr = m.group(1)
             for hm in re.finditer(r"<([0-9A-Fa-f\s]+)>", arr):
                 decoded = self._decode_hex_text(hm.group(1), prefer_utf16be=False)
                 if decoded:
                     accumulate(decoded, "TJ hex fragment")
-            for lm in re.finditer(r"\((.*?)(?<!\\)\)", arr, re.DOTALL):
+            for lm in _LITERAL.finditer(arr):
                 body = self._decode_pdf_literal(lm.group(1))
                 accumulate(body, "TJ literal fragment")
                 try:
@@ -726,9 +796,7 @@ class ZahirTextAnalyzer(BaseAnalyzer):
                     pass
 
         # Bare Tj literal strings
-        for m in re.finditer(
-            r"\((.*?)(?<!\\)\)\s*Tj", stream, re.DOTALL,
-        ):
+        for m in _TJ_LITERAL.finditer(stream):
             body = self._decode_pdf_literal(m.group(1))
             accumulate(body, "Tj literal")
             try:
@@ -1068,7 +1136,8 @@ class ZahirTextAnalyzer(BaseAnalyzer):
         techniques are stacked.
         """
         findings: list[Finding] = []
-        zw = [c for c in text if c in ZERO_WIDTH_CHARS]
+        findings.extend(_invisible_scan(text, f"page {page_idx + 1}"))
+        zw = suspicious_zero_width(text, ZERO_WIDTH_CHARS)
         if zw:
             visible = text
             for c in ZERO_WIDTH_CHARS:
@@ -1142,7 +1211,7 @@ class ZahirTextAnalyzer(BaseAnalyzer):
             has_plain_latin = any(
                 ("a" <= c.lower() <= "z") for c in word
             )
-            if has_plain_latin or len(confusables_in_word) >= 2:
+            if is_spoof_word(word, CONFUSABLE_TO_LATIN, text):
                 hits.append((word, confusables_in_word))
         if not hits:
             return []

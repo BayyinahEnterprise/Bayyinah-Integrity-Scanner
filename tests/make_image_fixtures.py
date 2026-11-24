@@ -524,7 +524,7 @@ IMAGE_FIXTURE_EXPECTATIONS: dict[str, list[str]] = {
         "image_text_metadata", "mathematical_alphanumeric",
     ],
     "adversarial/math_alphanumeric.svg":   ["mathematical_alphanumeric"],
-    "adversarial/hidden_text.svg":         ["svg_hidden_text"],
+    "adversarial/hidden_text.svg":         ["svg_hidden_text", "concealed_instruction"],
     "adversarial/microscopic_text.svg":    ["svg_microscopic_text"],
     # Phase 12 — cross-modal correlation fixtures. Run through the
     # full ``ScanService``, which invokes the CorrelationEngine on the

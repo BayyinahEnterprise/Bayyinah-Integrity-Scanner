@@ -55,12 +55,12 @@ TEXT_FIXTURE_EXPECTATIONS: dict[str, list[str]] = {
     "clean/clean.json":             [],
     # Adversarial — each fires a specific detector.
     "adversarial/zero_width.md":               ["zero_width_chars"],
-    "adversarial/tag_chars.md":                ["tag_chars"],
+    "adversarial/tag_chars.md":                ["tag_chars", "concealed_instruction", "invisible_payload_decoded"],
     "adversarial/bidi_control.py":             ["bidi_control"],
     "adversarial/homoglyph.md":                ["homoglyph"],
     "adversarial/duplicate_keys.json":         ["duplicate_keys"],
     "adversarial/excessive_nesting.json":      ["excessive_nesting"],
-    "adversarial/tag_in_json.json":            ["tag_chars"],
+    "adversarial/tag_in_json.json":            ["tag_chars", "concealed_instruction", "invisible_payload_decoded"],
     # v1.1.2 - the Tier 0 routing layer fires alongside the existing
     # Tier 2 extension_mismatch finding on this fixture (a JSON file
     # with PNG magic bytes - both layers correctly disagree with the

@@ -60,6 +60,7 @@ from pathlib import Path
 from typing import Iterable
 
 from domain.finding import Finding
+from domain.script_awareness import has_spoof_word, suspicious_zero_width
 
 
 _MAX_IMAGE_BYTES: int = 16 * 1024 * 1024
@@ -144,7 +145,7 @@ def _has_bidi(text: str) -> bool:
 
 
 def _has_zero_width(text: str) -> bool:
-    return any(ch in _ZERO_WIDTH_CHARS for ch in text)
+    return bool(suspicious_zero_width(text, _ZERO_WIDTH_CHARS))
 
 
 def detect_image_png_private_chunk(file_path: Path) -> Iterable[Finding]:

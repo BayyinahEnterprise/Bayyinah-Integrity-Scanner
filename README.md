@@ -1,6 +1,6 @@
 # Bayyinah
 
-> **Try it now:** [bayyinah.dev](https://bayyinah.dev/). Drag any file into the form and see the integrity report. See the [Hosted API](#hosted-api) section for the JSON endpoint.
+> **Runs on your own machine.** `pip install bayyinah`, then `bayyinah scan FILE`. Nothing is uploaded anywhere. The public demo site at bayyinah.dev was retired on 24 November 2026; see [HTTP API](#hosted-api) to run the same service yourself.
 
 **File integrity scanner for detecting hidden, concealed, or adversarial content in digital documents.**
 
@@ -289,10 +289,13 @@ A thin FastAPI wrapper (`api.py`) exposes `scan_file` over HTTP for
 demos and lightweight integration. The same library does the work; the
 wrapper only handles transport.
 
-**Live instance:** https://bayyinah.dev/
+There is no public instance. The one at bayyinah.dev was retired on
+24 November 2026. To run it yourself:
 
 ```bash
-curl -X POST -F "file=@suspicious.pdf" https://bayyinah.dev/scan
+pip install -r requirements.txt
+uvicorn api:app --host 127.0.0.1 --port 8000
+curl -X POST -F "file=@suspicious.pdf" http://127.0.0.1:8000/scan
 ```
 
 ### Endpoints
@@ -326,7 +329,7 @@ hosting provider.
 
 ### Demo counter (env vars)
 
-The public `/demo` page on bayyinah.dev shows a live counter of total
+The `/demo` page shows a live counter of total
 scans run and unique visitors. Counts are persisted in a small SQLite
 DB; uniqueness is tracked via a daily-salt-rotated SHA-256 hash of the
 client IP. The same IP on the same UTC day produces one record. Cross-day
@@ -347,8 +350,9 @@ Two environment variables control the counter:
 | `BAYYINAH_COUNTER_DB`     | `/data/counter.db` | SQLite path. Falls back to `/tmp/counter.db` if `/data` is not writable.      |
 | `BAYYINAH_COUNTER_SECRET` | (per-process random) | HMAC-SHA256 secret seeding the daily IP-hash salt. Set this in production. |
 
-The production deployment expects `/data` to be backed by a Railway
-volume; see `RAILWAY_VOLUME.md` for the one-time setup steps. In local
+A deployment that should keep its count across restarts needs `/data`
+on a persistent volume; `RAILWAY_VOLUME.md` records how the retired
+public instance did that. In local
 dev, neither variable needs to be set: the counter falls back to
 `/tmp/counter.db` with a per-process secret and logs a warning.
 

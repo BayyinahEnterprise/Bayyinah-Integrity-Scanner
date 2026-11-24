@@ -10,9 +10,10 @@ answers one further, narrower question:
     Does this hidden text read as an instruction addressed to an AI system?
 
 It is a deterministic phrase-pattern scorer, not a model. It looks only for
-positive evidence in six families (override of prior instructions, disclosure
-of secrets or system text, steering of the output, tool or agent direction,
-authority or exemption framing, and direct address of the model). Absence of
+positive evidence in seven families (override of prior instructions,
+disclosure of secrets or system text, steering of the output, tool or agent
+direction, authority or exemption framing, direct address of the model, and a
+planted verdict about the document's own subject). Absence of
 evidence returns ``False``; nothing is ever classified as "benign" on the
 strength of what it says about itself.
 
@@ -50,7 +51,7 @@ def _p(*alts: str) -> re.Pattern[str]:
     return re.compile("|".join("(?:" + a.replace(" ", r"\s*") + ")" for a in alts), re.I)
 
 
-_OBJ = r"(?:instruction|directive|prompt|rule|guideline|guidance|hierarchy|polic(?:y|ies)|constraint|context)s?"
+_OBJ = r"(?:instruction|directive|prompt|rule|guideline|guidance|hierarchy|polic(?:y|ies)|constraint|context|requirement|criteri(?:on|a)|rubric)s?"
 _SECRET = (r"(?:(?:system|startup|initial|hidden|internal|private|developer|original|base) (?:system )?"
            r"(?:prompt|message|instruction|directive|configuration|context|file|setting|guidance)s?|"
            r"prompt (?:state|text)|secrets?|secret-like|passwords?|credentials?|sensitive (?:strings?|values?|data)|"
@@ -94,6 +95,14 @@ _FAMILIES: dict[str, tuple[int, re.Pattern[str]]] = {
         r"sound more important",
         r"(?:you|the (?:assistant|model|reviewer)) (?:must|should|shall|will|need to) (?:always |now |only )?"
         r"(?:say|answer|respond|recommend|approve|accept|rate|output|conclude|state|reply)",
+        # Telling an evaluator what verdict to reach or how to write it.
+        r"(?:give|assign|award) (?:it |this |the |a |an )?(?:\w+ )?(?:full|best|highest) (?:rating|score|marks?|grade)",
+        r"(?:rating|score|grade)s? (?:you give |you assign |given )?.{0,40}?(?:is|be|of) (?:always |exactly )?(?:\d+ ?/ ?\d+|full|maximum|perfect|the highest)",
+        r"when (?:writing|reviewing|evaluating|assessing|summari[sz]ing|grading|screening|ranking)\b.{0,80}?(?:focus on|emphasi[sz]e|mention only|only mention|do not|never)",
+        r"(?:ensure|make sure) (?:that )?(?:the |your )(?:review|rating|score|summary|answer|response|evaluation|assessment|recommendation)\b",
+        r"(?:do not|don't|never) (?:evaluate|assess|judge|rate|score|review|analy[sz]e|summari[sz]e|critici[sz]e|penali[sz]e|compare)\b",
+        r"if (?:you are |you're )?asked\b.{0,100}?(?:respond|say|answer|reply|state|tell|write)\b",
+        r"(?:should|must) be (?:downplayed|ignored|omitted|rated|scored|ranked|accepted|recommended|described as|presented as)\b",
     )),
     "agent": (2, _p(
         r"tool calls?",
@@ -116,6 +125,25 @@ _FAMILIES: dict[str, tuple[int, re.Pattern[str]]] = {
         r"(?:end|begin|start) of (?:document|system|user|context)",
         r"^(?:system|assistant|developer)\s*:",
         r"jailbreak|do anything now",
+        # Imitated chat-role markers, and a planted note signed by an authority.
+        # (repeated: one bracketed word can be an ordinary label)
+        r"(?:\[\s*(?:system|assistant|developer|admin|inst)\s*\]\s*){2,}",
+        r"note (?:by|from) .{0,40}?(?:recruiter|reviewer|hiring manager|evaluator|editor|interviewer|examiner)\b",
+    )),
+    # A hidden verdict about the document's own subject, planted for an
+    # automated screener or reviewer to repeat. Not an order, so the other
+    # families miss it; a reader never sees it, so it has no ordinary purpose.
+    # Weight 2: on long hidden text it needs a second signal, because the text
+    # layer behind a scanned reference letter can praise a candidate honestly.
+    "endorsement": (2, _p(
+        r"(?:this|the) (?:candidate|applicant|paper|submission|manuscript|resume|cv|proposal|author)s? (?:is|are|deserves?|should be|must be)\b"
+        r".{0,50}?(?:best|supremely|exceptionally|perfectly|ideal(?:ly)?|uniquely|extremely|most|highly|outstanding)\b"
+        r".{0,30}?(?:qualified|suited|fit|recommended|accept(?:ed|ance)|hired|novel|impactful|candidate|match)",
+        r"this is (?:the|an?) .{0,40}?(?:best|exceptional(?:ly)?|ideal|perfect|outstanding|strongest|top)\b"
+        r".{0,40}?(?:candidate|resume|cv|applicant|paper|submission|manuscript|match)",
+        r"best (?:resume|cv|candidate|paper|submission|application) (?:i|we) have ever (?:seen|read|reviewed)",
+        r"(?:recommend|hire|accept|shortlist|select|approve) (?:them|him|her|this (?:candidate|applicant|paper|submission))"
+        r" (?:for|as|immediately|without|to the)\b",
     )),
     "addressee": (1, _p(
         r"\b(?:the )?(?:assistant|chatbot|language model|llm|ai (?:system|agent|model|assistant|reviewer|reader))\b",
@@ -286,6 +314,7 @@ def concealed_text_of(findings) -> str:
     used; mechanism names and locations are not.
     """
     parts: list[str] = []
+    seen: set[str] = set()
     for f in findings:
         c = getattr(f, "concealed", None)
         if c is None and isinstance(f, dict):
@@ -294,7 +323,15 @@ def concealed_text_of(findings) -> str:
             continue
         c = str(c)
         m = re.match(r"(?:Tm origin \([^)]*\); )?recovered text: (['\"])(.*)\1\.{0,3}$", c, re.S)
-        parts.append(m.group(2) if m else c)
+        part = m.group(2) if m else c
+        # Two detectors often report the same span (white and microscopic at
+        # once). Counting it twice doubles the length and can push a short
+        # hidden line past the short-text rule.
+        key = _WS.sub(" ", part).strip()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        parts.append(part)
     return " ".join(parts)
 
 
@@ -450,7 +487,8 @@ def finding_from_assessment(assessment, file_path=None):
         confidence=confidence,
         description=(
             "Text that a reader of this file cannot see is written as an "
-            f"instruction to an AI system (signals: {families}). Matched: "
+            "instruction to an AI system, or as a verdict planted for one to "
+            f"repeat (signals: {families}). Matched: "
             f"{evidence}.{note} This is a phrase-based reading of the hidden "
             "text; it does not understand paraphrase, and its silence is "
             "not evidence that hidden text is harmless."

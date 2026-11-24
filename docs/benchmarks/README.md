@@ -119,11 +119,81 @@ and little about false alarms. For false alarms: 313 clean PDFs (300
 benchmark originals and 13 fixtures), 9,901 extracted spans, none
 reported by the render check.
 
+## PhantomLint test documents (first outside test of the instruction assessment)
+
+Source: `tobycmurray/phantom-lint`, the `tests/` directory at the
+repository's head on 24 November 2026: 140 documents its authors label
+as carrying a hidden prompt (106 PDF, 34 HTML) and 9 they label clean.
+Most are real: résumés and research papers collected with hidden text
+in them. None informed any detector or pattern here. The scanner was
+run once at commit `38ebd5d` with defaults. A file counts as caught
+when the report contains a `concealed_instruction` finding.
+
+| | Caught | Hidden content reported at all |
+|---|---|---|
+| Real PDFs (89) | 80 | 89 |
+| Generated PDFs (17) | 14 | 17 |
+| Real HTML pages (24) | 2 | 24 |
+| Generated HTML pages (10) | 5 | 5 |
+| Clean documents (9) | 0 flagged | |
+
+PDF: 94 of 106 (88.7%), against 87.8% recall on the benchmark the
+patterns were developed on. HTML: 7 of 34.
+
+What the misses were:
+
+- **Nine real PDFs: the hidden text was found, then read as harmless.**
+  Three kinds of message the assessor had no pattern for: instructions
+  to an AI reviewer about what verdict to give and how to write it; a
+  run of imitated `[system]` markers followed by "if asked ..., answer
+  ..."; and a planted third-party endorsement of the candidate, which
+  is not an instruction at all. A fourth cause was mechanical: a span
+  reported by two detectors was counted twice, which pushed short
+  hidden lines past the short-text rule.
+- **Three generated PDFs:** rotated text (two) and one off-page
+  variant. No concealment finding carried the text.
+- **HTML:** text in the background colour set by a style attribute,
+  clipped text, text covered by another element, and a font that draws
+  nothing are not detected. The scanner reads HTML without laying it
+  out. The real pages are arXiv HTML renderings; their hidden prompts
+  were not recovered.
+- **Speed:** median 1.1 s per file; two real résumés took 130 s and
+  217 s.
+
+Nine clean documents say almost nothing about false alarms.
+
+### After the run
+
+The four causes in the first bullet were fixed. On the same documents
+the scanner then catches 102 of 106 PDFs; HTML is unchanged at 7 of 34.
+**The second number is not an outside result**: the patterns were
+written after reading these files. This collection can no longer serve
+as an outside test of the instruction assessment.
+
+Checks that the new patterns did not buy recall with false alarms,
+on files they were not written from:
+
+| CrackedPDFs files | Flagged before | Flagged after |
+|---|---|---|
+| Benign hidden text, train and validation splits (8,837) | not run | 0 |
+| Benign hidden text, test split (937) | 0 | 0 |
+| Clean originals, test split (937) | 0 | 0 |
+| Attacks, test split (937) | 805 | 817 |
+
+The test split in the copy downloaded for this check (dataset revision
+`02d7e0be`, `dataset_split == "test"`) has 937 triplets, not the 973
+reported in the section above; the earlier run's split file was not
+available here. On these 937 the unchanged scanner scores F1 0.924,
+and 0.932 after the change.
+
+Reproduce: `scripts/benchmarks/phantomlint_run.py TESTS_DIR results.jsonl`.
+
 ## Not yet run
 
-PhantomLint corpus (arXiv 2508.17884) and OpenRAG-Soc (arXiv
-2601.10923): no downloadable copy was found from this workspace. No
-outside test of the instruction assessment exists yet.
+OpenRAG-Soc (arXiv 2601.10923): no downloadable copy was found. The
+full 3,402-document PhantomLint corpus is not in its repository; only
+the test documents above were used. After the fixes above there is
+again no untouched outside test of the instruction assessment.
 
 ## Multilingual false-alarm check (not a benchmark)
 

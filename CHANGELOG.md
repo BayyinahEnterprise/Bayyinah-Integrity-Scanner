@@ -47,6 +47,15 @@ Planned as 2.1.0. Not committed, not tagged.
   whether it is written as an instruction to an AI system. English
   phrase families plus override, disclosure and steering shapes in
   sixteen other languages (`analyzers/instruction_phrases_i18n.py`).
+- `concealed_instruction` also reads three kinds of hidden message it
+  missed in its first outside test (PhantomLint's test documents, 94 of
+  106 PDFs before the change): instructions to an AI reviewer or
+  screener about what verdict to give, a run of imitated `[system]`
+  markers with "if asked ..., answer ...", and an endorsement of the
+  document's own subject planted for a screener to repeat. A span
+  reported by two detectors is now counted once. 102 of 106 after the
+  change, which is not an outside result. No benign hidden-text file
+  flagged in 9,774 CrackedPDFs files. See `docs/benchmarks/README.md`.
 - The stream-level PDF concealment pass is on by default.
 - `bayyinah clean FILE`: a copy of a text file with hidden content
   removed, and a receipt binding original to copy (`application/sanitize.py`).

@@ -120,6 +120,17 @@ The score function is `clamp(1.0 - sum(severity * confidence for f in findings),
 2. **The English patterns were developed on the CrackedPDFs training
    split.** The 0.935 F1 on that benchmark's test split is therefore
    in-distribution. See `docs/benchmarks/README.md`.
+   One outside test exists: PhantomLint's test documents, run once
+   before any change, 94 of 106 PDFs and 7 of 34 HTML pages. Patterns
+   for verdict steering, imitated role markers and planted endorsements
+   were written after reading its misses, so that collection is spent.
+   **HTML concealment that depends on layout is not detected**: text in
+   the background colour, clipped text, text under another element, a
+   font that draws nothing. Rotated PDF text is not detected.
+   **A planted endorsement on a long hidden text needs a second
+   signal**, because the text layer behind a scanned reference letter
+   can praise a candidate honestly; a short hidden endorsement is
+   reported on its own.
 3. **The other-language patterns have one attack and one ordinary
    sentence each as tests.** That shows they work on the plainest
    phrasing. It is not a measured detection rate.

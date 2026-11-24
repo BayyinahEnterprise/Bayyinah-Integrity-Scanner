@@ -16,6 +16,11 @@ Planned as 2.1.0. Not committed, not tagged.
 
 ### Fixed
 
+- **Two ordinary two-page PDFs took 130 s and 217 s to scan.** The raw
+  content-stream check used lazy patterns that rescanned to the end of
+  the stream from every opening bracket. They now stop at the string's
+  own closing bracket: 15 s and 13 s on those files, and no finding
+  changed on 2,960 benchmark files (`analyzers/text_analyzer.py`).
 - **Ordinary non-English text no longer reads as an attack.** The
   `homoglyph` rule flagged any word with two or more Latin-lookalike
   letters, which describes most Russian, Ukrainian and Greek words (34

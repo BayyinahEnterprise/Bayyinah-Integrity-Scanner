@@ -193,6 +193,22 @@ def _overlapping_pair_candidates(
 # ZahirTextAnalyzer
 # ---------------------------------------------------------------------------
 
+# Content-stream string operands, matched without lazy ``.*?`` scans.
+#
+# The earlier patterns (``\((.*?)(?<!\\)\)\s*Tj`` and ``\[(.*?)\]\s*TJ``
+# with DOTALL) restarted a scan to the end of the stream from every opening
+# bracket that was not followed by the expected operator, which is quadratic:
+# two ordinary two-page resumes took 130 s and 217 s. These patterns stop at
+# the string's or array's own closing bracket, so each byte is visited a
+# bounded number of times. A literal string may hold escaped characters and
+# one level of balanced parentheses, as the PDF syntax allows unescaped.
+_LIT_BODY = r"(?:[^()\\]|\\.|\((?:[^()\\]|\\.)*\))*"
+_LITERAL = re.compile(r"\((" + _LIT_BODY + r")\)", re.DOTALL)
+_TJ_LITERAL = re.compile(r"\((" + _LIT_BODY + r")\)\s*Tj", re.DOTALL)
+_TJ_ARRAY = re.compile(r"\[((?:[^\]()\\]|\\.|\(" + _LIT_BODY + r"\))*)\]\s*TJ", re.DOTALL)
+_HEX_SHOW = re.compile(r"<([0-9A-Fa-f\s]{1,65536})>\s*T[jJ]")
+
+
 class ZahirTextAnalyzer(BaseAnalyzer):
     """Detects concealment at the rendered-text (zahir) layer of a PDF.
 
@@ -757,21 +773,19 @@ class ZahirTextAnalyzer(BaseAnalyzer):
                 accumulate(decoded, "/ActualText hex")
 
         # Bare Tj / TJ hex strings
-        for m in re.finditer(
-            r"<([0-9A-Fa-f\s]+)>\s*T[jJ]", stream,
-        ):
+        for m in _HEX_SHOW.finditer(stream):
             decoded = self._decode_hex_text(m.group(1), prefer_utf16be=False)
             if decoded:
                 accumulate(decoded, "hex text string")
 
         # TJ arrays — both hex fragments and literal fragments
-        for m in re.finditer(r"\[(.*?)\]\s*TJ", stream, re.DOTALL):
+        for m in _TJ_ARRAY.finditer(stream):
             arr = m.group(1)
             for hm in re.finditer(r"<([0-9A-Fa-f\s]+)>", arr):
                 decoded = self._decode_hex_text(hm.group(1), prefer_utf16be=False)
                 if decoded:
                     accumulate(decoded, "TJ hex fragment")
-            for lm in re.finditer(r"\((.*?)(?<!\\)\)", arr, re.DOTALL):
+            for lm in _LITERAL.finditer(arr):
                 body = self._decode_pdf_literal(lm.group(1))
                 accumulate(body, "TJ literal fragment")
                 try:
@@ -782,9 +796,7 @@ class ZahirTextAnalyzer(BaseAnalyzer):
                     pass
 
         # Bare Tj literal strings
-        for m in re.finditer(
-            r"\((.*?)(?<!\\)\)\s*Tj", stream, re.DOTALL,
-        ):
+        for m in _TJ_LITERAL.finditer(stream):
             body = self._decode_pdf_literal(m.group(1))
             accumulate(body, "Tj literal")
             try:
